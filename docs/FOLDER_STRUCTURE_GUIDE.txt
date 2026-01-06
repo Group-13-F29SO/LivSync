@@ -1,0 +1,561 @@
+================================================================================
+                    LIVSYNC HEALTHCARE PROJECT
+                    FOLDER STRUCTURE & GUIDE
+================================================================================
+
+This document explains the purpose of each folder in the LivSync project and 
+what kind of files should be placed in each folder. Read this carefully to 
+understand where to place your code.
+
+================================================================================
+                            PROJECT ROOT FOLDERS
+================================================================================
+
+1. src/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Main source code folder - Contains ALL the code you write for the 
+            application.
+   
+   CONTAINS: All sub-folders like app, components, services, etc.
+   
+   EXPLANATION: This is the heart of your project. Everything that makes the 
+                application work is inside this folder. When you start coding,
+                you'll spend most of your time inside the src folder.
+   ────────────────────────────────────────────────────────────────────────────
+
+2. public/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Static files that don't change and need to be served as-is to the
+            browser.
+   
+   CONTAINS: 
+   - Images (logos, icons, photos, banners, etc.)
+   - Icons (SVG or PNG files)
+   - Favicons
+   - PDF files
+   - Any other static assets
+   
+   EXPLANATION: Files in this folder are directly accessible from the web.
+                For example, an image in public/images/logo.png can be accessed
+                at your-website.com/images/logo.png. These files don't get
+                processed by the build system.
+   
+   SUB-FOLDERS:
+   - images/ : For storing image files (JPG, PNG, GIF, WebP)
+   - icons/ : For storing icon files
+   ────────────────────────────────────────────────────────────────────────────
+
+3. docs/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Documentation and guides for the project.
+   
+   CONTAINS:
+   - API documentation
+   - Setup guides
+   - Architecture explanations
+   - Team guidelines
+   - Any educational materials
+   
+   EXPLANATION: This folder helps team members understand how the project works.
+                Put any documentation, diagrams, or guides here. Not code, but
+                explanations about code.
+   ────────────────────────────────────────────────────────────────────────────
+
+4. .github/workflows/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Continuous Integration and Continuous Deployment (CI/CD) 
+            configuration files.
+   
+   CONTAINS:
+   - YAML files that define automated tasks
+   - Build scripts
+   - Deployment scripts
+   - Automated testing configurations
+   
+   EXPLANATION: These files tell GitHub to automatically run tasks when you
+                push code. For example, automatically check if your code has
+                errors before merging. You may not need this initially.
+   ────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+                          SRC/ SUB-FOLDERS
+================================================================================
+
+Inside src/, you'll find these folders. These are where your actual code lives:
+
+1. src/app/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Main application pages and routing. This uses Next.js App Router.
+   
+   CONTAINS:
+   - layout.jsx : The main layout wrapper for all pages
+   - page.jsx : The home page of your application
+   - Nested folders for different pages/routes (e.g., app/appointments/, app/profile/)
+   - route.js files for API routes
+   
+   FILE NAMING RULES:
+   - Main page file should be named: page.jsx
+   - Main layout file should be named: layout.jsx
+   - API routes should be named: route.js
+   
+   EXPLANATION: In Next.js, the folder structure in src/app/ directly maps to
+                URLs on your website. For example:
+                
+                src/app/page.jsx → Website home page (/)
+                src/app/appointments/page.jsx → /appointments page
+                src/app/profile/page.jsx → /profile page
+                
+                This is different from traditional routing - the folder structure
+                IS your routing system.
+   
+   EXAMPLE STRUCTURE:
+   src/app/
+   ├── layout.jsx (Main layout - header, footer, etc.)
+   ├── page.jsx (Home page)
+   ├── appointments/
+   │   ├── page.jsx (Appointments list page)
+   │   ├── [id]/
+   │   │   └── page.jsx (Single appointment details)
+   │   └── create/
+   │       └── page.jsx (Create new appointment)
+   ├── doctors/
+   │   ├── page.jsx (Doctors list page)
+   │   └── [id]/
+   │       └── page.jsx (Doctor profile page)
+   └── api/
+       ├── appointments/
+       │   └── route.js (API endpoint for appointments)
+       └── doctors/
+           └── route.js (API endpoint for doctors)
+   ────────────────────────────────────────────────────────────────────────────
+
+2. src/components/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Reusable React components that you use across multiple pages.
+   
+   CONTAINS:
+   - Header.jsx : Navigation header
+   - Footer.jsx : Footer
+   - Button.jsx : Reusable button component
+   - Card.jsx : Reusable card component
+   - etc.
+   
+   EXPLANATION: Think of components as LEGO blocks. They are pieces of UI that
+                you can use and reuse throughout your application. For example,
+                you might have a Button component that you use on 20 different
+                pages. Instead of coding the button 20 times, you code it once
+                and reuse it everywhere.
+   
+   FOLDER ORGANIZATION:
+   You can organize components by feature or by type:
+   
+   Option 1 - By Feature (Recommended):
+   src/components/
+   ├── Appointments/
+   │   ├── AppointmentCard.jsx
+   │   ├── AppointmentForm.jsx
+   │   └── AppointmentList.jsx
+   ├── Doctors/
+   │   ├── DoctorCard.jsx
+   │   ├── DoctorProfile.jsx
+   │   └── DoctorList.jsx
+   └── Common/
+       ├── Header.jsx
+       ├── Footer.jsx
+       ├── Button.jsx
+       └── Modal.jsx
+   
+   Option 2 - By Type:
+   src/components/
+   ├── cards/
+   │   ├── AppointmentCard.jsx
+   │   └── DoctorCard.jsx
+   ├── forms/
+   │   ├── AppointmentForm.jsx
+   │   └── LoginForm.jsx
+   └── common/
+       ├── Header.jsx
+       └── Footer.jsx
+   
+   NAMING CONVENTION:
+   - Component files should start with capital letter: Button.jsx, Card.jsx
+   - Keep names descriptive: AppointmentCard.jsx (not AC.jsx)
+   ────────────────────────────────────────────────────────────────────────────
+
+3. src/services/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Functions that communicate with the backend API or handle business
+            logic that's used in multiple places.
+   
+   CONTAINS:
+   - api.js : Functions to call backend APIs
+   - authService.js : Handle login, logout, authentication
+   - appointmentService.js : Functions related to appointments
+   - doctorService.js : Functions related to doctors
+   - etc.
+   
+   EXPLANATION: Services are like helper functions that do specific jobs.
+                Instead of writing API calls directly in components, you write
+                them once in a service file and call them from anywhere.
+                
+                For example, instead of writing an API call to get appointments
+                in 3 different components, you write it once in
+                appointmentService.js and all components use it.
+   
+   TYPICAL SERVICE FILE STRUCTURE:
+   
+   // src/services/appointmentService.js
+   export const getAppointments = async (userId) => {
+     // Call API and return appointments
+   };
+   
+   export const createAppointment = async (appointmentData) => {
+     // Call API to create appointment
+   };
+   
+   export const cancelAppointment = async (appointmentId) => {
+     // Call API to cancel appointment
+   };
+   
+   Then in your components:
+   
+   import { getAppointments } from '@/services/appointmentService';
+   
+   const appointments = await getAppointments(userId);
+   ────────────────────────────────────────────────────────────────────────────
+
+4. src/hooks/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Custom React hooks - reusable logic that you can use in components.
+   
+   CONTAINS:
+   - useLocalStorage.js : Hook to use browser's local storage
+   - useAuth.js : Hook to manage authentication
+   - useFetch.js : Hook to fetch data from API
+   - useForm.js : Hook to manage form data
+   - etc.
+   
+   EXPLANATION: Hooks are special functions that let you use React features.
+                Custom hooks are your own hooks for logic you use in multiple
+                components. They always start with "use".
+   
+   EXAMPLE:
+   // src/hooks/useLocalStorage.js
+   export const useLocalStorage = (key, initialValue) => {
+     // Logic to handle local storage
+   };
+   
+   Then in your components:
+   
+   import { useLocalStorage } from '@/hooks/useLocalStorage';
+   const [name, setName] = useLocalStorage('userName', '');
+   ────────────────────────────────────────────────────────────────────────────
+
+5. src/utils/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Utility functions - small helper functions used throughout the app.
+   
+   CONTAINS:
+   - dateUtils.js : Functions to format dates, parse dates, etc.
+   - stringUtils.js : Functions to manipulate strings
+   - validationUtils.js : Functions to validate form inputs
+   - numberUtils.js : Functions to format numbers
+   - etc.
+   
+   EXPLANATION: Utilities are simple helper functions that do one specific job.
+                They're not tied to React or components. They're just JavaScript
+                functions that help you do common tasks.
+   
+   EXAMPLE:
+   // src/utils/dateUtils.js
+   export const formatDate = (date) => {
+     return date.toLocaleDateString('en-US');
+   };
+   
+   export const isDateInPast = (date) => {
+     return date < new Date();
+   };
+   
+   Then use them anywhere:
+   
+   import { formatDate } from '@/utils/dateUtils';
+   console.log(formatDate(new Date()));
+   ────────────────────────────────────────────────────────────────────────────
+
+6. src/lib/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Library functions and external tool configurations that are reused.
+   
+   CONTAINS:
+   - apiClient.js : Configured API client (Axios, Fetch, etc.)
+   - database.js : Database connection setup
+   - auth.js : Authentication logic
+   - etc.
+   
+   EXPLANATION: This is for more complex configurations and setups. Usually
+                things that need to be initialized once and reused everywhere.
+                
+                Think of it as "setup code" that other parts of your app
+                depend on.
+   
+   EXAMPLE:
+   // src/lib/apiClient.js
+   import axios from 'axios';
+   
+   const apiClient = axios.create({
+     baseURL: process.env.NEXT_PUBLIC_API_URL,
+     headers: { 'Content-Type': 'application/json' }
+   });
+   
+   export default apiClient;
+   
+   Then in services:
+   
+   import apiClient from '@/lib/apiClient';
+   const response = await apiClient.get('/appointments');
+   ────────────────────────────────────────────────────────────────────────────
+
+7. src/constants/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Fixed values that don't change and are used throughout the app.
+   
+   CONTAINS:
+   - index.js : API endpoints, user roles, status constants, etc.
+   - config.js : Application configuration
+   - messages.js : Error messages, notification messages
+   - etc.
+   
+   EXPLANATION: Instead of writing the same value in multiple places, define
+                it once in constants. If you need to change it later, you only
+                change it in one place.
+   
+   EXAMPLE:
+   // src/constants/index.js
+   export const API_ENDPOINTS = {
+     appointments: '/api/appointments',
+     doctors: '/api/doctors',
+     users: '/api/users',
+   };
+   
+   export const USER_ROLES = {
+     PATIENT: 'patient',
+     DOCTOR: 'doctor',
+     ADMIN: 'admin',
+   };
+   
+   export const APPOINTMENT_STATUS = {
+     SCHEDULED: 'scheduled',
+     COMPLETED: 'completed',
+     CANCELLED: 'cancelled',
+   };
+   
+   Then use them:
+   
+   import { API_ENDPOINTS, USER_ROLES } from '@/constants';
+   const response = await fetch(API_ENDPOINTS.appointments);
+   ────────────────────────────────────────────────────────────────────────────
+
+8. src/context/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: React Context files for managing global state (data shared across
+            multiple components).
+   
+   CONTAINS:
+   - AuthContext.jsx : Authentication state (logged in user, token, etc.)
+   - UserContext.jsx : User information state
+   - NotificationContext.jsx : Notification state
+   - etc.
+   
+   EXPLANATION: Sometimes you need to share data between many components.
+                Context is React's way of doing this without passing props
+                through every single component in between.
+                
+                For example, every component needs to know if a user is logged
+                in. Instead of passing "isLoggedIn" prop through 20 components,
+                use Context and any component can access it directly.
+   
+   EXAMPLE:
+   // src/context/AuthContext.jsx
+   import React, { createContext, useState } from 'react';
+   
+   export const AuthContext = createContext();
+   
+   export const AuthProvider = ({ children }) => {
+     const [user, setUser] = useState(null);
+     const [isLoggedIn, setIsLoggedIn] = useState(false);
+     
+     return (
+       <AuthContext.Provider value={{ user, isLoggedIn, setUser }}>
+         {children}
+       </AuthContext.Provider>
+     );
+   };
+   
+   Then in components:
+   
+   import { useContext } from 'react';
+   import { AuthContext } from '@/context/AuthContext';
+   
+   export default function MyComponent() {
+     const { user, isLoggedIn } = useContext(AuthContext);
+     return <div>{isLoggedIn ? 'Welcome back!' : 'Please login'}</div>;
+   }
+   ────────────────────────────────────────────────────────────────────────────
+
+9. src/styles/
+   ────────────────────────────────────────────────────────────────────────────
+   PURPOSE: Global CSS files and styling utilities.
+   
+   CONTAINS:
+   - globals.css : Global styles applied to entire application
+   - variables.css : CSS variables for colors, sizes, etc.
+   - etc.
+   
+   EXPLANATION: Put styles that apply to the whole app here. Most individual
+                component styles should be in component files or in Tailwind
+                classes.
+   
+   NOTE: This project uses Tailwind CSS, so you'll mostly use Tailwind classes
+         in your components instead of writing custom CSS.
+   ────────────────────────────────────────────────────────────────────────────
+
+================================================================================
+                        ROOT LEVEL CONFIGURATION FILES
+================================================================================
+
+These files configure how your project builds and runs. You typically don't
+modify them often, but here's what they do:
+
+1. package.json
+   - Lists all dependencies (npm packages) your project uses
+   - Contains scripts to run, build, and test your project
+   - Most important file for project setup
+
+2. next.config.js
+   - Configures Next.js framework
+   - Sets up image handling, environment variables, etc.
+
+3. .env.local
+   - Contains secret environment variables (API keys, database URLs, etc.)
+   - Never commit this to Git (it's in .gitignore)
+   - Copy .env.example and fill in your values
+
+4. .env.example
+   - Template showing what environment variables are needed
+   - This IS committed to Git for team reference
+
+5. .eslintrc.json
+   - Configures code style checking
+   - Helps maintain consistent code style across team
+
+6. tailwind.config.js & postcss.config.js
+   - Configure Tailwind CSS (the styling library)
+
+7. .gitignore
+   - Tells Git which files to NOT track (node_modules, .env, build files, etc.)
+
+8. README.md & README_PROJECT.md
+   - Project documentation
+   - How to install, run, and use the project
+
+================================================================================
+                        QUICK REFERENCE SUMMARY
+================================================================================
+
+Where to put what:
+
+PAGES & ROUTES → src/app/
+  - Create folders for each page/route
+  - Files named page.jsx for page content
+  - Files named layout.jsx for layouts
+  - Files named route.js for API endpoints
+
+REUSABLE UI PIECES → src/components/
+  - Buttons, Cards, Forms, Headers, etc.
+  - Anything you use multiple times
+
+REPEATED LOGIC → src/hooks/ or src/utils/
+  - React hooks → src/hooks/ (always start with "use")
+  - Regular functions → src/utils/
+
+API COMMUNICATION → src/services/
+  - Functions that call backend APIs
+  - Organized by feature (appointments, doctors, etc.)
+
+SHARED DATA ACROSS APP → src/context/
+  - User authentication status
+  - User information
+  - Global settings
+  - Notifications
+
+CONFIGURATION & CONSTANTS → src/lib/ & src/constants/
+  - API client setup → src/lib/
+  - API endpoints, roles, messages → src/constants/
+
+IMAGES, ICONS, FONTS → public/
+  - Images used in app
+  - Icons
+  - Downloadable files
+
+DOCUMENTATION → docs/
+  - Guides and explanations
+  - NOT code, but about code
+
+================================================================================
+                        BEST PRACTICES
+================================================================================
+
+1. NAMING CONVENTIONS
+   - Components: PascalCase (Button.jsx, AppointmentCard.jsx)
+   - Functions/Variables: camelCase (getAppointments, userName)
+   - Constants: UPPER_SNAKE_CASE (API_URL, MAX_RETRIES)
+   - Folders: lowercase (components, services, utils)
+
+2. FILE ORGANIZATION
+   - Keep files small and focused (one component per file usually)
+   - Group related files together in folders
+   - Use index.js files to export commonly used items
+
+3. IMPORTS
+   - Use path aliases: import { Component } from '@/components/...'
+   - Not: import { Component } from '../../components/...'
+
+4. COMMENTS
+   - Add comments for complex logic
+   - Comments should explain WHY, not WHAT
+   - Bad: // Add 5 to x
+   - Good: // Add buffer time for appointment scheduling
+
+5. DRY PRINCIPLE (Don't Repeat Yourself)
+   - If you write something twice, put it in utils or hooks
+   - Reuse components instead of duplicating code
+
+================================================================================
+                        COMMON WORKFLOW EXAMPLE
+================================================================================
+
+Say you want to create an "Appointments" page:
+
+1. CREATE THE PAGE:
+   - Create src/app/appointments/page.jsx
+   - This automatically creates the /appointments route
+
+2. CREATE COMPONENTS (if needed):
+   - src/components/Appointments/AppointmentCard.jsx
+   - src/components/Appointments/AppointmentList.jsx
+   - src/components/Appointments/AppointmentForm.jsx
+
+3. CREATE A SERVICE:
+   - src/services/appointmentService.js
+   - Write functions like getAppointments(), createAppointment()
+
+4. USE IN YOUR PAGE:
+   - Import the service in src/app/appointments/page.jsx
+   - Import components in the page
+   - Call service functions to get data
+   - Pass data to components
+   - Components display the data
+
+5. ADD CONSTANTS (if needed):
+   - Add appointment-related constants to src/constants/index.js
+
