@@ -38,7 +38,7 @@ export async function POST(request) {
     }
 
     // Login successful - return user data (without password)
-    return NextResponse.json(
+    const response = NextResponse.json(
       {
         message: 'Login successful',
         user: {
@@ -51,6 +51,20 @@ export async function POST(request) {
       },
       { status: 200 }
     );
+
+    // Set secure session cookie
+    response.cookies.set('livsync_session', JSON.stringify({
+      userId: user.id,
+      username: user.username,
+      email: user.email,
+    }), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+    });
+
+    return response;
   } catch (error) {
     console.error('Login error:', error);
     return NextResponse.json(
