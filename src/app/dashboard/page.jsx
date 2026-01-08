@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [activePage, setActivePage] = useState('dashboard');
+
+  const router = useRouter();
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -14,11 +17,11 @@ export default function DashboardPage() {
     const isActive = activePage === id;
     return (
       <button 
-        onClick={() => onClick && onClick(id)}
+        onClick={() => { if (onClick) onClick(id); router.push(`/${id}`); }}
         className="relative w-full flex justify-center py-2 transition-colors group"
       >
         {/* Container with background */}
-        <div className={`relative flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors w-20 flex-shrink-0 ${
+        <div className={`relative flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors w-20 mx-1 flex-shrink-0 ${
           isActive 
             ? 'bg-blue-100' 
             : 'group-hover:bg-gray-50'
@@ -149,7 +152,7 @@ export default function DashboardPage() {
         {/* Dashboard content will go here */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Placeholder cards */}
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow transform transition-transform duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-xl hover:z-10">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 rounded-md">
                 <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -169,7 +172,7 @@ export default function DashboardPage() {
           
 
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow transform transition-transform duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-xl hover:z-10">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 rounded-md">
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -189,7 +192,7 @@ export default function DashboardPage() {
           
 
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow transform transition-transform duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-xl hover:z-10">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 rounded-md">
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -209,7 +212,7 @@ export default function DashboardPage() {
 
 
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow transform transition-transform duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-xl hover:z-10">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 rounded-md">
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -227,7 +230,7 @@ export default function DashboardPage() {
 
 
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow transform transition-transform duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-xl hover:z-10">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 rounded-md">
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,7 +250,7 @@ export default function DashboardPage() {
 
 
 
-          <div className="bg-white p-6 rounded-lg shadow">
+          <div className="bg-white p-6 rounded-lg shadow transform transition-transform duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-xl hover:z-10">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-50 rounded-md">
                 <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
