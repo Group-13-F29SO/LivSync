@@ -15,9 +15,12 @@ export default function DashboardPage() {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+      setIsLoading(false);
+    } else {
+      // No user found in localStorage, redirect to login
+      router.push('/login');
     }
-    setIsLoading(false);
-  }, []);
+  }, [router]);
 
   const handleLogout = async () => {
     try {
