@@ -18,7 +18,7 @@ export default function DashboardPage() {
         className="relative w-full flex justify-center py-2 transition-colors group"
       >
         {/* Container with background */}
-        <div className={`relative flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors w-20 ${
+        <div className={`relative flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-colors w-20 flex-shrink-0 ${
           isActive 
             ? 'bg-blue-100' 
             : 'group-hover:bg-gray-50'
@@ -53,7 +53,7 @@ export default function DashboardPage() {
   return (
     <div className="flex h-screen">
       {/* Vertical Navigation Bar */}
-      <nav className="w-24 bg-white flex flex-col shadow-lg">
+      <nav className="w-23 bg-white flex flex-col shadow-lg">
         {/* Spacer */}
         <div className="h-24"></div>
         
@@ -141,27 +141,132 @@ export default function DashboardPage() {
       </nav>
 
       {/* Main Content Area */}
-      <main className="flex-1 bg-gray-100 p-8">
-        <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+      <main className="flex-1 p-8 overflow-auto bg-blue-50">
+        <h1 className="inline-block text-3xl font-bold text-gray-800 bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">Dashboard</h1>
         <p className="text-gray-600 mt-2">Welcome to your wellness dashboard</p>
+        <p className="text-gray-600 mt-2">Last Synced:</p>
         
         {/* Dashboard content will go here */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Placeholder cards */}
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-800">Quick Stats</h3>
-            <p className="text-gray-600 mt-2">Your health metrics at a glance</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-50 rounded-md">
+                <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M7 20c-1.5 0-2.5-1.5-2-3 1-2.5 3-4 4.5-4.5 1.5-.5 2.5.5 2 2-.5 1.5-2 6.5-4.5 5.5z" />
+                  <path d="M16 18c1.5 0 2-2 1-3.5-1.5-2-3.5-3-5-2.5-1.5.5-1 2 0 3.5 1 1.5 3 2.5 4 2.5z" />
+                  <path d="M9 7c0-1.5 1-3 2.5-3S14 5 14 6.5 13 9 11.5 9 9 8.5 9 7z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Steps</h3>
+            </div>
+
+            <div className="mt-4 flex items-baseline gap-3">
+              <span className="inline-block text-4xl md:text-5xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">7,834</span>
+              <span className="text-sm text-gray-500">steps</span>
+            </div>
           </div>
           
+
+
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-800">Recent Activity</h3>
-            <p className="text-gray-600 mt-2">Track your latest progress</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-50 rounded-md">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.682 4.318 12.682a4.5 4.5 0 010-6.364z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Heart Rate</h3>
+            </div>
+            
+            <p className="text-gray-500 mt-2">Resting: 65 bpm</p>
+
+            <div className="mt-4 flex items-baseline gap-3">
+              <span className="inline-block text-4xl md:text-5xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">72</span>
+              <span className="text-sm text-gray-500">bpm</span>
+            </div>
           </div>
           
+
+
           <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-800">Upcoming Goals</h3>
-            <p className="text-gray-600 mt-2">Stay on track with your targets</p>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-50 rounded-md">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 3s-3 3.2-3 6.2a3 3 0 006 0C15 6.2 12 3 12 3z" />
+                  <path d="M9.5 13.5c-.8 1.5-.5 3 1 4.5 1.5 1.5 4 1.2 5-1 .6-1.4.2-2.8-1.2-4.2" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Calories Burned</h3>
+            </div>
+            
+            
+            <div className="mt-4 flex items-baseline gap-3">
+              <span className="inline-block text-4xl md:text-5xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">1847</span>
+              <span className="text-sm text-gray-500">kcal</span>
+            </div>
           </div>
+
+
+
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-50 rounded-md">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 3s-6 6.5-6 10.5A6 6 0 0018 14c0-4-6-11-6-11z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Hydration</h3>
+            </div>
+            
+            <div className="mt-4 flex items-baseline gap-3">
+              <span className="inline-block text-4xl md:text-5xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">6</span>
+              <span className="text-sm text-gray-500">glasses</span>
+            </div>
+          </div>
+
+
+
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-50 rounded-md">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Sleep</h3>
+            </div>
+            
+            <p className="text-gray-500 mt-2">Quality: Good</p>
+
+            <div className="mt-4 flex items-baseline gap-3">
+              <span className="inline-block text-4xl md:text-5xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">7.5</span>
+              <span className="text-sm text-gray-500">hours</span>
+            </div>
+          </div>
+
+
+
+          <div className="bg-white p-6 rounded-lg shadow">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-50 rounded-md">
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 3a9 9 0 100 18 9 9 0 000-18z" />
+                  <path d="M12 12l4-4" />
+                  <path d="M12 12h.01" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">Blood Glucose</h3>
+            </div>
+            
+            <p className="text-gray-500 mt-2">Status: Normal</p>
+
+            <div className="mt-4 flex items-baseline gap-3">
+              <span className="inline-block text-4xl md:text-5xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">95</span>
+              <span className="text-sm text-gray-500">mg/dL</span>
+            </div>
+          </div>
+
         </div>
       </main>
     </div>
