@@ -1,18 +1,72 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import DashboardCard from '@/components/DashboardCard/DashboardCard';
 
 export default function DashboardPage() {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Get user data from localStorage (set during login)
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+    setIsLoading(false);
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include', // Include cookies in request
+      });
+
+      if (response.ok) {
+        // Clear user from localStorage only after successful logout
+        localStorage.removeItem('user');
+        
+        // Redirect to login
+        router.push('/login');
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-blue-50">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex bg-blue-50">
       <Navbar />
 
       {/* Main Content Area */}
       <main className="flex-1 p-8 ml-20 overflow-auto">
-        <h1 className="inline-block text-3xl font-bold text-gray-800 bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Welcome to your wellness dashboard</p>
-        <p className="text-gray-600 mt-2">Last Synced:</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="inline-block text-3xl font-bold text-gray-800 bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">Dashboard</h1>
+            <p className="text-gray-600 mt-2">Welcome back, {user?.firstName || 'User'}</p>
+            <p className="text-gray-600 mt-1">Last Synced: Just now</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
+          >
+            Logout
+          </button>
+        </div>
         
         {/* Dashboard content will go here */}
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
