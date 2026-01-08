@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model achievements {
+  id                Int                 @id @default(autoincrement())
+  name              String              @unique @db.VarChar(100)
+  description       String
+  icon_url          String?             @db.VarChar(255)
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  user_achievements user_achievements[]
+}
+
+model admins {
+  id            String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  username      String   @db.VarChar(50)
+  email         String   @unique @db.VarChar(255)
+  password_hash String   @db.VarChar(255)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model articles {
+  id         Int      @id @default(autoincrement())
+  title      String   @db.VarChar(255)
+  content    String
+  author     String?  @db.VarChar(100)
+  category   String?  @db.VarChar(50)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([category], map: "idx_articles_category")
+  @@index([created_at], map: "idx_articles_created_at")
+}
+
+model biometric_data {
+  id          BigInt   @id @default(autoincrement())
+  patient_id  String   @db.Uuid
+  metric_type String   @db.VarChar(50)
+  value       Decimal  @db.Decimal(10, 2)
+  timestamp   DateTime @default(now()) @db.Timestamptz(6)
+  source      String   @default("manual") @db.VarChar(50)
+  patients    patients @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([metric_type], map: "idx_biometric_data_metric_type")
+  @@index([patient_id], map: "idx_biometric_data_patient_id")
+  @@index([patient_id, metric_type, timestamp], map: "idx_biometric_data_patient_metric_time")
+  @@index([timestamp], map: "idx_biometric_data_timestamp")
+}
+
+model goals {
+  id           Int      @id @default(autoincrement())
+  patient_id   String   @db.Uuid
+  metric_type  String   @db.VarChar(50)
+  target_value Int
+  frequency    String   @default("daily") @db.VarChar(10)
+  is_active    Boolean  @default(true)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  patients     patients @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_goals_is_active")
+  @@index([patient_id], map: "idx_goals_patient_id")
+}
+
+model patient_profiles {
+  patient_id     String    @id @db.Uuid
+  date_of_birth  DateTime? @db.Date
+  height_cm      Int?
+  weight_kg      Decimal?  @db.Decimal(5, 2)
+  biological_sex String?   @db.VarChar(10)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at     DateTime  @default(now()) @db.Timestamptz(6)
+  patients       patients  @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model patients {
+  id                      String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  first_name              String              @db.VarChar(50)
+  last_name               String              @db.VarChar(50)
+  username                String              @unique @db.VarChar(50)
+  email                   String              @unique @db.VarChar(255)
+  password_hash           String              @db.VarChar(255)
+  profile_picture_url     String?             @db.VarChar(255)
+  provider_id             String?             @db.Uuid
+  provider_consent_status String              @default("none") @db.VarChar(20)
+  created_at              DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime            @default(now()) @db.Timestamptz(6)
+  biometric_data          biometric_data[]
+  goals                   goals[]
+  patient_profiles        patient_profiles?
+  providers               providers?          @relation(fields: [provider_id], references: [id], onUpdate: NoAction)
+  user_achievements       user_achievements[]
+
+  @@index([email], map: "idx_patients_email")
+  @@index([provider_id], map: "idx_patients_provider_id")
+  @@index([username], map: "idx_patients_username")
+}
+
+model providers {
+  id            String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  first_name    String     @db.VarChar(50)
+  last_name     String     @db.VarChar(50)
+  email         String     @unique @db.VarChar(255)
+  password_hash String     @db.VarChar(255)
+  specialty     String?    @db.VarChar(100)
+  is_verified   Boolean    @default(false)
+  created_at    DateTime   @default(now()) @db.Timestamptz(6)
+  patients      patients[]
+
+  @@index([email], map: "idx_providers_email")
+}
+
+model user_achievements {
+  patient_id     String       @db.Uuid
+  achievement_id Int
+  earned_at      DateTime     @default(now()) @db.Timestamptz(6)
+  achievements   achievements @relation(fields: [achievement_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  patients       patients     @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([patient_id, achievement_id])
+  @@index([achievement_id], map: "idx_user_achievements_achievement_id")
+  @@index([patient_id], map: "idx_user_achievements_patient_id")
+}
