@@ -4,46 +4,24 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import DashboardCard from '@/components/DashboardCard/DashboardCard';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardPage() {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { user, logout, isLoading } = useAuth();
 
   useEffect(() => {
-    // Get user data from localStorage (set during login)
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsLoading(false);
-    } else {
-      // No user found in localStorage, redirect to login
+    // Redirect to login if no user is found
+    if (!isLoading && !user) {
       router.push('/login');
     }
-  }, [router]);
+  }, [user, isLoading, router]);
 
-  const handleLogout = async () => {
-    try {
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include', // Include cookies in request
-      });
-
-      if (response.ok) {
-        // Clear user from localStorage only after successful logout
-        localStorage.removeItem('user');
-        
-        // Redirect to login
-        router.push('/login');
-      } else {
-        console.error('Logout failed');
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
+  const handleLogout = () => {
+    logout();
   };
 
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-blue-50">
         <p className="text-gray-600">Loading...</p>
