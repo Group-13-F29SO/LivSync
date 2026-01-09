@@ -1,0 +1,74 @@
+## Git Branching Workflow
+
+### Creating a Branch and Submitting Changes
+
+After completing your code changes, follow these steps:
+
+1. Create a new branch:
+   ```
+   git checkout -b your-branch-name
+   ```
+
+2. Stage your changes:
+   ```
+   git add .
+   ```
+
+3. Commit with a descriptive message:
+   ```
+   git commit -m "your-message-here"
+   ```
+
+4. Push the branch to GitHub:
+   ```
+   git push -u origin your-branch-name
+   ```
+
+### Continuing Development
+
+If you're still working on the same feature, continue in the same branch. For subsequent commits, use `git push` instead of `git push -u origin your-branch-name`.
+
+### Creating a Pull Request
+
+Once your work is complete:
+
+1. Navigate to the GitHub repository
+2. Click the "Compare & pull request" button (yellow banner with your branch name)
+3. Verify that:
+   - Base branch is set to `main`
+   - Compare branch is set to `your-branch-name`
+4. Add a descriptive title and description
+5. Click "Create Pull Request"
+
+### Code Review Process
+
+**For Reviewers:**
+
+1. Go to the repository and navigate to "Pull Requests"
+2. Select the pull request to review
+3. Review the changes in the "Files changed" tab
+4. Click "Review changes" (green button)
+5. Add comments and select "Approve"
+6. Confirm your review
+
+**Merging:**
+Once approved, either the reviewer or the author can merge the pull request. The PR will close automatically upon successful merge.
+
+### Post-Merge Updates
+
+After the branch has been merged to `main`, all team members must update their local repository:
+
+1. Switch to main branch:
+   ```
+   git checkout main
+   ```
+
+2. Pull the latest changes:
+   ```
+   git pull origin main
+   ```
+
+3. Delete your local feature branch (optional but recommended):
+   ```
+   git branch -d your-branch-name
+   ```

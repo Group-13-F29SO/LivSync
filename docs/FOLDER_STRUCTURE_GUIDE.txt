@@ -61,22 +61,6 @@ understand where to place your code.
                 explanations about code.
    ────────────────────────────────────────────────────────────────────────────
 
-4. .github/workflows/
-   ────────────────────────────────────────────────────────────────────────────
-   PURPOSE: Continuous Integration and Continuous Deployment (CI/CD) 
-            configuration files.
-   
-   CONTAINS:
-   - YAML files that define automated tasks
-   - Build scripts
-   - Deployment scripts
-   - Automated testing configurations
-   
-   EXPLANATION: These files tell GitHub to automatically run tasks when you
-                push code. For example, automatically check if your code has
-                errors before merging. You may not need this initially.
-   ────────────────────────────────────────────────────────────────────────────
-
 ================================================================================
                           SRC/ SUB-FOLDERS
 ================================================================================
@@ -90,7 +74,7 @@ Inside src/, you'll find these folders. These are where your actual code lives:
    CONTAINS:
    - layout.jsx : The main layout wrapper for all pages
    - page.jsx : The home page of your application
-   - Nested folders for different pages/routes (e.g., app/appointments/, app/profile/)
+   - Nested folders for different pages/routes (e.g., app/profile/)
    - route.js files for API routes
    
    FILE NAMING RULES:
@@ -102,7 +86,6 @@ Inside src/, you'll find these folders. These are where your actual code lives:
                 URLs on your website. For example:
                 
                 src/app/page.jsx → Website home page (/)
-                src/app/appointments/page.jsx → /appointments page
                 src/app/profile/page.jsx → /profile page
                 
                 This is different from traditional routing - the folder structure
@@ -112,21 +95,13 @@ Inside src/, you'll find these folders. These are where your actual code lives:
    src/app/
    ├── layout.jsx (Main layout - header, footer, etc.)
    ├── page.jsx (Home page)
-   ├── appointments/
-   │   ├── page.jsx (Appointments list page)
-   │   ├── [id]/
-   │   │   └── page.jsx (Single appointment details)
-   │   └── create/
-   │       └── page.jsx (Create new appointment)
-   ├── doctors/
-   │   ├── page.jsx (Doctors list page)
-   │   └── [id]/
-   │       └── page.jsx (Doctor profile page)
+   ├── dashboard/
+   │   ├── page.jsx (dashboard page)
    └── api/
-       ├── appointments/
-       │   └── route.js (API endpoint for appointments)
-       └── doctors/
-           └── route.js (API endpoint for doctors)
+       ├── login/
+       │   └── route.js (API endpoint for login)
+       └── logout/
+           └── route.js (API endpoint for logout)
    ────────────────────────────────────────────────────────────────────────────
 
 2. src/components/
@@ -140,16 +115,16 @@ Inside src/, you'll find these folders. These are where your actual code lives:
    - Card.jsx : Reusable card component
    - etc.
    
-   EXPLANATION: Think of components as LEGO blocks. They are pieces of UI that
-                you can use and reuse throughout your application. For example,
-                you might have a Button component that you use on 20 different
-                pages. Instead of coding the button 20 times, you code it once
+   EXPLANATION: Components are pieces of UI that you can use and reuse 
+                throughout your application. For example, you might have
+                a Button component that you use on 20 different pages. 
+                Instead of coding the button 20 times, you code it once
                 and reuse it everywhere.
    
    FOLDER ORGANIZATION:
-   You can organize components by feature or by type:
+   You can organize components by feature:
    
-   Option 1 - By Feature (Recommended):
+   By Feature:
    src/components/
    ├── Appointments/
    │   ├── AppointmentCard.jsx
@@ -165,18 +140,6 @@ Inside src/, you'll find these folders. These are where your actual code lives:
        ├── Button.jsx
        └── Modal.jsx
    
-   Option 2 - By Type:
-   src/components/
-   ├── cards/
-   │   ├── AppointmentCard.jsx
-   │   └── DoctorCard.jsx
-   ├── forms/
-   │   ├── AppointmentForm.jsx
-   │   └── LoginForm.jsx
-   └── common/
-       ├── Header.jsx
-       └── Footer.jsx
-   
    NAMING CONVENTION:
    - Component files should start with capital letter: Button.jsx, Card.jsx
    - Keep names descriptive: AppointmentCard.jsx (not AC.jsx)
@@ -190,38 +153,12 @@ Inside src/, you'll find these folders. These are where your actual code lives:
    CONTAINS:
    - api.js : Functions to call backend APIs
    - authService.js : Handle login, logout, authentication
-   - appointmentService.js : Functions related to appointments
-   - doctorService.js : Functions related to doctors
    - etc.
    
    EXPLANATION: Services are like helper functions that do specific jobs.
                 Instead of writing API calls directly in components, you write
                 them once in a service file and call them from anywhere.
-                
-                For example, instead of writing an API call to get appointments
-                in 3 different components, you write it once in
-                appointmentService.js and all components use it.
    
-   TYPICAL SERVICE FILE STRUCTURE:
-   
-   // src/services/appointmentService.js
-   export const getAppointments = async (userId) => {
-     // Call API and return appointments
-   };
-   
-   export const createAppointment = async (appointmentData) => {
-     // Call API to create appointment
-   };
-   
-   export const cancelAppointment = async (appointmentId) => {
-     // Call API to cancel appointment
-   };
-   
-   Then in your components:
-   
-   import { getAppointments } from '@/services/appointmentService';
-   
-   const appointments = await getAppointments(userId);
    ────────────────────────────────────────────────────────────────────────────
 
 4. src/hooks/
@@ -298,21 +235,6 @@ Inside src/, you'll find these folders. These are where your actual code lives:
                 Think of it as "setup code" that other parts of your app
                 depend on.
    
-   EXAMPLE:
-   // src/lib/apiClient.js
-   import axios from 'axios';
-   
-   const apiClient = axios.create({
-     baseURL: process.env.NEXT_PUBLIC_API_URL,
-     headers: { 'Content-Type': 'application/json' }
-   });
-   
-   export default apiClient;
-   
-   Then in services:
-   
-   import apiClient from '@/lib/apiClient';
-   const response = await apiClient.get('/appointments');
    ────────────────────────────────────────────────────────────────────────────
 
 7. src/constants/
@@ -332,27 +254,20 @@ Inside src/, you'll find these folders. These are where your actual code lives:
    EXAMPLE:
    // src/constants/index.js
    export const API_ENDPOINTS = {
-     appointments: '/api/appointments',
-     doctors: '/api/doctors',
+     providers: '/api/providers',
      users: '/api/users',
    };
    
    export const USER_ROLES = {
      PATIENT: 'patient',
-     DOCTOR: 'doctor',
+     PROVIDER: 'provider',
      ADMIN: 'admin',
-   };
-   
-   export const APPOINTMENT_STATUS = {
-     SCHEDULED: 'scheduled',
-     COMPLETED: 'completed',
-     CANCELLED: 'cancelled',
    };
    
    Then use them:
    
    import { API_ENDPOINTS, USER_ROLES } from '@/constants';
-   const response = await fetch(API_ENDPOINTS.appointments);
+   const response = await fetch(API_ENDPOINTS.users);
    ────────────────────────────────────────────────────────────────────────────
 
 8. src/context/
@@ -435,7 +350,7 @@ modify them often, but here's what they do:
    - Configures Next.js framework
    - Sets up image handling, environment variables, etc.
 
-3. .env.local
+3. .env
    - Contains secret environment variables (API keys, database URLs, etc.)
    - Never commit this to Git (it's in .gitignore)
    - Copy .env.example and fill in your values
