@@ -1,17 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Step1SignUp from '@/components/SignUpForm/Step1SignUp';
 import Step2SignUp from '@/components/SignUpForm/Step2SignUp';
 import Step3SignUp from '@/components/SignUpForm/Step3SignUp';
 import Step4SignUp from '@/components/SignUpForm/Step4SignUp';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function SignUpPage() {
   const [step, setStep] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
+  const { signup, isLoading, error, setError } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -36,32 +34,10 @@ export default function SignUpPage() {
       setStep(step + 1);
     } else {
       // Final submission - send to API
-      setIsLoading(true);
-      setError('');
-      
       try {
-        const response = await fetch('/api/auth/signup', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(formData),
-        });
-
-        const data = await response.json();
-
-        if (!response.ok) {
-          setError(data.error || 'An error occurred during signup');
-          return;
-        }
-
-        // Signup successful - redirect to login or dashboard
-        router.push('/login');
+        await signup(formData);
       } catch (err) {
-        setError('An error occurred. Please try again.');
         console.error('Signup error:', err);
-      } finally {
-        setIsLoading(false);
       }
     }
   };

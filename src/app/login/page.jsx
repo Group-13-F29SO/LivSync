@@ -1,43 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import LoginForm from '@/components/LoginForm/LoginForm';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const router = useRouter();
+  const { login, isLoading, error, setError } = useAuth();
 
   const handleLogin = async (formData) => {
-    setIsLoading(true);
-    setError('');
-
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies in request
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'An error occurred during login');
-        return;
-      }
-
-      // Login successful - store user data and redirect to dashboard
-      localStorage.setItem('user', JSON.stringify(data.user));
-      router.push('/dashboard');
+      await login(formData);
     } catch (err) {
-      setError('An error occurred. Please try again.');
       console.error('Login error:', err);
-    } finally {
-      setIsLoading(false);
     }
   };
 

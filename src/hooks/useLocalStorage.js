@@ -23,7 +23,13 @@ export const useLocalStorage = (key, initialValue) => {
     try {
       const valueToStore = value instanceof Function ? value(storedValue) : value
       setStoredValue(valueToStore)
-      window.localStorage.setItem(key, JSON.stringify(valueToStore))
+      
+      // If value is null or undefined, remove the item from localStorage
+      if (valueToStore === null || valueToStore === undefined) {
+        window.localStorage.removeItem(key)
+      } else {
+        window.localStorage.setItem(key, JSON.stringify(valueToStore))
+      }
     } catch (error) {
       console.error('Error writing to localStorage:', error)
     }
