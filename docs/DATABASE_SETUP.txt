@@ -1,0 +1,52 @@
+Prisma + PostgreSQL Setup (Local)
+
+Overview
+- The repo already includes `prisma/schema.prisma` and `prisma/migrations`. After cloning, configure your `DATABASE_URL`, then run Prisma to create and migrate your local database.
+
+Prerequisites
+- Install PostgreSQL (14+ recommended). pgAdmin 4 is optional for GUI management.
+- Ensure the PostgreSQL service is running and listening on port 5432 (default).
+
+1) Clone and install
+- Pull the latest code and install dependencies:
+	- git pull origin main (or clone the repo if first time)
+	- npm install
+
+2) Configure environment
+- Create a `.env` file in the project root (same folder as `package.json`).
+- Add your local PostgreSQL connection string:
+	- DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/LivSync?schema=public"
+- Replace `USERNAME`/`PASSWORD` with your local Postgres role credentials.
+- If you prefer a different database name, change `LivSync` in the URL; Prisma will create it if it doesn't exist.
+
+3) Initialize the database
+- Run migrations and generate Prisma Client:
+	- npx prisma migrate dev
+	- (Optional) npx prisma generate — this is run automatically by `migrate dev`.
+- This will:
+	- Create the database if it does not exist.
+	- Apply all migrations from `prisma/migrations`.
+	- Generate the Prisma Client used by the app.
+
+4) Using Prisma in the app
+- In any page/component, import the client:
+	- import prisma from '@/lib/prisma';
+
+5) Making schema changes (contributors)
+- Before editing, pull latest: git pull origin main.
+- Edit `prisma/schema.prisma`.
+- Create a migration and update your local DB:
+	- npx prisma migrate dev --name describe_your_change
+- Commit BOTH the updated `prisma/schema.prisma` and the new folder under `prisma/migrations/`, then push.
+
+6) Applying team changes locally
+- When you pull new migrations from the repo, apply them with:
+	- npx prisma migrate dev
+- Prisma will detect new migration files and update your local database automatically.
+
+Troubleshooting
+- Authentication errors (e.g., P1000): Check `DATABASE_URL` credentials and that the role exists in Postgres.
+- Connection refused: Ensure Postgres service is running and listening on 5432.
+- Role does not exist: Create a role in pgAdmin or via SQL (`CREATE ROLE your_user LOGIN PASSWORD 'your_password';`).
+- Permission issues creating DB: Manually create a database in pgAdmin named `LivSync` (or your chosen name), then rerun `npx prisma migrate dev`.
+- SSL/local flags: For local setups, default usually works. If needed, append `&sslmode=disable` to `DATABASE_URL`.
