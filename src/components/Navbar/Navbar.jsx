@@ -1,20 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import NavItem from './NavItem';
 
 export default function Navbar() {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [activePage, setActivePage] = useState('dashboard');
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Extract the active page from the current pathname
+  const activePage = pathname.split('/')[1] || 'dashboard';
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
   };
 
   const handleNavClick = (id) => {
-    setActivePage(id);
     router.push(`/${id}`);
   };
 
