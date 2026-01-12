@@ -37,7 +37,7 @@ export default function DashboardPage() {
       <main className="flex-1 p-8 ml-20 overflow-auto">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="inline-block text-3xl font-bold text-gray-800 bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">Dashboard</h1>
+            <h1 className="inline-block text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">Dashboard</h1>
             <p className="text-gray-600 mt-2">Welcome back, {user?.firstName || 'User'}</p>
             <p className="text-gray-600 mt-1">Last Synced: Just now</p>
           </div>
