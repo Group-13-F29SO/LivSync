@@ -15,9 +15,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-purple-500 to-pink-600">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-600 via-purple-500 to-pink-600 dark:from-blue-950 dark:via-purple-950 dark:to-pink-950">
       {/* Card */}
-      <div className="bg-white bg-opacity-30 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md shadow-xl">
+      <div className="bg-white dark:bg-gray-900 bg-opacity-30 dark:bg-opacity-40 backdrop-blur-sm rounded-2xl p-8 w-full max-w-md shadow-xl">
         <LoginForm 
           onSubmit={handleLogin} 
           isLoading={isLoading} 

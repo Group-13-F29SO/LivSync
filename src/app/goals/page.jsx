@@ -68,24 +68,24 @@ export default function GoalsPage() {
 
   if (isLoading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
+        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-blue-50">
+    <div className="min-h-screen flex bg-white dark:bg-gray-950">
       <Navbar />
 
       {/* Main Content Area */}
-      <main className="flex-1 p-8 ml-20 overflow-auto">
+      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         {/* Header Section */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">
             Goals & Streaks
           </h1>
-          <p className="text-slate-500 mt-2">Set and track your personal health goals</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-2">Set and track your personal health goals</p>
         </div>
 
         {/* Goals Grid */}
@@ -106,9 +106,9 @@ export default function GoalsPage() {
         </div>
 
         {/* Add New Goal Button */}
-        <button className="w-full bg-white border-2 border-dashed border-gray-300 rounded-2xl p-8 flex items-center justify-center gap-3 hover:border-gray-400 hover:bg-gray-50 transition-all group">
-          <PlusIcon className="w-6 h-6 text-gray-400 group-hover:text-gray-500" />
-          <span className="text-gray-500 font-medium group-hover:text-gray-600">Add New Goal</span>
+        <button className="w-full bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-8 flex items-center justify-center gap-3 hover:border-gray-400 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group">
+          <PlusIcon className="w-6 h-6 text-gray-400 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400" />
+          <span className="text-gray-500 dark:text-gray-400 font-medium group-hover:text-gray-600 dark:group-hover:text-gray-300">Add New Goal</span>
         </button>
       </main>
     </div>

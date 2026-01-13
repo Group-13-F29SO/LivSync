@@ -23,23 +23,23 @@ export default function DashboardPage() {
 
   if (isLoading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-blue-50">
-        <p className="text-gray-600">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
+        <p className="text-gray-600 dark:text-gray-400">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex bg-blue-50">
+    <div className="min-h-screen flex bg-white dark:bg-gray-950">
       <Navbar />
 
       {/* Main Content Area */}
-      <main className="flex-1 p-8 ml-20 overflow-auto">
+      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="inline-block text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">Dashboard</h1>
-            <p className="text-gray-600 mt-2">Welcome back, {user?.firstName || 'User'}</p>
-            <p className="text-gray-600 mt-1">Last Synced: Just now</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">Welcome back, {user?.firstName || 'User'}</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Last Synced: Just now</p>
           </div>
           <button
             onClick={handleLogout}

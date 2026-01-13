@@ -1,27 +1,31 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { useTheme } from '../../hooks/useTheme';
 import NavItem from './NavItem';
 
 export default function Navbar() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isDarkMode, toggleDarkMode } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 
   // Extract the active page from the current pathname
   const activePage = pathname.split('/')[1] || 'dashboard';
 
-  const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-  };
-
   const handleNavClick = (id) => {
     router.push(`/${id}`);
   };
 
+  const handleDarkModeToggle = () => {
+    toggleDarkMode();
+  };
+
   return (
-    <nav className="w-21 fixed left-0 top-0 h-screen bg-white flex flex-col shadow-lg z-20">
+    <nav className={`w-21 fixed left-0 top-0 h-screen flex flex-col shadow-lg z-20 transition-colors ${
+      isDarkMode 
+        ? 'bg-gray-900' 
+        : 'bg-white'
+    }`}>
       {/* Spacer */}
       <div className="h-24"></div>
       
@@ -87,8 +91,12 @@ export default function Navbar() {
       <div className="flex flex-col pb-6 gap-0">
         {/* Moon Icon - Dark Mode Toggle */}
         <button 
-          onClick={toggleDarkMode}
-          className="w-full flex justify-center py-3 text-gray-600 hover:text-gray-800 transition-colors"
+          onClick={handleDarkModeToggle}
+          className={`w-full flex justify-center py-3 transition-colors ${
+            isDarkMode
+              ? 'text-yellow-400 hover:text-yellow-300'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
         >
           <div className="p-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

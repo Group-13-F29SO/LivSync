@@ -61,19 +61,19 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="min-h-screen flex bg-blue-50">
+    <div className="min-h-screen flex bg-white dark:bg-gray-950">
       {/* Navbar */}
       <Navbar />
 
       {/* Main Content */}
-      <main className="flex-1 ml-24 overflow-auto">
+      <main className="flex-1 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <div className="p-8 max-w-4xl">
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2 pb-1">
               Settings
             </h1>
-            <p className="text-slate-500">Manage your account and app preferences</p>
+            <p className="text-slate-500 dark:text-slate-400">Manage your account and app preferences</p>
           </div>
 
           {/* Profile Management Section */}
@@ -86,36 +86,36 @@ export default function SettingsPage() {
                 {/* First Name and Last Name */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                       First Name
                     </label>
                     <input
                       type="text"
                       placeholder="Enter your first name"
-                      className="w-full px-4 py-2 bg-slate-100 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                       Last Name
                     </label>
                     <input
                       type="text"
                       placeholder="Enter your last name"
-                      className="w-full px-4 py-2 bg-slate-100 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
 
                 {/* Email */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                     Email
                   </label>
                   <input
                     type="email"
                     placeholder="Enter your email address"
-                    className="w-full px-4 py-2 bg-slate-100 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -139,35 +139,35 @@ export default function SettingsPage() {
                 {/* Password Fields */}
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                       Current Password
                     </label>
                     <input
                       type="password"
                       placeholder="Enter current password"
-                      className="w-full px-4 py-2 bg-slate-100 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                       New Password
                     </label>
                     <input
                       type="password"
                       placeholder="Enter new password"
-                      className="w-full px-4 py-2 bg-slate-100 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                       Confirm New Password
                     </label>
                     <input
                       type="password"
                       placeholder="Confirm new password"
-                      className="w-full px-4 py-2 bg-slate-100 rounded-lg text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
@@ -180,7 +180,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Divider */}
-                <div className="border-t border-slate-200 my-4"></div>
+                <div className="border-t border-slate-200 dark:border-gray-700 my-4"></div>
 
                 {/* Two-Factor Authentication */}
                 <ToggleRow
@@ -263,12 +263,12 @@ export default function SettingsPage() {
                 />
 
                 {/* Divider */}
-                <div className="border-t border-slate-200 my-6"></div>
+                <div className="border-t border-slate-200 dark:border-gray-700 my-6"></div>
 
                 {/* Delete Account */}
                 <div>
-                  <h4 className="font-bold text-slate-800 mb-2">Danger Zone</h4>
-                  <p className="text-sm text-slate-500 mb-4">
+                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Danger Zone</h4>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                     Permanently delete your account and all associated data
                   </p>
                   <DangerButton>
