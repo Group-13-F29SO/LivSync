@@ -4,7 +4,7 @@ export default function CategorySection({ category, badges }) {
   return (
     <div className="mb-12">
       {/* Category Header */}
-      <h2 className="mb-6 text-2xl font-bold text-slate-900">{category}</h2>
+      <h2 className="mb-6 text-2xl font-bold text-slate-900 dark:text-slate-100">{category}</h2>
 
       {/* Badge Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

@@ -106,11 +106,11 @@ export default function AchievementsPage() {
   );
 
   return (
-    <div className="min-h-screen flex bg-blue-50">
+    <div className="min-h-screen flex bg-white dark:bg-gray-950">
       <Navbar />
 
       {/* Main Content Area */}
-      <main className="flex-1 p-8 ml-20 overflow-auto">
+      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         {/* Page Header & Summary Section */}
         <div className="mb-12">
           {/* Main Title */}
@@ -119,16 +119,16 @@ export default function AchievementsPage() {
           </h1>
 
           {/* Main Subtitle */}
-          <p className="mb-8 text-slate-500">
+          <p className="mb-8 text-slate-500 dark:text-slate-400">
             You've earned {earnedCount} out of {totalCount} badges
           </p>
 
           {/* Trophy Case Card */}
-          <div className="mb-12 flex flex-col items-center justify-between gap-6 rounded-2xl bg-white p-8 shadow-md md:flex-row md:gap-12">
+          <div className="mb-12 flex flex-col items-center justify-between gap-6 rounded-2xl bg-white dark:bg-gray-900 p-8 shadow-md dark:shadow-lg md:flex-row md:gap-12">
             {/* Left Side */}
             <div className="flex-1 text-center md:text-left">
-              <h2 className="mb-2 text-2xl font-bold text-slate-900">Trophy Case</h2>
-              <p className="text-slate-600">
+              <h2 className="mb-2 text-2xl font-bold text-slate-900 dark:text-slate-100">Trophy Case</h2>
+              <p className="text-slate-600 dark:text-slate-400">
                 Keep achieving your goals to unlock more badges!
               </p>
             </div>
@@ -138,7 +138,7 @@ export default function AchievementsPage() {
               <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-7xl font-bold text-transparent">
                 {earnedCount}
               </div>
-              <p className="text-slate-600">Badges Earned</p>
+              <p className="text-slate-600 dark:text-slate-400">Badges Earned</p>
             </div>
           </div>
         </div>
