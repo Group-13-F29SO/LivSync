@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import SettingsSection from '@/components/Settings/SettingsSection';
 import ToggleRow from '@/components/Settings/ToggleRow';
 import { PrimaryButton, SecondaryButton, DangerButton } from '@/components/Settings/Buttons';
 
 export default function SettingsPage() {
+  const router = useRouter();
   const [settings, setSettings] = useState({
     notifications: {
       goalReminders: true,
@@ -57,6 +59,18 @@ export default function SettingsPage() {
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m7.784-4.817a.75.75 0 00-1.069 0l-15.5 15.5a.75.75 0 1001.069 1.069l15.5-15.5a.75.75 0 000-1.069z" />
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+    </svg>
+  );
+
+  const DevicesIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    </svg>
+  );
+
+  const ChevronRightIcon = () => (
+    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
     </svg>
   );
 
@@ -125,6 +139,39 @@ export default function SettingsPage() {
                     Save Changes
                   </PrimaryButton>
                 </div>
+              </div>
+            </SettingsSection>
+          </div>
+
+          {/* Connected Devices Section */}
+          <div className="mb-8">
+            <SettingsSection
+              icon={<DevicesIcon />}
+              title="Connected Devices"
+            >
+              <div className="space-y-4">
+                <p className="text-slate-600 dark:text-slate-400">
+                  Manage your wearable devices and health tracking equipment. Connect watches, fitness trackers, and other devices to sync your health data.
+                </p>
+                <button
+                  onClick={() => router.push('/settings/devices')}
+                  className="w-full flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-gray-800 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="text-blue-600 dark:text-blue-400">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-semibold text-slate-800 dark:text-slate-100">Manage Devices</h4>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Add or remove connected devices</p>
+                    </div>
+                  </div>
+                  <div className="text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <ChevronRightIcon />
+                  </div>
+                </button>
               </div>
             </SettingsSection>
           </div>
