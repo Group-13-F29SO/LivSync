@@ -94,10 +94,30 @@ model patients {
   patient_profiles        patient_profiles?
   providers               providers?          @relation(fields: [provider_id], references: [id], onUpdate: NoAction)
   user_achievements       user_achievements[]
+  devices                 devices[]
 
   @@index([email], map: "idx_patients_email")
   @@index([provider_id], map: "idx_patients_provider_id")
   @@index([username], map: "idx_patients_username")
+}
+
+model devices {
+  id            String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  patient_id    String    @db.Uuid
+  device_name   String    @db.VarChar(100)
+  device_type   String    @db.VarChar(50)
+  device_model  String?   @db.VarChar(100)
+  is_active     Boolean   @default(true)
+  battery_level Int?
+  last_sync     DateTime?
+  paired_at     DateTime  @default(now()) @db.Timestamptz(6)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime  @default(now()) @db.Timestamptz(6)
+  patients      patients  @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([patient_id], map: "idx_devices_patient_id")
+  @@index([is_active], map: "idx_devices_is_active")
+  @@index([device_type], map: "idx_devices_device_type")
 }
 
 model providers {
