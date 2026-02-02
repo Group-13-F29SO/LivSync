@@ -4,11 +4,28 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import DashboardCard from '@/components/DashboardCard/DashboardCard';
+import StreakCard from '@/components/Dashboard/StreakCard';
+import SummaryCard from '@/components/Dashboard/SummaryCard';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, logout, isLoading } = useAuth();
+
+  // Streak data
+  const streakData = {
+    currentStreak: 12,
+    targetMetric: "10,000 steps",
+    message: "Keep going!"
+  };
+
+  // Summary data
+  const summaryData = {
+    steps: 7834,
+    calories: 1847,
+    sleep: "7.5h",
+    hydration: "6/8"
+  };
 
   useEffect(() => {
     // Redirect to login if no user is found
@@ -132,6 +149,20 @@ export default function DashboardPage() {
               </svg>
             }
           />
+        </div>
+
+        {/* Current Streak Card - Full Width */}
+        <div className="mt-8">
+          <StreakCard 
+            currentStreak={streakData.currentStreak}
+            targetMetric={streakData.targetMetric}
+            message={streakData.message}
+          />
+        </div>
+
+        {/* Today's Summary Card - Full Width */}
+        <div className="mt-6">
+          <SummaryCard summaryData={summaryData} />
         </div>
       </main>
     </div>
