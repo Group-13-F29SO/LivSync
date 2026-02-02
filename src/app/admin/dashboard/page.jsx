@@ -47,13 +47,53 @@ export default function AdminDashboard() {
   };
 
   const handleDeletePatient = async (patientId) => {
-    // Frontend only for now - will implement backend later
-    setPatients(prev => prev.filter(p => p.id !== patientId));
+    try {
+      const response = await fetch('/api/admin/patients', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          patientId,
+        }),
+      });
+
+      if (response.ok) {
+        setPatients(prev => prev.filter(p => p.id !== patientId));
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to delete patient');
+      }
+    } catch (err) {
+      console.error('Error deleting patient:', err);
+      setError('Failed to delete patient');
+    }
   };
 
   const handleDeleteProvider = async (providerId) => {
-    // Frontend only for now - will implement backend later
-    setProviders(prev => prev.filter(p => p.id !== providerId));
+    try {
+      const response = await fetch('/api/admin/providers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          providerId,
+        }),
+      });
+
+      if (response.ok) {
+        setProviders(prev => prev.filter(p => p.id !== providerId));
+      } else {
+        const data = await response.json();
+        setError(data.error || 'Failed to delete provider');
+      }
+    } catch (err) {
+      console.error('Error deleting provider:', err);
+      setError('Failed to delete provider');
+    }
   };
 
   const handleLogout = async () => {
