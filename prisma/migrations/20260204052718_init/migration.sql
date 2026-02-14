@@ -113,7 +113,7 @@ CREATE TABLE "providers" (
     "email" VARCHAR(255) NOT NULL,
     "password_hash" VARCHAR(255) NOT NULL,
     "medical_license_number" VARCHAR(100) NOT NULL,
-    "organization_name" VARCHAR(200),
+    "workplace_name" VARCHAR(200),
     "work_phone" VARCHAR(20),
     "specialty" VARCHAR(100) NOT NULL,
     "is_verified" BOOLEAN NOT NULL DEFAULT false,

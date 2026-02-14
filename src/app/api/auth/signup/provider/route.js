@@ -16,7 +16,7 @@ export async function POST(request) {
     } = body;
 
     // Validation for providers
-    if (!email || !password || !firstName || !lastName || !medicalLicenseNumber) {
+    if (!email || !password || !firstName || !lastName || !specialty || !medicalLicenseNumber) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -51,7 +51,7 @@ export async function POST(request) {
         password_hash: passwordHash,
         first_name: firstName,
         last_name: lastName,
-        specialty: specialty || null,
+        specialty,
         medical_license_number: medicalLicenseNumber,
         workplace_name: workplaceName || null,
         is_verified: false,
@@ -60,8 +60,9 @@ export async function POST(request) {
 
     return NextResponse.json(
       {
-        message: 'Provider account created successfully',
+        message: 'Provider account created successfully. Your account is pending admin approval.',
         userId: newProvider.id,
+        status: 'pending_approval',
       },
       { status: 201 }
     );
