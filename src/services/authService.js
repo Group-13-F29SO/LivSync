@@ -17,7 +17,11 @@ export const loginUser = async (credentials) => {
 };
 
 export const signupUser = async (userData) => {
-  const response = await fetch(API_ENDPOINTS.auth.signup, {
+  const endpoint = userData.userType === 'provider' 
+    ? API_ENDPOINTS.auth.signupProvider 
+    : API_ENDPOINTS.auth.signup;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(userData),
