@@ -19,13 +19,16 @@ export default function SignUpPage() {
     email: '',
     username: '',
     password: '',
+    confirmPassword: '',
     firstName: '',
     lastName: '',
     age: '',
     biologicalSex: '',
     height: '',
     weight: '',
-    specialty: ''
+    specialty: '',
+    medicalLicenseNumber: '',
+    workplaceName: ''
   });
 
   const handleChange = (field, value) => {
@@ -68,13 +71,16 @@ export default function SignUpPage() {
       email: '',
       username: '',
       password: '',
+      confirmPassword: '',
       firstName: '',
       lastName: '',
       age: '',
       biologicalSex: '',
       height: '',
       weight: '',
-      specialty: ''
+      specialty: '',
+      medicalLicenseNumber: '',
+      workplaceName: ''
     });
     setError('');
   };

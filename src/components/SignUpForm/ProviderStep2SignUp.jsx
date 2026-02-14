@@ -2,10 +2,10 @@ export default function ProviderStep2SignUp({ formData, handleChange, handleNext
   return (
     <>
       <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-600 bg-clip-text text-transparent text-center" style={{paddingBottom: '8px'}}>
-        Let's get to know you
+        Professional Information
       </h1>
       <p className="text-center text-gray-600 mb-8 text-sm">
-        Tell us your name
+        Tell us about yourself
       </p>
 
       <form onSubmit={handleNext} className="space-y-6">
@@ -34,6 +34,33 @@ export default function ProviderStep2SignUp({ formData, handleChange, handleNext
             placeholder="Enter your last name"
             className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500 transition-colors"
             required
+          />
+        </div>
+
+        <div>
+          <label className="block text-black text-sm font-medium mb-2">
+            Medical License Number
+          </label>
+          <input
+            type="text"
+            value={formData.medicalLicenseNumber}
+            onChange={(e) => handleChange('medicalLicenseNumber', e.target.value)}
+            placeholder="Enter your medical license number"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500 transition-colors"
+            required
+          />
+        </div>
+
+        <div>
+          <label className="block text-black text-sm font-medium mb-2">
+            Clinic/Hospital/Organization Name
+          </label>
+          <input
+            type="text"
+            value={formData.workplaceName}
+            onChange={(e) => handleChange('workplaceName', e.target.value)}
+            placeholder="Enter your workplace name"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500 transition-colors"
           />
         </div>
 
