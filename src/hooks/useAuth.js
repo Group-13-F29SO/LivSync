@@ -16,7 +16,14 @@ export const useAuth = () => {
     try {
       const data = await loginUser(credentials);
       setUser(data.user);
-      router.push('/dashboard');
+      
+      // Redirect based on user type
+      if (data.user.userType === 'provider') {
+        router.push('/provider/dashboard');
+      } else {
+        router.push('/dashboard');
+      }
+      
       return data;
     } catch (err) {
       const errorMessage = err.message || 'An error occurred during login';
