@@ -1,7 +1,11 @@
 import { API_ENDPOINTS } from '@/constants';
 
 export const loginUser = async (credentials) => {
-  const response = await fetch(API_ENDPOINTS.auth.login, {
+  const endpoint = credentials.userType === 'provider'
+    ? API_ENDPOINTS.auth.loginProvider
+    : API_ENDPOINTS.auth.login;
+
+  const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
