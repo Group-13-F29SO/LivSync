@@ -2,12 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 
-export default function UserCard({ user, type, onDelete }) {
+export default function UserCard({ user, type, onDelete, onApprove, onReject }) {
   const router = useRouter();
 
   const handleCardClick = (e) => {
-    // Don't navigate if clicking the delete button
-    if (e.target.closest('.delete-button')) {
+    // Don't navigate if clicking action buttons
+    if (e.target.closest('.action-button') || e.target.closest('.delete-button')) {
       return;
     }
     router.push(`/admin/${type}/${user.id}`);
@@ -22,6 +22,24 @@ export default function UserCard({ user, type, onDelete }) {
     
     if (window.confirm(confirmMessage)) {
       onDelete(user.id);
+    }
+  };
+
+  const handleApprove = async (e) => {
+    e.stopPropagation();
+    if (onApprove) {
+      onApprove(user.id);
+    }
+  };
+
+  const handleReject = async (e) => {
+    e.stopPropagation();
+    const confirmMessage = `Are you sure you want to reject ${user.firstName} ${user.lastName}'s provider application? This will permanently delete their account.`;
+    
+    if (window.confirm(confirmMessage)) {
+      if (onReject) {
+        onReject(user.id);
+      }
     }
   };
 
@@ -114,7 +132,7 @@ export default function UserCard({ user, type, onDelete }) {
                     ? 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300' 
                     : 'bg-yellow-100 dark:bg-yellow-900/40 text-yellow-800 dark:text-yellow-300'
                 }`}>
-                  {user.isVerified ? '✓ Verified' : 'Pending Verification'}
+                  {user.isVerified ? '✓ Approved' : '⏳ Pending Approval'}
                 </span>
               </div>
               <div className="text-center">
@@ -122,6 +140,32 @@ export default function UserCard({ user, type, onDelete }) {
                 <div className="text-xs text-gray-600 dark:text-gray-400">Patients</div>
               </div>
             </div>
+
+            {/* Approval Actions for Pending Providers */}
+            {!user.isVerified && onApprove && onReject && (
+              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleApprove}
+                    className="action-button flex-1 flex items-center justify-center px-3 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Approve
+                  </button>
+                  <button
+                    onClick={handleReject}
+                    className="action-button flex-1 flex items-center justify-center px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors text-sm font-medium"
+                  >
+                    <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Reject
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 
@@ -133,11 +177,14 @@ export default function UserCard({ user, type, onDelete }) {
         </div>
       </div>
 
-      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-        <span className="text-xs font-medium text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300">
-          Click to view details →
-        </span>
-      </div>
+      {/* Only show "view details" footer if not showing approval buttons */}
+      {!(type === 'providers' && !user.isVerified && onApprove && onReject) && (
+        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <span className="text-xs font-medium text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300">
+            Click to view details →
+          </span>
+        </div>
+      )}
     </div>
   );
 }
