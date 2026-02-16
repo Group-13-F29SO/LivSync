@@ -79,25 +79,30 @@ export default function DashboardPage() {
         </div>
         
         {/* Dashboard content will go here */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
           {/* Steps Card */}
-          <DashboardCard
-            title="Steps"
-            value="7,834"
-            unit="steps"
-            icon={
-              <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M7 20c-1.5 0-2.5-1.5-2-3 1-2.5 3-4 4.5-4.5 1.5-.5 2.5.5 2 2-.5 1.5-2 6.5-4.5 5.5z" />
-                <path d="M16 18c1.5 0 2-2 1-3.5-1.5-2-3.5-3-5-2.5-1.5.5-1 2 0 3.5 1 1.5 3 2.5 4 2.5z" />
-                <path d="M9 7c0-1.5 1-3 2.5-3S14 5 14 6.5 13 9 11.5 9 9 8.5 9 7z" />
-              </svg>
-            }
-          />
+          <button
+            onClick={() => router.push('/dashboard/steps')}
+            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+          >
+            <DashboardCard
+              title="Steps"
+              value="7,834"
+              unit="steps"
+              icon={
+                <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M7 20c-1.5 0-2.5-1.5-2-3 1-2.5 3-4 4.5-4.5 1.5-.5 2.5.5 2 2-.5 1.5-2 6.5-4.5 5.5z" />
+                  <path d="M16 18c1.5 0 2-2 1-3.5-1.5-2-3.5-3-5-2.5-1.5.5-1 2 0 3.5 1 1.5 3 2.5 4 2.5z" />
+                  <path d="M9 7c0-1.5 1-3 2.5-3S14 5 14 6.5 13 9 11.5 9 9 8.5 9 7z" />
+                </svg>
+              }
+            />
+          </button>
 
           {/* Heart Rate Card */}
           <button
             onClick={() => router.push('/dashboard/heart-rate')}
-            className="cursor-pointer hover:shadow-lg transition-shadow"
+            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
           >
             <DashboardCard
               title="Heart Rate"
@@ -113,59 +118,79 @@ export default function DashboardPage() {
           </button>
 
           {/* Calories Burned Card */}
-          <DashboardCard
-            title="Calories Burned"
-            value="1847"
-            unit="kcal"
-            icon={
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 3s-3 3.2-3 6.2a3 3 0 006 0C15 6.2 12 3 12 3z" />
-                <path d="M9.5 13.5c-.8 1.5-.5 3 1 4.5 1.5 1.5 4 1.2 5-1 .6-1.4.2-2.8-1.2-4.2" />
-              </svg>
-            }
-          />
+          <button
+            onClick={() => router.push('/dashboard/calories')}
+            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+          >
+            <DashboardCard
+              title="Calories Burned"
+              value="1847"
+              unit="kcal"
+              icon={
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 3s-3 3.2-3 6.2a3 3 0 006 0C15 6.2 12 3 12 3z" />
+                  <path d="M9.5 13.5c-.8 1.5-.5 3 1 4.5 1.5 1.5 4 1.2 5-1 .6-1.4.2-2.8-1.2-4.2" />
+                </svg>
+              }
+            />
+          </button>
 
           {/* Hydration Card */}
-          <DashboardCard
-            title="Hydration"
-            value="6"
-            unit="glasses"
-            icon={
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 3s-6 6.5-6 10.5A6 6 0 0018 14c0-4-6-11-6-11z" />
-              </svg>
-            }
-          />
+          <button
+            onClick={() => router.push('/dashboard/hydration')}
+            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+          >
+            <DashboardCard
+              title="Hydration"
+              value="6"
+              unit="glasses"
+              icon={
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 3s-6 6.5-6 10.5A6 6 0 0018 14c0-4-6-11-6-11z" />
+                </svg>
+              }
+            />
+          </button>
 
           {/* Sleep Card */}
-          <DashboardCard
-            title="Sleep"
-            value="7.5"
-            unit="hours"
-            subtitle="Quality: Good"
-            icon={
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            }
-          />
+          <button
+            onClick={() => router.push('/dashboard/sleep')}
+            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+          >
+            <DashboardCard
+              title="Sleep"
+              value="7.5"
+              unit="hours"
+              subtitle="Quality: Good"
+              icon={
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              }
+            />
+          </button>
 
           {/* Blood Glucose Card */}
-          <DashboardCard
-            title="Blood Glucose"
-            value="95"
-            unit="mg/dL"
-            subtitle="Status: Normal"
-            iconBgColor="bg-indigo-50"
-            iconColor="text-indigo-600"
-            icon={
-              <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 3a9 9 0 100 18 9 9 0 000-18z" />
-                <path d="M12 12l4-4" />
-                <path d="M12 12h.01" />
-              </svg>
-            }
-          />
+          <button
+            onClick={() => router.push('/dashboard/blood-glucose')}
+            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+          >
+            <DashboardCard
+              title="Blood Glucose"
+              value="95"
+              unit="mg/dL"
+              subtitle="Status: Normal"
+              iconBgColor="bg-indigo-50"
+              iconColor="text-indigo-600"
+              icon={
+                <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M12 3a9 9 0 100 18 9 9 0 000-18z" />
+                  <path d="M12 12l4-4" />
+                  <path d="M12 12h.01" />
+                </svg>
+              }
+            />
+          </button>
         </div>
 
         {/* Current Streak Card - Full Width */}
