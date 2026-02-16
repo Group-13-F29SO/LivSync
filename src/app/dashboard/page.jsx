@@ -6,11 +6,13 @@ import Navbar from '@/components/Navbar/Navbar';
 import DashboardCard from '@/components/DashboardCard/DashboardCard';
 import StreakCard from '@/components/Dashboard/StreakCard';
 import SummaryCard from '@/components/Dashboard/SummaryCard';
+import SyncButton from '@/components/SyncButton/SyncButton';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, logout, isLoading } = useAuth();
+  const [lastSyncTime, setLastSyncTime] = useState('Just now');
 
   // Streak data
   const streakData = {
@@ -38,6 +40,13 @@ export default function DashboardPage() {
     logout();
   };
 
+  const handleSyncComplete = (syncData) => {
+    // Update last sync time
+    setLastSyncTime('Just now');
+    // Here you could also refresh the dashboard data
+    // For example, fetch the latest biometric data and update the summary
+  };
+
   if (isLoading || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
@@ -56,14 +65,17 @@ export default function DashboardPage() {
           <div>
             <h1 className="inline-block text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">Dashboard</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">Welcome back, {user?.firstName || 'User'}</p>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Last Synced: Just now</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Last Synced: {lastSyncTime}</p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
-          >
-            Logout
-          </button>
+          <div className="flex flex-col gap-2">
+            <SyncButton onSyncComplete={handleSyncComplete} />
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
         
         {/* Dashboard content will go here */}
@@ -83,17 +95,22 @@ export default function DashboardPage() {
           />
 
           {/* Heart Rate Card */}
-          <DashboardCard
-            title="Heart Rate"
-            value="72"
-            unit="bpm"
-            subtitle="Resting: 65 bpm"
-            icon={
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.682 4.318 12.682a4.5 4.5 0 010-6.364z" />
-              </svg>
-            }
-          />
+          <button
+            onClick={() => router.push('/dashboard/heart-rate')}
+            className="cursor-pointer hover:shadow-lg transition-shadow"
+          >
+            <DashboardCard
+              title="Heart Rate"
+              value="72"
+              unit="bpm"
+              subtitle="Resting: 65 bpm"
+              icon={
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M4.318 6.318a4.5 4.5 0 016.364 0L12 7.636l1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.682 4.318 12.682a4.5 4.5 0 010-6.364z" />
+                </svg>
+              }
+            />
+          </button>
 
           {/* Calories Burned Card */}
           <DashboardCard
