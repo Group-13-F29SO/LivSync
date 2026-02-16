@@ -2,7 +2,7 @@
 
 import UserCard from './UserCard';
 
-export default function AdminSection({ title, users, type, onDelete, icon }) {
+export default function AdminSection({ title, users, type, onDelete, onApprove, onReject, icon }) {
   return (
     <div className="mb-12">
       <div className="flex items-center mb-6">
@@ -39,6 +39,8 @@ export default function AdminSection({ title, users, type, onDelete, icon }) {
               user={user}
               type={type}
               onDelete={onDelete}
+              onApprove={onApprove}
+              onReject={onReject}
             />
           ))}
         </div>

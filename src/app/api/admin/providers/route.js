@@ -22,6 +22,21 @@ function verifyAdminSession(request) {
   }
 }
 
+/**
+ * GET /api/admin/providers
+ * 
+ * Retrieves all providers with filtering and pagination.
+ * 
+ * Query Parameters:
+ * - page: Page number for pagination (default: 1)
+ * - limit: Number of results per page (default: 20)
+ * - search: Search by first_name, last_name, email, or specialty
+ * - sortBy: Field to sort by (default: 'created_at')
+ * - sortOrder: Sort order 'asc' or 'desc' (default: 'desc')
+ * - verificationStatus: Filter by status ('approved', 'pending', or all)
+ * 
+ * Example: GET /api/admin/providers?verificationStatus=pending&limit=50
+ */
 export async function GET(request) {
   try {
     const session = verifyAdminSession(request);
@@ -38,9 +53,15 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 20;
     const search = searchParams.get('search') || '';
-    const sortBy = searchParams.get('sortBy') || 'created_at';
+    let sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
-    const verificationStatus = searchParams.get('verificationStatus'); // 'verified', 'unverified', or all
+    const approvalStatus = searchParams.get('verificationStatus') || searchParams.get('approvalStatus');
+
+    // Validate sortBy to prevent invalid field names
+    const validSortFields = ['id', 'first_name', 'last_name', 'email', 'specialty', 'created_at'];
+    if (!validSortFields.includes(sortBy)) {
+      sortBy = 'created_at';
+    }
 
     const skip = (page - 1) * limit;
 
@@ -56,57 +77,62 @@ export async function GET(request) {
       ];
     }
 
-    if (verificationStatus === 'verified') {
+    // Support both old (verified/unverified) and new (approved/pending) naming
+    if (approvalStatus === 'approved' || approvalStatus === 'verified') {
       where.is_verified = true;
-    } else if (verificationStatus === 'unverified') {
+    } else if (approvalStatus === 'pending' || approvalStatus === 'unverified') {
       where.is_verified = false;
     }
 
+    // Build orderBy object safely
+    const orderBy = {};
+    orderBy[sortBy] = sortOrder === 'asc' ? 'asc' : 'desc';
+
     // Fetch providers with pagination
-    const [providers, totalCount] = await Promise.all([
-      prisma.providers.findMany({
-        where,
-        select: {
-          id: true,
-          first_name: true,
-          last_name: true,
-          email: true,
-          specialty: true,
-          is_verified: true,
-          created_at: true,
-          _count: {
-            select: {
-              patients: true,
-            },
+    const providers = await prisma.providers.findMany({
+      where,
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+        email: true,
+        specialty: true,
+        is_verified: true,
+        created_at: true,
+        _count: {
+          select: {
+            patients: true,
           },
         },
-        orderBy: {
-          [sortBy]: sortOrder === 'asc' ? 'asc' : 'desc',
-        },
-        skip,
-        take: limit,
-      }),
-      prisma.providers.count({ where }),
-    ]);
+      },
+      orderBy,
+      skip,
+      take: limit,
+    });
 
+    const totalCount = await prisma.providers.count({ where });
     const totalPages = Math.ceil(totalCount / limit);
 
     return NextResponse.json({
-      providers: providers.map(p => ({
-        id: p.id,
-        firstName: p.first_name,
-        lastName: p.last_name,
-        email: p.email,
-        specialty: p.specialty,
-        isVerified: p.is_verified,
-        createdAt: p.created_at,
-        patientCount: p._count.patients,
-      })),
-      pagination: {
-        page,
-        limit,
-        totalCount,
-        totalPages,
+      status: 'success',
+      data: {
+        providers: providers.map(p => ({
+          id: p.id,
+          firstName: p.first_name,
+          lastName: p.last_name,
+          email: p.email,
+          specialty: p.specialty,
+          approvalStatus: p.is_verified ? 'approved' : 'pending',
+          isVerified: p.is_verified,
+          createdAt: p.created_at,
+          patientCount: p._count.patients,
+        })),
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages,
+        },
       },
     });
   } catch (error) {
@@ -118,6 +144,15 @@ export async function GET(request) {
   }
 }
 
+/**
+ * POST /api/admin/providers
+ * 
+ * Actions:
+ * - approve: Approve a pending provider account
+ * - reject: Reject (delete) a pending provider account
+ * - revoke: Revoke approval from an approved provider
+ * - delete: Delete a provider account
+ */
 export async function POST(request) {
   try {
     const session = verifyAdminSession(request);
@@ -132,16 +167,35 @@ export async function POST(request) {
     const body = await request.json();
     const { action, providerId } = body;
 
-    if (action === 'verify') {
-      if (!providerId) {
+    if (!providerId) {
+      return NextResponse.json(
+        { error: 'Provider ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Check if provider exists
+    const provider = await prisma.providers.findUnique({
+      where: { id: providerId },
+    });
+
+    if (!provider) {
+      return NextResponse.json(
+        { error: 'Provider not found' },
+        { status: 404 }
+      );
+    }
+
+    // Approve pending provider
+    if (action === 'approve' || action === 'verify') {
+      if (provider.is_verified) {
         return NextResponse.json(
-          { error: 'Provider ID is required' },
+          { error: 'Provider is already approved' },
           { status: 400 }
         );
       }
 
-      // Verify provider
-      const provider = await prisma.providers.update({
+      const approvedProvider = await prisma.providers.update({
         where: { id: providerId },
         data: { is_verified: true },
         select: {
@@ -155,27 +209,46 @@ export async function POST(request) {
 
       return NextResponse.json({
         success: true,
-        message: 'Provider verified successfully',
+        message: 'Provider approved successfully. They can now login.',
         provider: {
-          id: provider.id,
-          firstName: provider.first_name,
-          lastName: provider.last_name,
-          email: provider.email,
-          isVerified: provider.is_verified,
+          id: approvedProvider.id,
+          firstName: approvedProvider.first_name,
+          lastName: approvedProvider.last_name,
+          email: approvedProvider.email,
+          isVerified: approvedProvider.is_verified,
         },
       });
     }
 
-    if (action === 'unverify') {
-      if (!providerId) {
+    // Reject (delete) pending provider
+    if (action === 'reject') {
+      if (provider.is_verified) {
         return NextResponse.json(
-          { error: 'Provider ID is required' },
+          { error: 'Cannot reject an already approved provider. Use "revoke" first to revoke approval.' },
           { status: 400 }
         );
       }
 
-      // Unverify provider
-      const provider = await prisma.providers.update({
+      await prisma.providers.delete({
+        where: { id: providerId },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Provider account rejected and deleted',
+      });
+    }
+
+    // Revoke approval from approved provider
+    if (action === 'revoke' || action === 'unverify') {
+      if (!provider.is_verified) {
+        return NextResponse.json(
+          { error: 'Provider is not approved yet' },
+          { status: 400 }
+        );
+      }
+
+      const revokedProvider = await prisma.providers.update({
         where: { id: providerId },
         data: { is_verified: false },
         select: {
@@ -189,38 +262,31 @@ export async function POST(request) {
 
       return NextResponse.json({
         success: true,
-        message: 'Provider verification revoked',
+        message: 'Provider approval revoked. They can no longer login.',
         provider: {
-          id: provider.id,
-          firstName: provider.first_name,
-          lastName: provider.last_name,
-          email: provider.email,
-          isVerified: provider.is_verified,
+          id: revokedProvider.id,
+          firstName: revokedProvider.first_name,
+          lastName: revokedProvider.last_name,
+          email: revokedProvider.email,
+          isVerified: revokedProvider.is_verified,
         },
       });
     }
 
+    // Delete provider account
     if (action === 'delete') {
-      if (!providerId) {
-        return NextResponse.json(
-          { error: 'Provider ID is required' },
-          { status: 400 }
-        );
-      }
-
-      // Delete provider (cascades handled by prisma)
       await prisma.providers.delete({
         where: { id: providerId },
       });
 
       return NextResponse.json({
         success: true,
-        message: 'Provider deleted successfully',
+        message: 'Provider account deleted successfully',
       });
     }
 
     return NextResponse.json(
-      { error: 'Invalid action' },
+      { error: 'Invalid action. Allowed actions: approve, reject, revoke, delete' },
       { status: 400 }
     );
   } catch (error) {
