@@ -26,11 +26,11 @@ After completing your code changes, follow these steps:
 
 ### Continuing Development
 
-If you're still working on the same feature, continue in the same branch. For subsequent commits, use `git push` instead of `git push -u origin your-branch-name`.
+If you're still working on the same feature, continue to commit and push in the same branch (steps 3 & 4). For subsequent commits, use `git push` instead of `git push -u origin your-branch-name`.
 
 ### Creating a Pull Request
 
-Once your work is complete:
+Once your work in the branch is complete:
 
 1. Navigate to the GitHub repository
 2. Click the "Compare & pull request" button (yellow banner with your branch name)
@@ -53,6 +53,7 @@ Once your work is complete:
 
 **Merging:**
 Once approved, either the reviewer or the author can merge the pull request. The PR will close automatically upon successful merge.
+The branch can then be deleted.
 
 ### Post-Merge Updates
 
@@ -67,8 +68,4 @@ After the branch has been merged to `main`, all team members must update their l
    ```
    git pull origin main
    ```
-
-3. Delete your local feature branch (optional but recommended):
-   ```
-   git branch -d your-branch-name
-   ```
+   

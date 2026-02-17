@@ -8,7 +8,7 @@ export default function DashboardCard({
   subtitle 
 }) {
   return (
-    <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow dark:shadow-lg transform transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-xl dark:hover:shadow-xl hover:z-10">
+    <div className="h-full flex flex-col text-left bg-white dark:bg-gray-900 p-6 rounded-lg shadow dark:shadow-lg transform transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-xl dark:hover:shadow-xl hover:z-10">
       <div className="flex items-center gap-3">
         <div className={`p-2 ${iconBgColor} dark:bg-opacity-20 rounded-md`}>
           {icon}

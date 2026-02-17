@@ -4,7 +4,7 @@ Overview
 - The repo already includes `prisma/schema.prisma` and `prisma/migrations`. After cloning, configure your `DATABASE_URL`, then run Prisma to create and migrate your local database.
 
 Prerequisites
-- Install PostgreSQL (14+ recommended). pgAdmin 4 is optional for GUI management.
+- Install PostgreSQL (14+ recommended). pgAdmin 4 is optional for GUI management (but recommended, easier for debugging).
 - Ensure the PostgreSQL service is running and listening on port 5432 (default).
 
 1) Clone and install
@@ -17,7 +17,6 @@ Prerequisites
 - Add your local PostgreSQL connection string:
 	- DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/LivSync?schema=public"
 - Replace `USERNAME`/`PASSWORD` with your local Postgres role credentials.
-- If you prefer a different database name, change `LivSync` in the URL; Prisma will create it if it doesn't exist.
 
 3) Initialize the database
 - Run migrations and generate Prisma Client:
