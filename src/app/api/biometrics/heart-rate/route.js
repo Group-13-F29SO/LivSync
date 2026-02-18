@@ -81,21 +81,34 @@ export async function GET(req) {
       );
     }
 
+    // For "all" period, adjust startDate to first data point instead of epoch
+    if (period === 'all' && heartRateData.length > 0) {
+      const firstDataPoint = new Date(heartRateData[0].timestamp);
+      startDate = new Date(firstDataPoint);
+      startDate.setHours(0, 0, 0, 0);
+    }
+
     // Determine aggregation interval based on date range
     const daysDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
     let aggregationIntervalMs;
     let timeFormatKey;
+    let chartType = 'area'; // Default to area chart
+    let useRangeBar = false; // Flag for special range bar rendering
 
     if (daysDiff > 30) {
-      // Multi-week: aggregate by day
+      // Multi-week/All data: aggregate by day, use line chart with min/avg/max
       aggregationIntervalMs = 24 * 60 * 60 * 1000;
       timeFormatKey = 'day';
+      chartType = 'rangeBar';
+      useRangeBar = true;
     } else if (daysDiff > 1) {
-      // Multi-day: aggregate by 4-6 hours
-      aggregationIntervalMs = 6 * 60 * 60 * 1000;
-      timeFormatKey = 'time';
+      // Multi-day (7 days): aggregate by full calendar day, use line chart with min/avg/max
+      aggregationIntervalMs = 24 * 60 * 60 * 1000;
+      timeFormatKey = 'day';
+      chartType = 'rangeBar';
+      useRangeBar = true;
     } else {
-      // Single day: use adaptive 15-60 min buckets
+      // Single day: use adaptive 15-60 min buckets, use area chart
       const MAX_CHART_POINTS = 100;
       const intervalCandidates = [15, 30, 45, 60];
       const selectedInterval = intervalCandidates.find((minutes) => {
@@ -105,6 +118,7 @@ export async function GET(req) {
       }) || 60;
       aggregationIntervalMs = selectedInterval * 60 * 1000;
       timeFormatKey = 'time';
+      chartType = 'area';
     }
 
     // Aggregate data into buckets
@@ -118,30 +132,45 @@ export async function GET(req) {
         buckets.set(bucketIndex, {
           sum: 0,
           count: 0,
+          min: Infinity,
+          max: -Infinity,
           timestamp
         });
       }
 
       const bucket = buckets.get(bucketIndex);
-      bucket.sum += Number(item.value);
+      const value = Number(item.value);
+      bucket.sum += value;
       bucket.count += 1;
+      bucket.min = Math.min(bucket.min, value);
+      bucket.max = Math.max(bucket.max, value);
       if (timestamp < bucket.timestamp) {
         bucket.timestamp = timestamp;
       }
     });
 
     // Format chart data
-    const chartData = [...buckets.entries()]
+    let chartData = [...buckets.entries()]
       .sort((a, b) => a[0] - b[0])
       .map(([, bucket]) => {
         let displayTimestamp;
 
         if (timeFormatKey === 'day') {
           // Show date for multi-day views
-          displayTimestamp = bucket.timestamp.toLocaleDateString([], {
-            month: '2-digit',
-            day: '2-digit'
-          });
+          if (period === 'all') {
+            // Include year for "all" data spanning multiple years
+            displayTimestamp = bucket.timestamp.toLocaleDateString([], {
+              year: '2-digit',
+              month: '2-digit',
+              day: '2-digit'
+            });
+          } else {
+            // Just month/day for 7day and 30day views
+            displayTimestamp = bucket.timestamp.toLocaleDateString([], {
+              month: '2-digit',
+              day: '2-digit'
+            });
+          }
         } else {
           // Show time for single/few-day views
           displayTimestamp = bucket.timestamp.toLocaleTimeString([], {
@@ -150,18 +179,66 @@ export async function GET(req) {
           });
         }
 
+        const average = Number((bucket.sum / bucket.count).toFixed(1));
+
         return {
           timestamp: displayTimestamp,
-          value: Number((bucket.sum / bucket.count).toFixed(1)),
+          average,
+          max: bucket.max,
+          min: bucket.min,
+          hasData: true,
           rawTime: bucket.timestamp
         };
       });
 
-    // Calculate statistics
-    const values = heartRateData.map(item => Number(item.value));
-    const average = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
-    const max = Math.max(...values);
-    const min = Math.min(...values);
+    // For range bar view, fill in missing dates (7days and all periods)
+    if (useRangeBar && (period === '7days' || period === 'all')) {
+      const allDays = [];
+      const currentDate = new Date(startDate);
+      
+      while (currentDate <= endDate) {
+        let dateStr;
+        if (period === 'all') {
+          dateStr = currentDate.toLocaleDateString([], {
+            year: '2-digit',
+            month: '2-digit',
+            day: '2-digit'
+          });
+        } else {
+          dateStr = currentDate.toLocaleDateString([], {
+            month: '2-digit',
+            day: '2-digit'
+          });
+        }
+        
+        const existingData = chartData.find(item => item.timestamp === dateStr);
+        
+        if (existingData) {
+          allDays.push(existingData);
+        } else {
+          // Add empty day
+          allDays.push({
+            timestamp: dateStr,
+            average: null,
+            max: null,
+            min: null,
+            hasData: false,
+            rawTime: new Date(currentDate)
+          });
+        }
+        
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      
+      chartData = allDays;
+    }
+
+    // Calculate statistics from raw data (always true max/min/average)
+    const rawValues = heartRateData.map(item => Number(item.value));
+    const averageRaw = (rawValues.reduce((a, b) => a + b, 0) / rawValues.length).toFixed(1);
+    const maxRaw = Math.max(...rawValues);
+    const minRaw = Math.min(...rawValues);
+    const count = heartRateData.length; // Total raw readings
 
     // Get earliest and latest dates for available data
     const allDates = await prisma.biometric_data.findMany({
@@ -188,12 +265,14 @@ export async function GET(req) {
       JSON.stringify({
         data: chartData,
         stats: {
-          average: Number(average),
-          max,
-          min,
-          count: values.length
+          average: Number(averageRaw),
+          max: maxRaw,
+          min: minRaw,
+          count
         },
         period,
+        chartType,
+        useRangeBar,
         availableDates
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }

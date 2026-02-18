@@ -17,6 +17,8 @@ export default function HeartRateChartPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
   const [period, setPeriod] = useState('today');
+  const [chartType, setChartType] = useState('area');
+  const [useRangeBar, setUseRangeBar] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -37,6 +39,8 @@ export default function HeartRateChartPage() {
         const result = await response.json();
         setChartData(result.data);
         setStats(result.stats);
+        setChartType(result.chartType || 'area');
+        setUseRangeBar(result.useRangeBar || false);
       } catch (err) {
         console.error('Error fetching heart rate data:', err);
         setError(err.message);
@@ -89,7 +93,7 @@ export default function HeartRateChartPage() {
         <StatsGrid stats={stats} />
 
         {/* Chart */}
-        <HeartRateChart period={period} chartData={chartData} dataLoading={dataLoading} error={error} />
+        <HeartRateChart period={period} chartData={chartData} dataLoading={dataLoading} error={error} chartType={chartType} useRangeBar={useRangeBar} />
 
         {/* Additional Info */}
         <HeartRateInfo />
