@@ -27,16 +27,26 @@ export async function GET(req) {
     // Get the patient ID from the session
     const patientId = session.userId;
 
-    // Fetch heart rate data for the past 24 hours, sorted by timestamp
+    // Build local day boundaries (00:00 -> 23:59:59.999)
+    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Fetch heart rate data for the current day, sorted by timestamp
     const heartRateData = await prisma.biometric_data.findMany({
       where: {
         patient_id: patientId,
-        metric_type: 'heart_rate'
+        metric_type: 'heart_rate',
+        timestamp: {
+          gte: startOfDay,
+          lte: endOfDay
+        }
       },
       orderBy: {
         timestamp: 'asc'
-      },
-      take: 100 // Limit to last 100 readings
+      }
     });
 
     if (!heartRateData || heartRateData.length === 0) {
@@ -49,15 +59,49 @@ export async function GET(req) {
       );
     }
 
-    // Transform the data for the chart
-    const chartData = heartRateData.map(item => ({
-      timestamp: new Date(item.timestamp).toLocaleTimeString([], { 
-        hour: '2-digit', 
-        minute: '2-digit' 
-      }),
-      value: Number(item.value),
-      rawTime: item.timestamp
-    }));
+    const MAX_CHART_POINTS = 100;
+    const intervalCandidates = [15, 30, 45, 60];
+
+    const selectedInterval = intervalCandidates.find((minutes) => {
+      const intervalMs = minutes * 60 * 1000;
+      const bucketCount = Math.ceil((endOfDay.getTime() - startOfDay.getTime()) / intervalMs);
+      return bucketCount <= MAX_CHART_POINTS;
+    }) || 60;
+
+    const intervalMs = selectedInterval * 60 * 1000;
+    const buckets = new Map();
+
+    heartRateData.forEach((item) => {
+      const timestamp = new Date(item.timestamp);
+      const bucketIndex = Math.floor((timestamp.getTime() - startOfDay.getTime()) / intervalMs);
+
+      if (!buckets.has(bucketIndex)) {
+        buckets.set(bucketIndex, {
+          sum: 0,
+          count: 0,
+          timestamp
+        });
+      }
+
+      const bucket = buckets.get(bucketIndex);
+      bucket.sum += Number(item.value);
+      bucket.count += 1;
+      if (timestamp < bucket.timestamp) {
+        bucket.timestamp = timestamp;
+      }
+    });
+
+    const chartData = [...buckets.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .slice(0, MAX_CHART_POINTS)
+      .map(([, bucket]) => ({
+        timestamp: bucket.timestamp.toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+        value: Number((bucket.sum / bucket.count).toFixed(1)),
+        rawTime: bucket.timestamp
+      }));
 
     // Calculate statistics
     const values = heartRateData.map(item => Number(item.value));
@@ -73,7 +117,8 @@ export async function GET(req) {
           max,
           min,
           count: values.length
-        }
+        },
+        intervalMinutes: selectedInterval
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }
     );
