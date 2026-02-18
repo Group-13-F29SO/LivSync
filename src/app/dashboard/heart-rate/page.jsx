@@ -4,18 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Area,
-  AreaChart
-} from 'recharts';
+import PeriodSelector from '@/components/HeartRate/PeriodSelector';
+import StatsGrid from '@/components/HeartRate/StatsGrid';
+import HeartRateChart from '@/components/HeartRate/HeartRateChart';
+import HeartRateInfo from '@/components/HeartRate/HeartRateInfo';
 
 export default function HeartRateChartPage() {
   const router = useRouter();
@@ -25,7 +17,6 @@ export default function HeartRateChartPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
   const [period, setPeriod] = useState('today');
-  const [availableDates, setAvailableDates] = useState(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -46,7 +37,6 @@ export default function HeartRateChartPage() {
         const result = await response.json();
         setChartData(result.data);
         setStats(result.stats);
-        setAvailableDates(result.availableDates);
       } catch (err) {
         console.error('Error fetching heart rate data:', err);
         setError(err.message);
@@ -93,137 +83,16 @@ export default function HeartRateChartPage() {
         </div>
 
         {/* Period Selector */}
-        <div className="flex gap-2 mb-8">
-          {[
-            { value: 'today', label: 'Today' },
-            { value: '7days', label: 'Last 7 Days' },
-            { value: '30days', label: 'Last 30 Days' },
-            { value: 'all', label: 'All Data' }
-          ].map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setPeriod(option.value)}
-              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-                period === option.value
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
-              }`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <PeriodSelector period={period} onPeriodChange={setPeriod} />
 
         {/* Statistics Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Current Average</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">{stats.average}</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">bpm</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Maximum</p>
-              <p className="text-3xl font-bold text-red-600 mt-2">{stats.max}</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">bpm</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Minimum</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">{stats.min}</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">bpm</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Data Points</p>
-              <p className="text-3xl font-bold text-purple-600 mt-2">{stats.count}</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">readings</p>
-            </div>
-          </div>
-        )}
+        <StatsGrid stats={stats} />
 
-        {/* Chart Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-          {error ? (
-            <div className="text-red-600 dark:text-red-400 p-4 bg-red-50 dark:bg-red-900/20 rounded">
-              Error: {error}
-            </div>
-          ) : dataLoading ? (
-            <div className="flex items-center justify-center h-96">
-              <p className="text-gray-600 dark:text-gray-400">Loading heart rate data...</p>
-            </div>
-          ) : chartData.length === 0 ? (
-            <div className="flex items-center justify-center h-96">
-              <p className="text-gray-600 dark:text-gray-400">No heart rate data available yet.</p>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Heart Rate Over Time
-                {period === 'today' && ' - Today'}
-                {period === '7days' && ' - Last 7 Days'}
-                {period === '30days' && ' - Last 30 Days'}
-                {period === 'all' && ' - All Available Data'}
-              </h2>
-              <ResponsiveContainer width="100%" height={400}>
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    stroke="#e5e7eb"
-                    dark="#374151"
-                  />
-                  <XAxis 
-                    dataKey="timestamp" 
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis 
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                    label={{ value: 'BPM', angle: -90, position: 'insideLeft' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #3b82f6',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                    formatter={(value) => [`${value} bpm`, 'Heart Rate']}
-                  />
-                  <Legend />
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorValue)"
-                    name="Heart Rate (bpm)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </div>
+        {/* Chart */}
+        <HeartRateChart period={period} chartData={chartData} dataLoading={dataLoading} error={error} />
 
         {/* Additional Info */}
-        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
-          <h3 className="font-semibold text-blue-900 dark:text-blue-200">Heart Rate Information</h3>
-          <ul className="mt-2 text-sm text-blue-800 dark:text-blue-300 space-y-1">
-            <li>• <strong>Resting Heart Rate:</strong> 60-100 bpm is considered normal</li>
-            <li>• <strong>Athletic Heart Rate:</strong> 40-60 bpm indicates good cardiovascular fitness</li>
-            <li>• <strong>Maximum Heart Rate:</strong> Estimated at 220 minus your age</li>
-            <li>• <strong>Target Zone:</strong> 50-85% of maximum heart rate for moderate to vigorous exercise</li>
-          </ul>
-        </div>
+        <HeartRateInfo />
       </main>
     </div>
   );
