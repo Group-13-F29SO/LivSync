@@ -30,6 +30,9 @@ export async function GET(req) {
     // Get period from query params (default: 'today')
     const url = new URL(req.url);
     const period = url.searchParams.get('period') || 'today';
+    const dateParam = url.searchParams.get('date'); // For 'today' period, allows selecting a specific day
+    const startDateParam = url.searchParams.get('startDate'); // For 'all' period, start of date range
+    const endDateParam = url.searchParams.get('endDate'); // For 'all' period, end of date range
 
     // Calculate date range based on period
     const now = new Date();
@@ -47,11 +50,30 @@ export async function GET(req) {
         startDate.setHours(0, 0, 0, 0);
         break;
       case 'all':
-        startDate = new Date(0); // Fetch from epoch
+        if (startDateParam && endDateParam) {
+          // User provided a custom date range
+          // Parse date strings to create local midnight (not UTC)
+          const [startYear, startMonth, startDay] = startDateParam.split('-').map(Number);
+          const [endYear, endMonth, endDay] = endDateParam.split('-').map(Number);
+          startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
+          endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
+        } else {
+          // Default: fetch from epoch if no range specified
+          startDate = new Date(0);
+        }
         break;
       case 'today':
       default:
-        startDate.setHours(0, 0, 0, 0);
+        if (dateParam) {
+          // Parse date string to create local midnight (not UTC)
+          // dateParam format: "YYYY-MM-DD"
+          const [year, month, day] = dateParam.split('-').map(Number);
+          startDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+          endDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+        } else {
+          // Default to today
+          startDate.setHours(0, 0, 0, 0);
+        }
         break;
     }
 
@@ -81,8 +103,8 @@ export async function GET(req) {
       );
     }
 
-    // For "all" period, adjust startDate to first data point instead of epoch
-    if (period === 'all' && heartRateData.length > 0) {
+    // For "all" period without custom date range, adjust startDate to first data point instead of epoch
+    if (period === 'all' && !startDateParam && heartRateData.length > 0) {
       const firstDataPoint = new Date(heartRateData[0].timestamp);
       startDate = new Date(firstDataPoint);
       startDate.setHours(0, 0, 0, 0);
@@ -108,88 +130,106 @@ export async function GET(req) {
       chartType = 'rangeBar';
       useRangeBar = true;
     } else {
-      // Single day: use adaptive 15-60 min buckets, use area chart
+      // Single day: display raw data points without bucketing to show exact database values
       const MAX_CHART_POINTS = 100;
-      const intervalCandidates = [15, 30, 45, 60];
-      const selectedInterval = intervalCandidates.find((minutes) => {
-        const intervalMs = minutes * 60 * 1000;
-        const bucketCount = Math.ceil((endDate.getTime() - startDate.getTime()) / intervalMs);
-        return bucketCount <= MAX_CHART_POINTS;
-      }) || 60;
-      aggregationIntervalMs = selectedInterval * 60 * 1000;
+      aggregationIntervalMs = 0; // No bucketing for single day
       timeFormatKey = 'time';
       chartType = 'area';
     }
 
-    // Aggregate data into buckets
-    const buckets = new Map();
-
-    heartRateData.forEach((item) => {
-      const timestamp = new Date(item.timestamp);
-      const bucketIndex = Math.floor((timestamp.getTime() - startDate.getTime()) / aggregationIntervalMs);
-
-      if (!buckets.has(bucketIndex)) {
-        buckets.set(bucketIndex, {
-          sum: 0,
-          count: 0,
-          min: Infinity,
-          max: -Infinity,
-          timestamp
-        });
-      }
-
-      const bucket = buckets.get(bucketIndex);
-      const value = Number(item.value);
-      bucket.sum += value;
-      bucket.count += 1;
-      bucket.min = Math.min(bucket.min, value);
-      bucket.max = Math.max(bucket.max, value);
-      if (timestamp < bucket.timestamp) {
-        bucket.timestamp = timestamp;
-      }
-    });
-
-    // Format chart data
-    let chartData = [...buckets.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([, bucket]) => {
-        let displayTimestamp;
-
-        if (timeFormatKey === 'day') {
-          // Show date for multi-day views
-          if (period === 'all') {
-            // Include year for "all" data spanning multiple years
-            displayTimestamp = bucket.timestamp.toLocaleDateString([], {
-              year: '2-digit',
-              month: '2-digit',
-              day: '2-digit'
-            });
-          } else {
-            // Just month/day for 7day and 30day views
-            displayTimestamp = bucket.timestamp.toLocaleDateString([], {
-              month: '2-digit',
-              day: '2-digit'
-            });
-          }
-        } else {
-          // Show time for single/few-day views
-          displayTimestamp = bucket.timestamp.toLocaleTimeString([], {
+    // Aggregate data into buckets or use raw data
+    let chartData;
+    
+    if (period === 'today') {
+      // For single day, use raw data points without aggregation
+      chartData = heartRateData
+        .map((item) => {
+          const timestamp = new Date(item.timestamp);
+          const displayTimestamp = timestamp.toLocaleTimeString([], {
             hour: '2-digit',
             minute: '2-digit'
           });
+          
+          return {
+            timestamp: displayTimestamp,
+            average: Number(item.value),
+            max: Number(item.value),
+            min: Number(item.value),
+            hasData: true,
+            rawTime: timestamp
+          };
+        });
+    } else {
+      // For multi-day periods, use bucketed aggregation
+      const buckets = new Map();
+
+      heartRateData.forEach((item) => {
+        const timestamp = new Date(item.timestamp);
+        const bucketIndex = Math.floor((timestamp.getTime() - startDate.getTime()) / aggregationIntervalMs);
+
+        if (!buckets.has(bucketIndex)) {
+          buckets.set(bucketIndex, {
+            sum: 0,
+            count: 0,
+            min: Infinity,
+            max: -Infinity,
+            timestamp
+          });
         }
 
-        const average = Number((bucket.sum / bucket.count).toFixed(1));
-
-        return {
-          timestamp: displayTimestamp,
-          average,
-          max: bucket.max,
-          min: bucket.min,
-          hasData: true,
-          rawTime: bucket.timestamp
-        };
+        const bucket = buckets.get(bucketIndex);
+        const value = Number(item.value);
+        bucket.sum += value;
+        bucket.count += 1;
+        bucket.min = Math.min(bucket.min, value);
+        bucket.max = Math.max(bucket.max, value);
+        if (timestamp < bucket.timestamp) {
+          bucket.timestamp = timestamp;
+        }
       });
+
+      // Format chart data from buckets
+      chartData = [...buckets.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([, bucket]) => {
+          let displayTimestamp;
+
+          if (timeFormatKey === 'day') {
+            // Show date for multi-day views
+            if (period === 'all') {
+              // Include year for "all" data spanning multiple years
+              displayTimestamp = bucket.timestamp.toLocaleDateString([], {
+                year: '2-digit',
+                month: '2-digit',
+                day: '2-digit'
+              });
+            } else {
+              // Just month/day for 7day and 30day views
+              displayTimestamp = bucket.timestamp.toLocaleDateString([], {
+                month: '2-digit',
+                day: '2-digit'
+              });
+            }
+          } else {
+            // Show time for single/few-day views
+            displayTimestamp = bucket.timestamp.toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+          }
+
+          const average = Number((bucket.sum / bucket.count).toFixed(1));
+
+          return {
+            timestamp: displayTimestamp,
+            average,
+            max: bucket.max,
+            min: bucket.min,
+            hasData: true,
+            rawTime: bucket.timestamp
+          };
+        });
+    }
 
     // For range bar view, fill in missing dates (7days and all periods)
     if (useRangeBar && (period === '7days' || period === 'all')) {
@@ -233,12 +273,38 @@ export async function GET(req) {
       chartData = allDays;
     }
 
-    // Calculate statistics from raw data (always true max/min/average)
-    const rawValues = heartRateData.map(item => Number(item.value));
-    const averageRaw = (rawValues.reduce((a, b) => a + b, 0) / rawValues.length).toFixed(1);
-    const maxRaw = Math.max(...rawValues);
-    const minRaw = Math.min(...rawValues);
-    const count = heartRateData.length; // Total raw readings
+    // Calculate statistics based on the chart data that will be displayed
+    let statsToReturn;
+    
+    if (period === 'today' && heartRateData.length > 0) {
+      // For single day, calculate stats directly from the raw data for that day
+      // This ensures accurate min/max/average regardless of bucketing
+      const rawValues = heartRateData.map(item => Number(item.value));
+      const minVal = Math.min(...rawValues);
+      const maxVal = Math.max(...rawValues);
+      const avgVal = (rawValues.reduce((a, b) => a + b, 0) / rawValues.length).toFixed(1);
+      
+      statsToReturn = {
+        average: Number(avgVal),
+        max: maxVal,
+        min: minVal,
+        count: rawValues.length
+      };
+    } else {
+      // For multi-day periods, calculate stats from raw data
+      const rawValues = heartRateData.map(item => Number(item.value));
+      const averageRaw = (rawValues.reduce((a, b) => a + b, 0) / rawValues.length).toFixed(1);
+      const maxRaw = Math.max(...rawValues);
+      const minRaw = Math.min(...rawValues);
+      const count = heartRateData.length; // Total raw readings
+      
+      statsToReturn = {
+        average: Number(averageRaw),
+        max: maxRaw,
+        min: minRaw,
+        count: count
+      };
+    }
 
     // Get earliest and latest dates for available data
     const allDates = await prisma.biometric_data.findMany({
@@ -264,12 +330,7 @@ export async function GET(req) {
     return new Response(
       JSON.stringify({
         data: chartData,
-        stats: {
-          average: Number(averageRaw),
-          max: maxRaw,
-          min: minRaw,
-          count
-        },
+        stats: statsToReturn,
         period,
         chartType,
         useRangeBar,

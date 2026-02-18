@@ -19,6 +19,9 @@ export default function HeartRateChartPage() {
   const [period, setPeriod] = useState('today');
   const [chartType, setChartType] = useState('area');
   const [useRangeBar, setUseRangeBar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [startDateRange, setStartDateRange] = useState('');
+  const [endDateRange, setEndDateRange] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -30,7 +33,19 @@ export default function HeartRateChartPage() {
     const fetchHeartRateData = async () => {
       try {
         setDataLoading(true);
-        const response = await fetch(`/api/biometrics/heart-rate?period=${period}`);
+        let url = `/api/biometrics/heart-rate?period=${period}`;
+        
+        // If period is "today", include the selected date
+        if (period === 'today') {
+          url += `&date=${selectedDate}`;
+        }
+        
+        // If period is "all", include the date range
+        if (period === 'all' && startDateRange) {
+          url += `&startDate=${startDateRange}&endDate=${endDateRange}`;
+        }
+        
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error('Failed to fetch heart rate data');
@@ -52,7 +67,7 @@ export default function HeartRateChartPage() {
     if (user) {
       fetchHeartRateData();
     }
-  }, [user, period]);
+  }, [user, period, selectedDate, startDateRange, endDateRange]);
 
   if (isLoading || !user) {
     return (
@@ -88,6 +103,48 @@ export default function HeartRateChartPage() {
 
         {/* Period Selector */}
         <PeriodSelector period={period} onPeriodChange={setPeriod} />
+
+        {/* Date Picker - only show for "today" period */}
+        {period === 'today' && (
+          <div className="mb-6 flex items-center gap-4">
+            <label htmlFor="date-picker" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Select Date:
+            </label>
+            <input
+              id="date-picker"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        )}
+
+        {/* Date Range Picker - only show for "all" period */}
+        {period === 'all' && (
+          <div className="mb-6 flex items-center gap-4">
+            <label htmlFor="start-date-picker" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Start Date:
+            </label>
+            <input
+              id="start-date-picker"
+              type="date"
+              value={startDateRange}
+              onChange={(e) => setStartDateRange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <label htmlFor="end-date-picker" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              End Date:
+            </label>
+            <input
+              id="end-date-picker"
+              type="date"
+              value={endDateRange}
+              onChange={(e) => setEndDateRange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        )}
 
         {/* Statistics Cards */}
         <StatsGrid stats={stats} />
