@@ -24,6 +24,8 @@ export default function HeartRateChartPage() {
   const [stats, setStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [period, setPeriod] = useState('today');
+  const [availableDates, setAvailableDates] = useState(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -35,7 +37,7 @@ export default function HeartRateChartPage() {
     const fetchHeartRateData = async () => {
       try {
         setDataLoading(true);
-        const response = await fetch('/api/biometrics/heart-rate');
+        const response = await fetch(`/api/biometrics/heart-rate?period=${period}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch heart rate data');
@@ -44,6 +46,7 @@ export default function HeartRateChartPage() {
         const result = await response.json();
         setChartData(result.data);
         setStats(result.stats);
+        setAvailableDates(result.availableDates);
       } catch (err) {
         console.error('Error fetching heart rate data:', err);
         setError(err.message);
@@ -55,7 +58,7 @@ export default function HeartRateChartPage() {
     if (user) {
       fetchHeartRateData();
     }
-  }, [user]);
+  }, [user, period]);
 
   if (isLoading || !user) {
     return (
@@ -87,6 +90,28 @@ export default function HeartRateChartPage() {
           >
             Back
           </button>
+        </div>
+
+        {/* Period Selector */}
+        <div className="flex gap-2 mb-8">
+          {[
+            { value: 'today', label: 'Today' },
+            { value: '7days', label: 'Last 7 Days' },
+            { value: '30days', label: 'Last 30 Days' },
+            { value: 'all', label: 'All Data' }
+          ].map((option) => (
+            <button
+              key={option.value}
+              onClick={() => setPeriod(option.value)}
+              className={`px-4 py-2 font-medium rounded-lg transition-colors ${
+                period === option.value
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-200 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
 
         {/* Statistics Cards */}
@@ -133,6 +158,10 @@ export default function HeartRateChartPage() {
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
                 Heart Rate Over Time
+                {period === 'today' && ' - Today'}
+                {period === '7days' && ' - Last 7 Days'}
+                {period === '30days' && ' - Last 30 Days'}
+                {period === 'all' && ' - All Available Data'}
               </h2>
               <ResponsiveContainer width="100%" height={400}>
                 <AreaChart
