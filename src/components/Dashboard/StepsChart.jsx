@@ -51,12 +51,25 @@ export default function StepsChart({ chartData, dataLoading, error, period }) {
     switch (period) {
       case 'today':
         return 'Steps Over Time (Hourly)';
-      case '7days':
-        return 'Steps Over Last 7 Days';
-      case '30days':
-        return 'Steps Over Last 30 Days';
+      case 'week':
+        return 'Steps This Week';
+      case 'month':
+        return 'Steps This Month';
+      case 'year':
+        return 'Average Daily Steps by Month (Last 12 Months)';
       default:
-        return 'Steps Over All Time';
+        return 'Steps Over Time';
+    }
+  };
+
+  const getBarLabel = () => {
+    switch (period) {
+      case 'today':
+        return 'Steps';
+      case 'year':
+        return 'Average Steps/Day';
+      default:
+        return 'Daily Steps';
     }
   };
 
@@ -158,14 +171,14 @@ export default function StepsChart({ chartData, dataLoading, error, period }) {
               }}
               labelStyle={{ color: '#000000' }}
               formatter={(value) => {
-                if (value === 0) return ['No data', 'Steps'];
-                return [value.toLocaleString() + ' steps', 'Daily Steps'];
+                if (value === 0) return ['No data', getBarLabel()];
+                return [value.toLocaleString() + (period === 'year' ? ' steps/day avg' : ' steps'), getBarLabel()];
               }}
             />
             <Legend />
             <Bar 
               dataKey="value" 
-              name="Daily Steps"
+              name={getBarLabel()}
               radius={[8, 8, 0, 0]}
               fill="#3b82f6"
               minPointSize={2}

@@ -19,11 +19,16 @@ export default function StepsChartPage() {
   const [error, setError] = useState(null);
   const [period, setPeriod] = useState('today');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [startDateRange, setStartDateRange] = useState('');
-  const [endDateRange, setEndDateRange] = useState(new Date().toISOString().split('T')[0]);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const GOAL = 10000; // Daily step goal
+
+  const stepsPeriodOptions = [
+    { value: 'today', label: 'Today' },
+    { value: 'week', label: 'This Week' },
+    { value: 'month', label: 'This Month' },
+    { value: 'year', label: '1 Year' }
+  ];
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -39,11 +44,6 @@ export default function StepsChartPage() {
       // If period is "today", include the selected date
       if (period === 'today') {
         url += `&date=${selectedDate}`;
-      }
-      
-      // If period is "all", include the date range
-      if (period === 'all' && startDateRange) {
-        url += `&startDate=${startDateRange}&endDate=${endDateRange}`;
       }
       
       const response = await fetch(url);
@@ -68,7 +68,7 @@ export default function StepsChartPage() {
     if (user) {
       fetchStepsData();
     }
-  }, [user, period, selectedDate, startDateRange, endDateRange, refreshKey]);
+  }, [user, period, selectedDate, refreshKey]);
 
   if (isLoading || !user) {
     return (
@@ -103,7 +103,7 @@ export default function StepsChartPage() {
         </div>
 
         {/* Period Selector */}
-        <PeriodSelector period={period} onPeriodChange={setPeriod} />
+        <PeriodSelector period={period} onPeriodChange={setPeriod} periodOptions={stepsPeriodOptions} />
 
         {/* Date Picker - only show for "today" period */}
         {period === 'today' && (
@@ -116,32 +116,6 @@ export default function StepsChartPage() {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        )}
-
-        {/* Date Range Picker - only show for "all" period */}
-        {period === 'all' && (
-          <div className="mb-6 flex items-center gap-4">
-            <label htmlFor="start-date-picker" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Start Date:
-            </label>
-            <input
-              id="start-date-picker"
-              type="date"
-              value={startDateRange}
-              onChange={(e) => setStartDateRange(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <label htmlFor="end-date-picker" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              End Date:
-            </label>
-            <input
-              id="end-date-picker"
-              type="date"
-              value={endDateRange}
-              onChange={(e) => setEndDateRange(e.target.value)}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -161,25 +135,25 @@ export default function StepsChartPage() {
             <StatCard
               label="Total Steps"
               value={stats.total}
-              subLabel={period === 'today' ? 'steps' : 'total steps'}
+              subLabel={period === 'today' ? 'steps' : period === 'year' ? 'total steps' : 'total steps'}
               color="blue"
             />
             <StatCard
-              label={period === 'today' ? 'Daily Average' : 'Average Daily Steps'}
+              label={period === 'today' ? 'Daily Average' : period === 'year' ? 'Average Steps/Month' : 'Average Daily Steps'}
               value={stats.average}
-              subLabel={period === 'today' ? 'steps/hour' : 'steps/day'}
+              subLabel={period === 'today' ? 'steps/hour' : period === 'year' ? 'steps/day' : 'steps/day'}
               color="purple"
             />
             <StatCard
               label="Peak"
               value={stats.max}
-              subLabel={period === 'today' ? 'steps/hour' : 'steps'}
+              subLabel={period === 'today' ? 'steps/hour' : period === 'year' ? 'steps/day' : 'steps'}
               color="green"
             />
             <StatCard
-              label={period === 'today' ? 'Goal Achievement' : 'Days with Data'}
-              value={period === 'today' ? (stats.goalAchieved ? 'Achieved' : 'Not Met') : stats.daysWithData}
-              subLabel={period === 'today' ? `${stats.goal} steps/day goal` : `of ${stats.totalDays} days`}
+              label={period === 'today' ? 'Goal Achievement' : period === 'year' ? 'Months with Data' : 'Days with Data'}
+              value={period === 'today' ? (stats.goalAchieved ? 'Achieved' : 'Not Met') : period === 'year' ? stats.monthsWithData : stats.daysWithData}
+              subLabel={period === 'today' ? `${stats.goal} steps/day goal` : period === 'year' ? `of ${stats.totalMonths} months` : `of ${stats.totalDays} days`}
               color="orange"
             />
           </div>

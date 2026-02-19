@@ -35,6 +35,51 @@ export default function StepsInfo({ period }) {
     );
   }
 
+  if (period === 'week') {
+    return (
+      <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+        <h3 className="font-semibold text-blue-900 dark:text-blue-200">Weekly Steps Summary</h3>
+        <ul className="mt-2 text-sm text-blue-800 dark:text-blue-300 space-y-1">
+          <li>• <strong>Chart Shows:</strong> Total steps per day for the entire week (Monday-Sunday)</li>
+          <li>• <strong>Daily Goal:</strong> 10,000 steps per day is the recommended daily target</li>
+          <li>• <strong>Weekly Target:</strong> Aim for 70,000 steps per week (10,000 × 7 days)</li>
+          <li>• <strong>Complete Week:</strong> Includes all 7 days even if some days have no recorded data</li>
+          <li>• <strong>Rest Days:</strong> Lower activity days are natural and important for recovery</li>
+        </ul>
+      </div>
+    );
+  }
+
+  if (period === 'month') {
+    return (
+      <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+        <h3 className="font-semibold text-blue-900 dark:text-blue-200">Monthly Steps Summary</h3>
+        <ul className="mt-2 text-sm text-blue-800 dark:text-blue-300 space-y-1">
+          <li>• <strong>Chart Shows:</strong> Total steps per day for the entire month (1st to last day)</li>
+          <li>• <strong>Daily Goal:</strong> 10,000 steps per day is the recommended daily target</li>
+          <li>• <strong>Complete Month:</strong> All days of the month are displayed, including days without data</li>
+          <li>• <strong>Monthly Average:</strong> Check your average daily steps for the month</li>
+          <li>• <strong>Consistency:</strong> Monitor how consistently you reach your daily goals throughout the month</li>
+        </ul>
+      </div>
+    );
+  }
+
+  if (period === 'year') {
+    return (
+      <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
+        <h3 className="font-semibold text-blue-900 dark:text-blue-200">Yearly Steps Summary</h3>
+        <ul className="mt-2 text-sm text-blue-800 dark:text-blue-300 space-y-1">
+          <li>• <strong>Chart Shows:</strong> Average daily steps for each month throughout the year (January-December)</li>
+          <li>• <strong>Monthly Averages:</strong> Each bar represents the average steps per day in that month</li>
+          <li>• <strong>Complete Year:</strong> All 12 months are displayed, including months without data</li>
+          <li>• <strong>Seasonal Trends:</strong> Identify how your activity varies across different seasons</li>
+          <li>• <strong>Long-Term Progress:</strong> Use this view to track fitness improvements and yearly patterns</li>
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
       <h3 className="font-semibold text-blue-900 dark:text-blue-200">Daily Steps Summary</h3>

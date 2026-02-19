@@ -33,8 +33,6 @@ export async function GET(req) {
     const url = new URL(req.url);
     const period = url.searchParams.get('period') || 'today';
     const dateParam = url.searchParams.get('date'); // For 'today' period, allows selecting a specific day
-    const startDateParam = url.searchParams.get('startDate'); // For 'all' period, start of date range
-    const endDateParam = url.searchParams.get('endDate'); // For 'all' period, end of date range
 
     // Calculate date range based on period
     const now = new Date();
@@ -43,25 +41,29 @@ export async function GET(req) {
     endDate.setHours(23, 59, 59, 999);
 
     switch (period) {
-      case '7days':
-        startDate.setDate(startDate.getDate() - 6); // Include today + 6 previous days
+      case 'week':
+        // Get the start of this week (Monday)
+        const day = startDate.getDay();
+        const diff = startDate.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+        startDate.setDate(diff);
         startDate.setHours(0, 0, 0, 0);
+        // End date is Sunday of the same week
+        endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
         break;
-      case '30days':
-        startDate.setDate(startDate.getDate() - 29);
+      case 'month':
+        // Get the first day of this month
+        startDate.setDate(1);
         startDate.setHours(0, 0, 0, 0);
+        // End date is last day of this month
+        endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59, 999);
         break;
-      case 'all':
-        if (startDateParam && endDateParam) {
-          // User provided a custom date range
-          const [startYear, startMonth, startDay] = startDateParam.split('-').map(Number);
-          const [endYear, endMonth, endDay] = endDateParam.split('-').map(Number);
-          startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
-          endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
-        } else {
-          // Default: fetch from epoch if no range specified
-          startDate = new Date(0);
-        }
+      case 'year':
+        // Get the data for the current year (January 1st to December 31st)
+        startDate.setFullYear(startDate.getFullYear(), 0, 1);
+        startDate.setHours(0, 0, 0, 0);
+        endDate = new Date(startDate.getFullYear(), 11, 31, 23, 59, 59, 999);
         break;
       case 'today':
       default:
@@ -103,30 +105,17 @@ export async function GET(req) {
       );
     }
 
-    // For "all" period without custom date range, adjust startDate to first data point instead of epoch
-    if (period === 'all' && !startDateParam && stepsData.length > 0) {
-      const firstDataPoint = new Date(stepsData[0].timestamp);
-      startDate = new Date(firstDataPoint);
-      startDate.setHours(0, 0, 0, 0);
-    }
-
-    // Determine aggregation interval based on date range
-    const daysDiff = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+    // Determine aggregation interval based on period
     let aggregationIntervalMs;
     let timeFormatKey;
 
-    if (daysDiff > 30) {
-      // Multi-week/All data: aggregate by day
-      aggregationIntervalMs = 24 * 60 * 60 * 1000;
-      timeFormatKey = 'day';
-    } else if (daysDiff > 1) {
-      // Multi-day (7 days): aggregate by full calendar day
-      aggregationIntervalMs = 24 * 60 * 60 * 1000;
-      timeFormatKey = 'day';
+    if (period === 'year') {
+      // Monthly aggregation for year view
+      timeFormatKey = 'month';
     } else {
-      // Single day: display raw hourly data
-      aggregationIntervalMs = 0;
-      timeFormatKey = 'hour';
+      // Daily aggregation for week/month views
+      aggregationIntervalMs = 24 * 60 * 60 * 1000;
+      timeFormatKey = 'day';
     }
 
     // Aggregate data into buckets or use raw data
@@ -161,8 +150,56 @@ export async function GET(req) {
           date: new Date(stepsData[0].timestamp).toLocaleDateString()
         });
       }
+    } else if (period === 'year') {
+      // For year period, aggregate by month with average steps per day
+      const monthlyData = new Map();
+      
+      // Initialize all 12 months
+      const currentDate = new Date(startDate);
+      for (let i = 0; i < 12; i++) {
+        const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+        monthlyData.set(monthKey, {
+          totalSteps: 0,
+          days: new Set(),
+          monthDate: new Date(currentDate)
+        });
+        currentDate.setMonth(currentDate.getMonth() + 1);
+      }
+      
+      // Aggregate steps by month
+      stepsData.forEach((item) => {
+        const timestamp = new Date(item.timestamp);
+        const monthKey = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}`;
+        const dayKey = `${timestamp.getFullYear()}-${String(timestamp.getMonth() + 1).padStart(2, '0')}-${String(timestamp.getDate()).padStart(2, '0')}`;
+        
+        if (monthlyData.has(monthKey)) {
+          const monthData = monthlyData.get(monthKey);
+          monthData.totalSteps += Number(item.value);
+          monthData.days.add(dayKey);
+        }
+      });
+      
+      // Create chart data from monthly aggregates
+      chartData = [];
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      
+      monthlyData.forEach((data, monthKey) => {
+        const [year, month] = monthKey.split('-');
+        const monthIndex = parseInt(month) - 1;
+        const monthName = monthNames[monthIndex];
+        const daysCount = data.days.size;
+        const avgStepsPerDay = daysCount > 0 ? Math.round(data.totalSteps / daysCount) : 0;
+        
+        chartData.push({
+          timestamp: monthName,
+          value: avgStepsPerDay,
+          totalSteps: data.totalSteps,
+          daysWithData: daysCount,
+          rawTime: data.monthDate
+        });
+      });
     } else {
-      // For multi-day periods, aggregate by day
+      // For week/month periods, aggregate by day
       const buckets = new Map();
 
       stepsData.forEach((item) => {
@@ -193,21 +230,11 @@ export async function GET(req) {
           let displayTimestamp;
 
           if (timeFormatKey === 'day') {
-            // Show date for multi-day views
-            if (period === 'all') {
-              // Include year for "all" data spanning multiple years
-              displayTimestamp = bucket.timestamp.toLocaleDateString([], {
-                year: '2-digit',
-                month: '2-digit',
-                day: '2-digit'
-              });
-            } else {
-              // Just month/day for 7day and 30day views
-              displayTimestamp = bucket.timestamp.toLocaleDateString([], {
-                month: '2-digit',
-                day: '2-digit'
-              });
-            }
+            // Show date for week/month views (just MM-DD format)
+            displayTimestamp = bucket.timestamp.toLocaleDateString([], {
+              month: '2-digit',
+              day: '2-digit'
+            });
           }
 
           return {
@@ -218,25 +245,16 @@ export async function GET(req) {
           };
         });
       
-      // Fill in missing dates for 7day and 30day periods
-      if ((period === '7days' || period === '30days' || period === 'all') && chartData.length > 0) {
+      // Fill in missing dates for week and month periods
+      if ((period === 'week' || period === 'month') && chartData.length > 0) {
         const allDays = [];
         const currentDate = new Date(startDate);
         
         while (currentDate <= endDate) {
-          let dateStr;
-          if (period === 'all') {
-            dateStr = currentDate.toLocaleDateString([], {
-              year: '2-digit',
-              month: '2-digit',
-              day: '2-digit'
-            });
-          } else {
-            dateStr = currentDate.toLocaleDateString([], {
-              month: '2-digit',
-              day: '2-digit'
-            });
-          }
+          const dateStr = currentDate.toLocaleDateString([], {
+            month: '2-digit',
+            day: '2-digit'
+          });
           
           const existingData = chartData.find(item => item.timestamp === dateStr);
           
@@ -279,8 +297,22 @@ export async function GET(req) {
         goalAchieved: totalSteps >= 10000,
         goal: 10000
       };
+    } else if (period === 'year') {
+      // For year period, calculate stats based on monthly averages
+      const monthlyValues = chartData.map(d => d.value);
+      const maxMonthly = Math.max(...monthlyValues);
+      const avgMonthly = (monthlyValues.reduce((a, b) => a + b, 0) / monthlyValues.length).toFixed(0);
+      
+      statsToReturn = {
+        total: totalSteps,
+        average: Number(avgMonthly),
+        max: maxMonthly,
+        min: Math.min(...monthlyValues.filter(v => v > 0)) || 0,
+        monthsWithData: monthlyValues.filter(v => v > 0).length,
+        totalMonths: monthlyValues.length
+      };
     } else {
-      // For multi-day periods, calculate stats from daily aggregates
+      // For week/month periods, calculate stats from daily aggregates
       const dailyValues = chartData.map(d => d.value);
       const avgDaily = (totalSteps / (dailyValues.length || 1)).toFixed(0);
       const maxDaily = Math.max(...dailyValues);
