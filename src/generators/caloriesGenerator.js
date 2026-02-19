@@ -16,7 +16,6 @@ class CaloriesGenerator {
   generate(startDate) {
     const timestamps = generateTimestamps(startDate, 288);
     const data = [];
-    let cumulativeCalories = 0;
 
     for (let i = 0; i < 288; i++) {
       const minuteOfDay = i * 5;
@@ -43,16 +42,12 @@ class CaloriesGenerator {
       // Add random variance (±8%)
       caloriesThisPeriod = addRandomVariance(caloriesThisPeriod, 8);
 
-      // Ensure positive
-      caloriesThisPeriod = Math.max(0, caloriesThisPeriod);
-      cumulativeCalories += caloriesThisPeriod;
-
-      // Clamp to realistic daily maximum
-      cumulativeCalories = clamp(cumulativeCalories, 0, 3500);
+      // Ensure positive and clamp to realistic 5-minute maximum
+      caloriesThisPeriod = clamp(Math.max(0, caloriesThisPeriod), 0, 30);
 
       data.push({
         metric_type: 'calories',
-        value: Math.round(cumulativeCalories),
+        value: Math.round(caloriesThisPeriod),
         timestamp: timestamps[i],
         source: 'simulated'
       });

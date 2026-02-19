@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
+import CaloriesDataManagement from '@/components/Dashboard/CaloriesDataManagement';
 import { useAuth } from '@/hooks/useAuth';
 import {
   AreaChart,
@@ -25,6 +26,7 @@ export default function CaloriesChartPage() {
   const [stats, setStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -32,31 +34,36 @@ export default function CaloriesChartPage() {
     }
   }, [user, isLoading, router]);
 
-  useEffect(() => {
-    const fetchCaloriesData = async () => {
-      try {
-        setDataLoading(true);
-        const response = await fetch('/api/biometrics/calories');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch calories data');
-        }
-
-        const result = await response.json();
-        setChartData(result.data);
-        setStats(result.stats);
-      } catch (err) {
-        console.error('Error fetching calories data:', err);
-        setError(err.message);
-      } finally {
-        setDataLoading(false);
+  const fetchCaloriesData = async (dateStr = null) => {
+    try {
+      setDataLoading(true);
+      const url = new URL('/api/biometrics/calories', window.location.origin);
+      if (dateStr) {
+        url.searchParams.append('date', dateStr);
       }
-    };
+      
+      const response = await fetch(url.toString());
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch calories data');
+      }
 
-    if (user) {
-      fetchCaloriesData();
+      const result = await response.json();
+      setChartData(result.data);
+      setStats(result.stats);
+    } catch (err) {
+      console.error('Error fetching calories data:', err);
+      setError(err.message);
+    } finally {
+      setDataLoading(false);
     }
-  }, [user]);
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchCaloriesData(selectedDate);
+    }
+  }, [user, selectedDate]);
 
   // Get activity level based on calories burned
   const getActivityLevel = (calories) => {
@@ -100,6 +107,25 @@ export default function CaloriesChartPage() {
             Back
           </button>
         </div>
+
+        {/* Date Picker */}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Select Date
+          </label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+          />
+        </div>
+
+        {/* Data Management Section */}
+        <CaloriesDataManagement 
+          selectedDate={selectedDate} 
+          onDataGenerated={() => fetchCaloriesData(selectedDate)}
+        />
 
         {/* Statistics Cards */}
         {stats && (
