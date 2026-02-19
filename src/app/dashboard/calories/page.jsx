@@ -3,20 +3,23 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
+import PeriodSelector from '@/components/HeartRate/PeriodSelector';
 import CaloriesDataManagement from '@/components/Dashboard/CaloriesDataManagement';
 import { useAuth } from '@/hooks/useAuth';
 import {
   AreaChart,
   Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  ReferenceLine,
-  LineChart,
-  Line
+  Cell
 } from 'recharts';
 
 export default function CaloriesChartPage() {
@@ -26,7 +29,15 @@ export default function CaloriesChartPage() {
   const [stats, setStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [period, setPeriod] = useState('today');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const caloriesPeriodOptions = [
+    { value: 'today', label: 'Today' },
+    { value: 'week', label: 'This Week' },
+    { value: 'month', label: 'This Month' }
+  ];
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -34,15 +45,17 @@ export default function CaloriesChartPage() {
     }
   }, [user, isLoading, router]);
 
-  const fetchCaloriesData = async (dateStr = null) => {
+  const fetchCaloriesData = async () => {
     try {
       setDataLoading(true);
-      const url = new URL('/api/biometrics/calories', window.location.origin);
-      if (dateStr) {
-        url.searchParams.append('date', dateStr);
+      let url = `/api/biometrics/calories?period=${period}`;
+      
+      // If period is "today", include the selected date
+      if (period === 'today') {
+        url += `&date=${selectedDate}`;
       }
       
-      const response = await fetch(url.toString());
+      const response = await fetch(url);
       
       if (!response.ok) {
         throw new Error('Failed to fetch calories data');
@@ -51,6 +64,7 @@ export default function CaloriesChartPage() {
       const result = await response.json();
       setChartData(result.data);
       setStats(result.stats);
+      setError(null);
     } catch (err) {
       console.error('Error fetching calories data:', err);
       setError(err.message);
@@ -61,9 +75,9 @@ export default function CaloriesChartPage() {
 
   useEffect(() => {
     if (user) {
-      fetchCaloriesData(selectedDate);
+      fetchCaloriesData();
     }
-  }, [user, selectedDate]);
+  }, [user, period, selectedDate, refreshKey]);
 
   // Get activity level based on calories burned
   const getActivityLevel = (calories) => {
@@ -74,7 +88,26 @@ export default function CaloriesChartPage() {
     return { level: 'Extremely Active', color: 'text-purple-600' };
   };
 
-  const activityLevel = stats ? getActivityLevel(stats.latest) : null;
+  const getChartTitle = () => {
+    switch (period) {
+      case 'today':
+        return 'Calories Burned Over Time (Hourly)';
+      case 'week':
+        return 'Calories Burned This Week (Daily)';
+      case 'month':
+        return 'Calories Burned This Month (Daily Trend)';
+      default:
+        return 'Calories Burned Over Time';
+    }
+  };
+
+  const getBarColor = (value) => {
+    if (value >= 250) return '#f97316'; // Orange - high activity
+    if (value >= 150) return '#fbbf24'; // Amber - moderate activity
+    return '#fca5a5'; // Light red - low activity
+  };
+
+  const activityLevel = stats ? getActivityLevel(stats.latest || stats.max || 0) : null;
 
   if (isLoading || !user) {
     return (
@@ -108,60 +141,78 @@ export default function CaloriesChartPage() {
           </button>
         </div>
 
-        {/* Date Picker */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-8">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Select Date
-          </label>
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full sm:w-48 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-          />
-        </div>
+        {/* Period Selector */}
+        <PeriodSelector period={period} onPeriodChange={setPeriod} periodOptions={caloriesPeriodOptions} />
 
-        {/* Data Management Section */}
-        <CaloriesDataManagement 
-          selectedDate={selectedDate} 
-          onDataGenerated={() => fetchCaloriesData(selectedDate)}
-        />
+        {/* Date Picker - only show for "today" period */}
+        {period === 'today' && (
+          <div className="mb-6 flex items-center gap-4">
+            <label htmlFor="date-picker" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Select Date:
+            </label>
+            <input
+              id="date-picker"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+            />
+          </div>
+        )}
+
+        {/* Data Management Section - only show for "today" period */}
+        {period === 'today' && (
+          <CaloriesDataManagement 
+            selectedDate={selectedDate}
+            onDataGenerated={() => setRefreshKey(prev => prev + 1)}
+          />
+        )}
 
         {/* Statistics Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Latest Reading</p>
-              <p className={`text-3xl font-bold mt-2 ${activityLevel?.color || 'text-orange-600'}`}>
-                {stats.latest.toLocaleString()}
+              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                {period === 'today' ? 'Latest Reading' : 'Total Burned'}
               </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">kcal burned</p>
-              {activityLevel && (
+              <p className={`text-3xl font-bold mt-2 text-orange-600`}>
+                {(stats.latest || stats.total || 0).toLocaleString()}
+              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">kcal</p>
+              {period === 'today' && activityLevel && (
                 <p className={`text-sm font-medium ${activityLevel.color} mt-2`}>
                   {activityLevel.level}
                 </p>
               )}
             </div>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Average</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                {period === 'today' ? 'Hourly Average' : 'Daily Average'}
+              </p>
               <p className="text-3xl font-bold text-red-600 mt-2">
                 {stats.average.toLocaleString()}
               </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">kcal/day</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+                {period === 'today' ? 'kcal/hour' : 'kcal/day'}
+              </p>
             </div>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Peak Day</p>
+              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Peak</p>
               <p className="text-3xl font-bold text-green-600 mt-2">
                 {stats.max.toLocaleString()}
               </p>
               <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">kcal</p>
             </div>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Burned</p>
-              <p className="text-3xl font-bold text-purple-600 mt-2">
-                {(stats.total / 1000).toFixed(1)}k
+              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+                {period === 'today' ? 'Min' : 'Total Days'}
               </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">kcal total</p>
+              <p className="text-3xl font-bold text-purple-600 mt-2">
+                {period === 'today' ? stats.min.toLocaleString() : stats.daysWithData || 0}
+              </p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
+                {period === 'today' ? 'kcal' : 'days'}
+              </p>
             </div>
           </div>
         )}
@@ -183,53 +234,137 @@ export default function CaloriesChartPage() {
           ) : (
             <div>
               <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Calories Burned Over Time
+                {getChartTitle()}
               </h2>
               <ResponsiveContainer width="100%" height={400}>
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorCalories" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    stroke="#e5e7eb"
-                  />
-                  <XAxis 
-                    dataKey="timestamp" 
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis 
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                    label={{ value: 'Calories (kcal)', angle: -90, position: 'insideLeft' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #f97316',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                    formatter={(value) => [value.toLocaleString() + ' kcal', 'Calories Burned']}
-                  />
-                  <Legend />
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#f97316" 
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorCalories)"
-                    name="Calories Burned (kcal)"
-                  />
-                </AreaChart>
+                {period === 'today' ? (
+                  // Area chart for today
+                  <AreaChart
+                    data={chartData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                  >
+                    <defs>
+                      <linearGradient id="colorCalories" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f97316" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#f97316" stopOpacity={0.1} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke="#e5e7eb"
+                    />
+                    <XAxis 
+                      dataKey="timestamp" 
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                    />
+                    <YAxis 
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      label={{ value: 'Calories (kcal)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
+                        border: '1px solid #f97316',
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                      formatter={(value) => [value.toLocaleString() + ' kcal', 'Calories Burned']}
+                    />
+                    <Legend />
+                    <Area 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#f97316" 
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorCalories)"
+                      name="Calories Burned (kcal)"
+                    />
+                  </AreaChart>
+                ) : period === 'week' ? (
+                  // Bar chart for week
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 40 }}
+                  >
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke="#e5e7eb"
+                    />
+                    <XAxis 
+                      dataKey="timestamp" 
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                    />
+                    <YAxis 
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      label={{ value: 'Calories (kcal)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
+                        border: '1px solid #f97316',
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                      formatter={(value) => [value.toLocaleString() + ' kcal', 'Total Calories']}
+                    />
+                    <Legend />
+                    <Bar 
+                      dataKey="value" 
+                      fill="#f97316"
+                      radius={[8, 8, 0, 0]}
+                      name="Calories Burned (kcal)"
+                    >
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={getBarColor(entry.value)} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                ) : (
+                  // Line chart for month (trend)
+                  <LineChart
+                    data={chartData}
+                    margin={{ top: 10, right: 30, left: 0, bottom: 40 }}
+                  >
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke="#e5e7eb"
+                    />
+                    <XAxis 
+                      dataKey="timestamp" 
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                    />
+                    <YAxis 
+                      stroke="#6b7280"
+                      style={{ fontSize: '12px' }}
+                      label={{ value: 'Calories (kcal)', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{
+                        backgroundColor: '#1f2937',
+                        border: '1px solid #f97316',
+                        borderRadius: '8px',
+                        color: '#fff'
+                      }}
+                      formatter={(value) => [value.toLocaleString() + ' kcal', 'Daily Calories']}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="value" 
+                      stroke="#f97316"
+                      strokeWidth={3}
+                      dot={{ fill: '#f97316', r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Calories Burned (kcal)"
+                    />
+                  </LineChart>
+                )}
               </ResponsiveContainer>
             </div>
           )}
