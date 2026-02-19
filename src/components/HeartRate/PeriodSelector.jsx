@@ -1,16 +1,18 @@
 'use client';
 
-export default function PeriodSelector({ period, onPeriodChange }) {
-  const periodOptions = [
+export default function PeriodSelector({ period, onPeriodChange, periodOptions }) {
+  const defaultPeriodOptions = [
     { value: 'today', label: 'Today' },
     { value: '7days', label: 'Last 7 Days' },
     { value: '30days', label: 'Last 30 Days' },
     { value: 'all', label: 'All Data' }
   ];
 
+  const options = periodOptions || defaultPeriodOptions;
+
   return (
     <div className="flex gap-2 mb-8">
-      {periodOptions.map((option) => (
+      {options.map((option) => (
         <button
           key={option.value}
           onClick={() => onPeriodChange(option.value)}

@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import PeriodSelector from '@/components/HeartRate/PeriodSelector';
-import StatCard from '@/components/Dashboard/StatCard';
-import StepsChart from '@/components/Dashboard/StepsChart';
-import StepsDataManagement from '@/components/Dashboard/StepsDataManagement';
-import StepsInfo from '@/components/Dashboard/StepsInfo';
+import StepsChart from '@/components/Dashboard/Steps/StepsChart';
+import StepsDataManagement from '@/components/Dashboard/Steps/StepsDataManagement';
+import StepsInfo from '@/components/Dashboard/Steps/StepsInfo';
+import StepsStats from '@/components/Dashboard/Steps/StepsStats';
+import StepsDatePicker from '@/components/Dashboard/Steps/StepsDatePicker';
 
 export default function StepsChartPage() {
   const router = useRouter();
@@ -107,18 +108,11 @@ export default function StepsChartPage() {
 
         {/* Date Picker - only show for "today" period */}
         {period === 'today' && (
-          <div className="mb-6 flex items-center gap-4">
-            <label htmlFor="date-picker" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Select Date:
-            </label>
-            <input
-              id="date-picker"
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          <StepsDatePicker 
+            selectedDate={selectedDate}
+            onDateChange={setSelectedDate}
+            disabled={dataLoading}
+          />
         )}
 
         {/* Data Management Section */}
@@ -131,32 +125,7 @@ export default function StepsChartPage() {
 
         {/* Statistics Cards */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <StatCard
-              label="Total Steps"
-              value={stats.total}
-              subLabel={period === 'today' ? 'steps' : period === 'year' ? 'total steps' : 'total steps'}
-              color="blue"
-            />
-            <StatCard
-              label={period === 'today' ? 'Daily Average' : period === 'year' ? 'Average Steps/Month' : 'Average Daily Steps'}
-              value={stats.average}
-              subLabel={period === 'today' ? 'steps/hour' : period === 'year' ? 'steps/day' : 'steps/day'}
-              color="purple"
-            />
-            <StatCard
-              label="Peak"
-              value={stats.max}
-              subLabel={period === 'today' ? 'steps/hour' : period === 'year' ? 'steps/day' : 'steps'}
-              color="green"
-            />
-            <StatCard
-              label={period === 'today' ? 'Goal Achievement' : period === 'year' ? 'Months with Data' : 'Days with Data'}
-              value={period === 'today' ? (stats.goalAchieved ? 'Achieved' : 'Not Met') : period === 'year' ? stats.monthsWithData : stats.daysWithData}
-              subLabel={period === 'today' ? `${stats.goal} steps/day goal` : period === 'year' ? `of ${stats.totalMonths} months` : `of ${stats.totalDays} days`}
-              color="orange"
-            />
-          </div>
+          <StepsStats stats={stats} period={period} goal={GOAL} />
         )}
 
         {/* Chart Section */}
