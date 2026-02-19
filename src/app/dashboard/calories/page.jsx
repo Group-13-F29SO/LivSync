@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import PeriodSelector from '@/components/HeartRate/PeriodSelector';
-import CaloriesDataManagement from '@/components/Dashboard/CaloriesDataManagement';
+import CaloriesDataManagement from '@/components/Dashboard/Calories/CaloriesDataManagement';
 import CaloriesChart from '@/components/Dashboard/Calories/CaloriesChart';
 import CaloriesStats from '@/components/Dashboard/Calories/CaloriesStats';
 import CaloriesInfo from '@/components/Dashboard/Calories/CaloriesInfo';
