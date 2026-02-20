@@ -23,6 +23,10 @@ import {
 export default function HydrationChartPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [chartData, setChartData] = useState([]);
   const [stats, setStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
@@ -40,7 +44,7 @@ export default function HydrationChartPage() {
     const fetchHydrationData = async () => {
       try {
         setDataLoading(true);
-        const response = await fetch('/api/biometrics/hydration');
+        const response = await fetch(`/api/biometrics/hydration?date=${selectedDate}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch hydration data');
@@ -60,7 +64,7 @@ export default function HydrationChartPage() {
     if (user) {
       fetchHydrationData();
     }
-  }, [user]);
+  }, [user, selectedDate]);
 
   // Get radial chart data for current progress
   const getRadialData = () => {
@@ -107,7 +111,9 @@ export default function HydrationChartPage() {
               Hydration Tracker
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Monitor your daily water intake and stay hydrated
+              {selectedDate === new Date().toISOString().split('T')[0] 
+                ? 'Monitor your daily water intake and stay hydrated' 
+                : `Viewing hydration data for ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
             </p>
           </div>
           <button
@@ -116,6 +122,18 @@ export default function HydrationChartPage() {
           >
             Back
           </button>
+        </div>
+
+        {/* Date Picker */}
+        <div className="flex flex-col gap-2 mb-8">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Date:</label>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+            className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-fit"
+          />
         </div>
 
         {/* Statistics Cards */}
@@ -166,12 +184,12 @@ export default function HydrationChartPage() {
               </div>
             ) : !stats ? (
               <div className="flex items-center justify-center h-96">
-                <p className="text-gray-600 dark:text-gray-400">No hydration data available yet.</p>
+                <p className="text-gray-600 dark:text-gray-400">No hydration data exists for this date.</p>
               </div>
             ) : (
               <div>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  Today's Progress
+                  {selectedDate === new Date().toISOString().split('T')[0] ? "Today's Progress" : 'Selected Date Progress'}
                 </h2>
                 <ResponsiveContainer width="100%" height={350}>
                   <RadialBarChart

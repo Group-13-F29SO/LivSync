@@ -27,23 +27,48 @@ export async function GET(req) {
     // Get the patient ID from the session
     const patientId = session.userId;
 
-    // Fetch hydration data, sorted by timestamp
+    // Get the date parameter from the query string
+    const { searchParams } = new URL(req.url);
+    const selectedDate = searchParams.get('date');
+
+    // If no date is provided, return no data
+    if (!selectedDate) {
+      return new Response(
+        JSON.stringify({ 
+          data: [],
+          message: 'No date specified',
+          stats: null
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse the selected date to get start and end of day
+    const dateObj = new Date(selectedDate + 'T00:00:00');
+    const startOfDay = new Date(dateObj.getTime());
+    const endOfDay = new Date(dateObj.getTime() + 24 * 60 * 60 * 1000);
+
+    // Fetch hydration data for the specific date
     const hydrationData = await prisma.biometric_data.findMany({
       where: {
         patient_id: patientId,
-        metric_type: 'hydration'
+        metric_type: 'hydration',
+        timestamp: {
+          gte: startOfDay,
+          lt: endOfDay
+        }
       },
       orderBy: {
         timestamp: 'asc'
-      },
-      take: 100 // Limit to last 100 readings
+      }
     });
 
     if (!hydrationData || hydrationData.length === 0) {
       return new Response(
         JSON.stringify({ 
           data: [],
-          message: 'No hydration data available'
+          message: 'No hydration data available for this date',
+          stats: null
         }),
         { status: 200, headers: { 'Content-Type': 'application/json' } }
       );
@@ -72,8 +97,8 @@ export async function GET(req) {
 
     // Calculate goal achievement (assuming 8 glasses goal)
     const goal = 8;
-    const goalAchievement = values.filter(v => v >= goal).length;
-    const goalPercentage = ((goalAchievement / values.length) * 100).toFixed(1);
+    const goalAchievement = latest >= goal ? 1 : 0;
+    const goalPercentage = latest >= goal ? 100 : ((latest / goal) * 100).toFixed(1);
     const currentProgress = ((latest / goal) * 100).toFixed(1);
 
     return new Response(
