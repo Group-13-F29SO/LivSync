@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
+import StatCard from '@/components/Hydration/StatCard';
+import TipCard from '@/components/Hydration/TipCard';
+import HydrationLevelCard from '@/components/Hydration/HydrationLevelCard';
 import {
   RadialBarChart,
   RadialBar,
@@ -139,34 +142,30 @@ export default function HydrationChartPage() {
         {/* Statistics Cards */}
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Current Progress</p>
-              <p className="text-3xl font-bold text-blue-600 mt-2">
-                {stats.latest}/{GOAL}
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">glasses today</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Daily Average</p>
-              <p className="text-3xl font-bold text-cyan-600 mt-2">
-                {stats.average}
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">glasses/day</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Best Day</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                {stats.max}
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">glasses</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Goal Achievement</p>
-              <p className="text-3xl font-bold text-teal-600 mt-2">{stats.goalPercentage}%</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                {stats.goalAchievement} of {stats.count} days
-              </p>
-            </div>
+            <StatCard 
+              title="Current Progress" 
+              value={`${stats.latest}/${GOAL}`}
+              unit="glasses today"
+              color="blue"
+            />
+            <StatCard 
+              title="Daily Average" 
+              value={stats.average}
+              unit="glasses/day"
+              color="cyan"
+            />
+            <StatCard 
+              title="Best Day" 
+              value={stats.max}
+              unit="glasses"
+              color="green"
+            />
+            <StatCard 
+              title="Goal Achievement" 
+              value={`${stats.goalPercentage}%`}
+              unit={`${stats.goalAchievement} of ${stats.count} days`}
+              color="teal"
+            />
           </div>
         )}
 
@@ -249,34 +248,30 @@ export default function HydrationChartPage() {
           <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 p-6 rounded-lg shadow-lg border border-blue-200 dark:border-blue-800">
             <h3 className="text-lg font-bold text-blue-900 dark:text-blue-200 mb-4">💧 Hydration Tips</h3>
             <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">1</div>
-                <div>
-                  <p className="font-semibold text-blue-900 dark:text-blue-200">Start Your Day Right</p>
-                  <p className="text-sm text-blue-800 dark:text-blue-300">Drink a glass of water first thing in the morning</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">2</div>
-                <div>
-                  <p className="font-semibold text-blue-900 dark:text-blue-200">Set Reminders</p>
-                  <p className="text-sm text-blue-800 dark:text-blue-300">Use hourly reminders to maintain consistent intake</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-teal-500 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">3</div>
-                <div>
-                  <p className="font-semibold text-blue-900 dark:text-blue-200">Before Meals</p>
-                  <p className="text-sm text-blue-800 dark:text-blue-300">Drink water 30 minutes before eating to aid digestion</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold">4</div>
-                <div>
-                  <p className="font-semibold text-blue-900 dark:text-blue-200">During Exercise</p>
-                  <p className="text-sm text-blue-800 dark:text-blue-300">Increase intake when physically active</p>
-                </div>
-              </div>
+              <TipCard 
+                number={1}
+                title="Start Your Day Right"
+                description="Drink a glass of water first thing in the morning"
+                backgroundColor="bg-blue-500"
+              />
+              <TipCard 
+                number={2}
+                title="Set Reminders"
+                description="Use hourly reminders to maintain consistent intake"
+                backgroundColor="bg-cyan-500"
+              />
+              <TipCard 
+                number={3}
+                title="Before Meals"
+                description="Drink water 30 minutes before eating to aid digestion"
+                backgroundColor="bg-teal-500"
+              />
+              <TipCard 
+                number={4}
+                title="During Exercise"
+                description="Increase intake when physically active"
+                backgroundColor="bg-blue-600"
+              />
             </div>
           </div>
         </div>
@@ -354,26 +349,30 @@ export default function HydrationChartPage() {
 
         {/* Hydration Levels */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-red-900 dark:text-red-200">Dehydrated</h4>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-2">&lt; 4</p>
-            <p className="text-sm text-red-700 dark:text-red-300 mt-1">glasses/day</p>
-          </div>
-          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-orange-900 dark:text-orange-200">Under-hydrated</h4>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-2">4-5</p>
-            <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">glasses/day</p>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-blue-900 dark:text-blue-200">Good Hydration</h4>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">6-7</p>
-            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">glasses/day</p>
-          </div>
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-green-900 dark:text-green-200">Optimal</h4>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">≥ 8</p>
-            <p className="text-sm text-green-700 dark:text-green-300 mt-1">glasses/day</p>
-          </div>
+          <HydrationLevelCard 
+            title="Dehydrated"
+            value="< 4"
+            unit="glasses/day"
+            colorClass="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-900 dark:text-red-200"
+          />
+          <HydrationLevelCard 
+            title="Under-hydrated"
+            value="4-5"
+            unit="glasses/day"
+            colorClass="bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 text-orange-900 dark:text-orange-200"
+          />
+          <HydrationLevelCard 
+            title="Good Hydration"
+            value="6-7"
+            unit="glasses/day"
+            colorClass="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200"
+          />
+          <HydrationLevelCard 
+            title="Optimal"
+            value="≥ 8"
+            unit="glasses/day"
+            colorClass="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-900 dark:text-green-200"
+          />
         </div>
       </main>
     </div>
