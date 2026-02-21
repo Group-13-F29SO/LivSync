@@ -313,10 +313,10 @@ export default function HydrationChartPage() {
                 />
                 <Tooltip 
                   contentStyle={{
-                    backgroundColor: '#1f2937',
+                    backgroundColor: '#ffffff',
                     border: '1px solid #3b82f6',
                     borderRadius: '8px',
-                    color: '#fff'
+                    color: '#1f2937'
                   }}
                   formatter={(value) => [value + ' glasses', 'Hydration']}
                 />
