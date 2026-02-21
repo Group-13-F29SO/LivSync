@@ -4,19 +4,10 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Area,
-  AreaChart,
-  ReferenceLine
-} from 'recharts';
+import PeriodSelector from '@/components/BloodGlucose/PeriodSelector';
+import StatsGrid from '@/components/BloodGlucose/StatsGrid';
+import BloodGlucoseChart from '@/components/BloodGlucose/BloodGlucoseChart';
+import BloodGlucoseInfo from '@/components/BloodGlucose/BloodGlucoseInfo';
 
 export default function BloodGlucoseChartPage() {
   const router = useRouter();
@@ -25,6 +16,8 @@ export default function BloodGlucoseChartPage() {
   const [stats, setStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [period, setPeriod] = useState('today');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -36,7 +29,14 @@ export default function BloodGlucoseChartPage() {
     const fetchBloodGlucoseData = async () => {
       try {
         setDataLoading(true);
-        const response = await fetch('/api/biometrics/blood-glucose');
+        let url = `/api/biometrics/blood-glucose?period=${period}`;
+        
+        // If period is "today", include the selected date
+        if (period === 'today') {
+          url += `&date=${selectedDate}`;
+        }
+        
+        const response = await fetch(url);
         
         if (!response.ok) {
           throw new Error('Failed to fetch blood glucose data');
@@ -56,7 +56,7 @@ export default function BloodGlucoseChartPage() {
     if (user) {
       fetchBloodGlucoseData();
     }
-  }, [user]);
+  }, [user, period, selectedDate]);
 
   // Determine status based on average
   const getGlucoseStatus = (value) => {
@@ -100,152 +100,40 @@ export default function BloodGlucoseChartPage() {
           </button>
         </div>
 
-        {/* Statistics Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Average Level</p>
-              <p className={`text-3xl font-bold ${statusInfo?.color || 'text-indigo-600'} mt-2`}>
-                {stats.average}
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">mg/dL</p>
-              {statusInfo && (
-                <p className={`text-sm font-medium ${statusInfo.color} mt-2`}>
-                  {statusInfo.status}
-                </p>
-              )}
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Maximum</p>
-              <p className="text-3xl font-bold text-red-600 mt-2">{stats.max}</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">mg/dL</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Minimum</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">{stats.min}</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">mg/dL</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Data Points</p>
-              <p className="text-3xl font-bold text-purple-600 mt-2">{stats.count}</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">readings</p>
-            </div>
+        {/* Period Selector */}
+        <PeriodSelector period={period} onPeriodChange={setPeriod} />
+
+        {/* Date Picker - only show for "today" period */}
+        {period === 'today' && (
+          <div className="mb-6 flex items-center gap-4">
+            <label htmlFor="date-picker" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Select Date:
+            </label>
+            <input
+              id="date-picker"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
           </div>
         )}
 
+        {/* Statistics Cards */}
+        <StatsGrid stats={stats} />
+
         {/* Chart Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-          {error ? (
-            <div className="text-red-600 dark:text-red-400 p-4 bg-red-50 dark:bg-red-900/20 rounded">
-              Error: {error}
-            </div>
-          ) : dataLoading ? (
-            <div className="flex items-center justify-center h-96">
-              <p className="text-gray-600 dark:text-gray-400">Loading blood glucose data...</p>
-            </div>
-          ) : chartData.length === 0 ? (
-            <div className="flex items-center justify-center h-96">
-              <p className="text-gray-600 dark:text-gray-400">No blood glucose data available yet.</p>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Blood Glucose Over Time
-              </h2>
-              <ResponsiveContainer width="100%" height={400}>
-                <AreaChart
-                  data={chartData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="colorGlucose" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    stroke="#e5e7eb"
-                  />
-                  <XAxis 
-                    dataKey="timestamp" 
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis 
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                    label={{ value: 'mg/dL', angle: -90, position: 'insideLeft' }}
-                    domain={[0, 200]}
-                  />
-                  {/* Reference lines for normal range */}
-                  <ReferenceLine 
-                    y={70} 
-                    stroke="#f59e0b" 
-                    strokeDasharray="3 3"
-                    label={{ value: 'Low (<70)', position: 'right', fill: '#f59e0b', fontSize: 10 }}
-                  />
-                  <ReferenceLine 
-                    y={140} 
-                    stroke="#10b981" 
-                    strokeDasharray="3 3"
-                    label={{ value: 'Normal (70-140)', position: 'right', fill: '#10b981', fontSize: 10 }}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #6366f1',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                    formatter={(value) => [`${value} mg/dL`, 'Blood Glucose']}
-                  />
-                  <Legend />
-                  <Area 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke="#6366f1" 
-                    strokeWidth={2}
-                    fillOpacity={1}
-                    fill="url(#colorGlucose)"
-                    name="Blood Glucose (mg/dL)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
+          <BloodGlucoseChart 
+            chartData={chartData}
+            period={period}
+            dataLoading={dataLoading}
+            error={error}
+          />
         </div>
 
         {/* Additional Info */}
-        <div className="mt-8 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 p-4 rounded-lg">
-          <h3 className="font-semibold text-indigo-900 dark:text-indigo-200">Blood Glucose Information</h3>
-          <ul className="mt-2 text-sm text-indigo-800 dark:text-indigo-300 space-y-1">
-            <li>• <strong>Normal Fasting:</strong> 70-100 mg/dL (before meals)</li>
-            <li>• <strong>Normal Post-Meal:</strong> Less than 140 mg/dL (2 hours after eating)</li>
-            <li>• <strong>Prediabetes:</strong> 100-125 mg/dL (fasting)</li>
-            <li>• <strong>Diabetes:</strong> 126 mg/dL or higher (fasting) on two separate tests</li>
-            <li>• <strong>Hypoglycemia:</strong> Below 70 mg/dL - seek immediate attention if symptoms occur</li>
-          </ul>
-        </div>
-
-        {/* Health Ranges */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-green-900 dark:text-green-200">Normal Range</h4>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">70-140</p>
-            <p className="text-sm text-green-700 dark:text-green-300 mt-1">mg/dL</p>
-          </div>
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-yellow-900 dark:text-yellow-200">Low (Hypoglycemia)</h4>
-            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-2">&lt; 70</p>
-            <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">mg/dL</p>
-          </div>
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-red-900 dark:text-red-200">High (Hyperglycemia)</h4>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-2">&gt; 140</p>
-            <p className="text-sm text-red-700 dark:text-red-300 mt-1">mg/dL (post-meal)</p>
-          </div>
-        </div>
+        <BloodGlucoseInfo />
       </main>
     </div>
   );
