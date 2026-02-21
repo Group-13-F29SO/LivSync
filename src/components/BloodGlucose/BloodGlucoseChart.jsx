@@ -87,13 +87,13 @@ export default function BloodGlucoseChart({ chartData, period, dataLoading, erro
               y={70} 
               stroke="#f59e0b" 
               strokeDasharray="3 3"
-              label={{ value: 'Low (<70)', position: 'right', fill: '#f59e0b', fontSize: 10 }}
+              label={{ value: 'Low (<70)', position: 'insideTopRight', fill: '#f59e0b', fontSize: 10 }}
             />
             <ReferenceLine 
               y={140} 
               stroke="#10b981" 
               strokeDasharray="3 3"
-              label={{ value: 'Normal (70-140)', position: 'right', fill: '#10b981', fontSize: 10 }}
+              label={{ value: 'Normal (70-140)', position: 'insideTopRight', fill: '#10b981', fontSize: 10 }}
             />
             <Tooltip 
               contentStyle={{
@@ -152,13 +152,13 @@ export default function BloodGlucoseChart({ chartData, period, dataLoading, erro
               y={70} 
               stroke="#f59e0b" 
               strokeDasharray="3 3"
-              label={{ value: 'Low (<70)', position: 'right', fill: '#f59e0b', fontSize: 10 }}
+              label={{ value: 'Low (<70)', position: 'insideTopRight', fill: '#f59e0b', fontSize: 10 }}
             />
             <ReferenceLine 
               y={140} 
               stroke="#10b981" 
               strokeDasharray="3 3"
-              label={{ value: 'Normal (70-140)', position: 'right', fill: '#10b981', fontSize: 10 }}
+              label={{ value: 'Normal (70-140)', position: 'insideTopRight', fill: '#10b981', fontSize: 10 }}
             />
             <Tooltip 
               contentStyle={{

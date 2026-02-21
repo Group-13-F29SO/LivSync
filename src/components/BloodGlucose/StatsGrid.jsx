@@ -6,7 +6,7 @@ export default function StatsGrid({ stats }) {
   if (!stats) return null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
       <StatsCard 
         label="Average Level" 
         value={stats.average} 
@@ -24,12 +24,6 @@ export default function StatsGrid({ stats }) {
         value={stats.min} 
         unit="mg/dL" 
         color="green"
-      />
-      <StatsCard 
-        label="Data Points" 
-        value={stats.count} 
-        unit="readings" 
-        color="purple"
       />
     </div>
   );
