@@ -4,20 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  RadialBarChart,
-  RadialBar,
-  PolarAngleAxis,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  Cell
-} from 'recharts';
+import StatCard from '@/components/Sleep/StatCard';
+import InfoCard from '@/components/Sleep/InfoCard';
+import RadialChartCard from '@/components/Sleep/RadialChartCard';
 
 export default function SleepChartPage() {
   const router = useRouter();
@@ -242,40 +231,30 @@ export default function SleepChartPage() {
         {/* Statistics Cards */}
         {stats && stats.latest > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Last Night's Sleep</p>
-              <p className={`text-3xl font-bold mt-2`} style={{ color: getSleepQuality(stats.latest).color }}>
-                {stats.latest}h
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                {getSleepQuality(stats.latest).label}
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Average Sleep</p>
-              <p className="text-3xl font-bold text-purple-600 mt-2">
-                {stats.average}h
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                {stats.count} nights tracked
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Best Sleep</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                {stats.max}h
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">longest night</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Sleep Quality</p>
-              <p className="text-3xl font-bold text-indigo-600 mt-2">
-                {stats.optimalPercentage}%
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                {stats.optimalNights}/{stats.count} optimal
-              </p>
-            </div>
+            <StatCard 
+              label="Last Night's Sleep" 
+              value={`${stats.latest}h`}
+              sublabel={getSleepQuality(stats.latest).label}
+              color={getSleepQuality(stats.latest).color}
+            />
+            <StatCard 
+              label="Average Sleep" 
+              value={`${stats.average}h`}
+              sublabel={`${stats.count} nights tracked`}
+              color="#a855f7"
+            />
+            <StatCard 
+              label="Best Sleep" 
+              value={`${stats.max}h`}
+              sublabel="longest night"
+              color="#10b981"
+            />
+            <StatCard 
+              label="Sleep Quality" 
+              value={`${stats.optimalPercentage}%`}
+              sublabel={`${stats.optimalNights}/${stats.count} optimal`}
+              color="#4f46e5"
+            />
           </div>
         )}
 
@@ -283,230 +262,58 @@ export default function SleepChartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Current Progress - Radial Chart */}
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-            {error ? (
-              <div className="text-red-600 dark:text-red-400 p-4 bg-red-50 dark:bg-red-900/20 rounded">
-                Error: {error}
-              </div>
-            ) : dataLoading ? (
-              <div className="flex items-center justify-center h-96">
-                <p className="text-gray-600 dark:text-gray-400">Loading sleep data...</p>
-              </div>
-            ) : !stats ? (
-              <div className="flex items-center justify-center h-96">
-                <p className="text-gray-600 dark:text-gray-400">No sleep data available yet.</p>
-              </div>
-            ) : stats.latest === 0 ? (
-              <div className="flex items-center justify-center h-96">
-                <div className="text-center">
-                  <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">No data synced for this date</p>
-                  <p className="text-gray-500 dark:text-gray-500 text-sm">Data will appear here once your device syncs sleep information</p>
-                </div>
-              </div>
-            ) : (
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  {selectedDate === new Date().toISOString().split('T')[0] ? "Last Night's Sleep" : 'Selected Date Sleep'}
-                </h2>
-                <ResponsiveContainer width="100%" height={300}>
-                  <RadialBarChart
-                    cx="50%"
-                    cy="50%"
-                    innerRadius="60%"
-                    outerRadius="90%"
-                    data={getRadialData()}
-                    startAngle={90}
-                    endAngle={-270}
-                  >
-                    <PolarAngleAxis
-                      type="number"
-                      domain={[0, 100]}
-                      angleAxisId={0}
-                      tick={false}
-                    />
-                    <RadialBar
-                      background
-                      dataKey="value"
-                      cornerRadius={10}
-                      fill={getRadialData()[0]?.fill}
-                    />
-                    <text
-                      x="50%"
-                      y="45%"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      className="text-5xl font-bold fill-gray-900 dark:fill-gray-100"
-                    >
-                      {stats.latest}
-                    </text>
-                    <text
-                      x="50%"
-                      y="55%"
-                      textAnchor="middle"
-                      dominantBaseline="middle"
-                      className="text-lg fill-gray-600 dark:fill-gray-400"
-                    >
-                      of {stats.recommendedMax}h goal
-                    </text>
-                  </RadialBarChart>
-                </ResponsiveContainer>
-                <div className="text-center mt-4">
-                  <p className="text-2xl font-bold" style={{ color: getRadialData()[0]?.fill }}>
-                    {stats.currentProgress}%
-                  </p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {stats.latest >= RECOMMENDED_MIN 
-                      ? '✨ Good sleep!' 
-                      : `${(RECOMMENDED_MIN - stats.latest).toFixed(1)}h short of optimal`
-                    }
-                  </p>
-                </div>
-              </div>
-            )}
+            <RadialChartCard
+              dataLoading={dataLoading}
+              error={error}
+              stats={stats}
+              selectedDate={selectedDate}
+              RECOMMENDED_MIN={RECOMMENDED_MIN}
+              getRadialData={getRadialData}
+            />
           </div>
 
           {/* Sleep Tips */}
-          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 p-6 rounded-lg shadow-lg border border-purple-200 dark:border-purple-800">
-            <h3 className="text-lg font-bold text-purple-900 dark:text-purple-200 mb-4">😴 Sleep Tips</h3>
-            <div className="space-y-4 text-sm">
-              <div className="flex items-start gap-3">
-                <span className="text-lg">🕐</span>
-                <div>
-                  <p className="font-semibold text-purple-900 dark:text-purple-200">Consistent Schedule</p>
-                  <p className="text-purple-800 dark:text-purple-300">Go to bed and wake up at the same time daily</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-lg">🌡️</span>
-                <div>
-                  <p className="font-semibold text-purple-900 dark:text-purple-200">Cool Environment</p>
-                  <p className="text-purple-800 dark:text-purple-300">Keep bedroom temperature between 60-67°F</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-lg">📱</span>
-                <div>
-                  <p className="font-semibold text-purple-900 dark:text-purple-200">Limit Screen Time</p>
-                  <p className="text-purple-800 dark:text-purple-300">Avoid screens 1 hour before bedtime</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-lg">☕</span>
-                <div>
-                  <p className="font-semibold text-purple-900 dark:text-purple-200">Avoid Caffeine</p>
-                  <p className="text-purple-800 dark:text-purple-300">No caffeine 6 hours before sleep</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Sleep History Chart */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
-          {chartData.length > 0 ? (
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Sleep History (Last 14 Days)
-              </h2>
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 5 }}
-                >
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    stroke="#e5e7eb"
-                    vertical={false}
-                  />
-                  <XAxis 
-                    dataKey="date"
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                    tick={{ fontSize: 11 }}
-                  />
-                  <YAxis 
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                    label={{ value: 'Hours', angle: -90, position: 'insideLeft' }}
-                    domain={[0, 12]}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '2px solid #6366f1',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                    formatter={(value) => [`${value}h`, 'Sleep']}
-                    labelFormatter={(label) => `Date: ${label}`}
-                  />
-                  <Bar 
-                    dataKey="value" 
-                    name="Sleep Duration"
-                    radius={[8, 8, 0, 0]}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={getBarColor(entry.value)} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              
-              {/* Legend */}
-              <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Optimal (7-9h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Extended (9-10h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-600 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Below Optimal (6-7h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Insufficient (5-6h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Critical (&lt;5h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-indigo-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Oversleep (&gt;10h)</span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-center h-96">
-              <p className="text-gray-600 dark:text-gray-400">No sleep history available yet.</p>
-            </div>
-          )}
+          <InfoCard
+            icon="😴"
+            title="Sleep Tips"
+            bgColor="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800"
+            textColor="text-purple-900 dark:text-purple-200"
+            items={[
+              { label: '🕐 Consistent Schedule', description: 'Go to bed and wake up at the same time daily' },
+              { label: '🌡️ Cool Environment', description: 'Keep bedroom temperature between 60-67°F' },
+              { label: '📱 Limit Screen Time', description: 'Avoid screens 1 hour before bedtime' },
+              { label: '☕ Avoid Caffeine', description: 'No caffeine 6 hours before sleep' }
+            ]}
+          />
         </div>
 
         {/* Sleep Quality Information */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 p-6 rounded-lg">
-            <h3 className="font-semibold text-green-900 dark:text-green-200 text-lg mb-3">💚 Sleep Benefits</h3>
-            <ul className="space-y-2 text-sm text-green-800 dark:text-green-300">
-              <li>• <strong>Memory & Learning:</strong> Consolidates memories and improves focus</li>
-              <li>• <strong>Physical Health:</strong> Repairs tissues and strengthens immune system</li>
-              <li>• <strong>Emotional Balance:</strong> Regulates mood and reduces stress</li>
-              <li>• <strong>Metabolism:</strong> Helps maintain healthy weight and blood sugar</li>
-            </ul>
-          </div>
+          <InfoCard
+            icon="💚"
+            title="Sleep Benefits"
+            bgColor="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800"
+            textColor="text-green-900 dark:text-green-200"
+            items={[
+              { label: 'Memory & Learning', description: 'Consolidates memories and improves focus' },
+              { label: 'Physical Health', description: 'Repairs tissues and strengthens immune system' },
+              { label: 'Emotional Balance', description: 'Regulates mood and reduces stress' },
+              { label: 'Metabolism', description: 'Helps maintain healthy weight and blood sugar' }
+            ]}
+          />
 
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800 p-6 rounded-lg">
-            <h3 className="font-semibold text-indigo-900 dark:text-indigo-200 text-lg mb-3">📊 Sleep Guidelines</h3>
-            <ul className="space-y-2 text-sm text-indigo-800 dark:text-indigo-300">
-              <li>• <strong>Adults (18-64):</strong> 7-9 hours recommended per night</li>
-              <li>• <strong>Quality matters:</strong> Uninterrupted sleep is more restorative</li>
-              <li>• <strong>Sleep cycles:</strong> About 90 minutes per cycle; 5-6 cycles optimal</li>
-              <li>• <strong>Individual needs:</strong> Some need more or less than average</li>
-            </ul>
-          </div>
+          <InfoCard
+            icon="📊"
+            title="Sleep Guidelines"
+            bgColor="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800"
+            textColor="text-indigo-900 dark:text-indigo-200"
+            items={[
+              { label: 'Adults (18-64)', description: '7-9 hours recommended per night' },
+              { label: 'Quality matters', description: 'Uninterrupted sleep is more restorative' },
+              { label: 'Sleep cycles', description: 'About 90 minutes per cycle; 5-6 cycles optimal' },
+              { label: 'Individual needs', description: 'Some need more or less than average' }
+            ]}
+          />
         </div>
       </main>
     </div>
