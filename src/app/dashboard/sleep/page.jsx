@@ -4,28 +4,23 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine,
-  Cell,
-  Area,
-  ComposedChart
-} from 'recharts';
+import StatCard from '@/components/Sleep/StatCard';
+import InfoCard from '@/components/Sleep/InfoCard';
+import RadialChartCard from '@/components/Sleep/RadialChartCard';
 
 export default function SleepChartPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  });
   const [chartData, setChartData] = useState([]);
   const [stats, setStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [actionMessage, setActionMessage] = useState(null);
 
   const RECOMMENDED_MIN = 7;
   const RECOMMENDED_MAX = 9;
@@ -40,7 +35,7 @@ export default function SleepChartPage() {
     const fetchSleepData = async () => {
       try {
         setDataLoading(true);
-        const response = await fetch('/api/biometrics/sleep');
+        const response = await fetch(`/api/biometrics/sleep?date=${selectedDate}`);
         
         if (!response.ok) {
           throw new Error('Failed to fetch sleep data');
@@ -60,16 +55,104 @@ export default function SleepChartPage() {
     if (user) {
       fetchSleepData();
     }
-  }, [user]);
+  }, [user, selectedDate]);
 
-  // Get bar color and quality label based on sleep hours
+  // Get radial chart data for current progress
+  const getRadialData = () => {
+    if (!stats) return [];
+    
+    const progress = stats.currentProgress || 0;
+    
+    return [
+      {
+        name: 'Progress',
+        value: progress,
+        fill: progress >= 100 ? '#10b981' : progress >= 85 ? '#3b82f6' : progress >= 70 ? '#f59e0b' : '#ef4444'
+      }
+    ];
+  };
+
+  // Get quality label and color based on sleep hours
   const getSleepQuality = (hours) => {
-    if (hours < 5) return { color: '#ef4444', quality: 'Poor', label: 'Critical' };
-    if (hours < 6) return { color: '#f97316', quality: 'Low', label: 'Insufficient' };
-    if (hours < 7) return { color: '#f59e0b', quality: 'Fair', label: 'Below Optimal' };
-    if (hours >= 7 && hours <= 9) return { color: '#10b981', quality: 'Good', label: 'Optimal' };
-    if (hours > 9 && hours <= 10) return { color: '#3b82f6', quality: 'Good', label: 'Extended' };
-    return { color: '#6366f1', quality: 'Fair', label: 'Oversleep' };
+    if (hours < 5) return { color: '#ef4444', label: 'Critical' };
+    if (hours < 6) return { color: '#f97316', label: 'Insufficient' };
+    if (hours < 7) return { color: '#f59e0b', label: 'Below Optimal' };
+    if (hours >= 7 && hours <= 9) return { color: '#10b981', label: 'Optimal' };
+    if (hours > 9 && hours <= 10) return { color: '#3b82f6', label: 'Extended' };
+    return { color: '#6366f1', label: 'Oversleep' };
+  };
+
+  // Get bar color based on sleep hours
+  const getBarColor = (value) => {
+    return getSleepQuality(value).color;
+  };
+
+  // Handle delete sleep data
+  const handleDeleteData = async () => {
+    if (!confirm(`Are you sure you want to delete sleep data for ${selectedDate}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setActionLoading(true);
+      setActionMessage(null);
+      
+      const response = await fetch('/api/biometrics/sleep/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: selectedDate })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete sleep data');
+      }
+
+      const result = await response.json();
+      setActionMessage({ type: 'success', text: result.message });
+      
+      // Refresh the data
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const refreshResponse = await fetch(`/api/biometrics/sleep?date=${selectedDate}`);
+      const refreshResult = await refreshResponse.json();
+      setChartData(refreshResult.data);
+      setStats(refreshResult.stats);
+    } catch (err) {
+      setActionMessage({ type: 'error', text: err.message });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Handle generate sleep data
+  const handleGenerateData = async () => {
+    try {
+      setActionLoading(true);
+      setActionMessage(null);
+      
+      const response = await fetch('/api/biometrics/sleep/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: selectedDate })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate sleep data');
+      }
+
+      const result = await response.json();
+      setActionMessage({ type: 'success', text: result.message });
+      
+      // Refresh the data
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const refreshResponse = await fetch(`/api/biometrics/sleep?date=${selectedDate}`);
+      const refreshResult = await refreshResponse.json();
+      setChartData(refreshResult.data);
+      setStats(refreshResult.stats);
+    } catch (err) {
+      setActionMessage({ type: 'error', text: err.message });
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   if (isLoading || !user) {
@@ -85,15 +168,17 @@ export default function SleepChartPage() {
       <Navbar />
 
       {/* Main Content Area */}
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 p-8 ml-20 overflow-auto bg-purple-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div>
-            <h1 className="inline-block text-3xl font-bold bg-gradient-to-br from-indigo-600 via-purple-500 to-violet-400 bg-clip-text text-transparent">
+            <h1 className="inline-block text-3xl font-bold bg-gradient-to-br from-purple-600 via-indigo-500 to-blue-400 bg-clip-text text-transparent">
               Sleep Tracker
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Monitor your sleep duration and quality patterns
+              {selectedDate === new Date().toISOString().split('T')[0] 
+                ? 'Monitor your sleep patterns and quality' 
+                : `Viewing sleep data for ${new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`}
             </p>
           </div>
           <button
@@ -104,213 +189,131 @@ export default function SleepChartPage() {
           </button>
         </div>
 
-        {/* Statistics Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Last Night</p>
-              <p className={`text-3xl font-bold mt-2`} style={{ color: getSleepQuality(stats.latest).color }}>
-                {stats.latest}h
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                {getSleepQuality(stats.latest).label}
-              </p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Average Sleep</p>
-              <p className="text-3xl font-bold text-purple-600 mt-2">
-                {stats.average}h
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">per night</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Longest Sleep</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">
-                {stats.max}h
-              </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">best night</p>
-            </div>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
-              <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Optimal Sleep</p>
-              <p className="text-3xl font-bold text-indigo-600 mt-2">{stats.optimalPercentage}%</p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                {stats.optimalSleep} of {stats.count} nights
-              </p>
-            </div>
+        {/* Date Picker */}
+        <div className="flex flex-col gap-2 mb-8">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Select Date:</label>
+          <div className="flex gap-3 items-end">
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <button
+              onClick={handleDeleteData}
+              disabled={actionLoading}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:disabled:bg-red-800 text-white font-medium rounded-lg transition-colors"
+            >
+              {actionLoading ? 'Processing...' : 'Delete Data'}
+            </button>
+            <button
+              onClick={handleGenerateData}
+              disabled={actionLoading}
+              className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:disabled:bg-green-800 text-white font-medium rounded-lg transition-colors"
+            >
+              {actionLoading ? 'Processing...' : 'Generate Data'}
+            </button>
+          </div>
+        </div>
+
+        {/* Action Message */}
+        {actionMessage && (
+          <div className={`mb-6 p-4 rounded-lg ${
+            actionMessage.type === 'success' 
+              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400' 
+              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
+          }`}>
+            {actionMessage.text}
           </div>
         )}
 
-        {/* Chart Section */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-          {error ? (
-            <div className="text-red-600 dark:text-red-400 p-4 bg-red-50 dark:bg-red-900/20 rounded">
-              Error: {error}
-            </div>
-          ) : dataLoading ? (
-            <div className="flex items-center justify-center h-96">
-              <p className="text-gray-600 dark:text-gray-400">Loading sleep data...</p>
-            </div>
-          ) : chartData.length === 0 ? (
-            <div className="flex items-center justify-center h-96">
-              <p className="text-gray-600 dark:text-gray-400">No sleep data available yet.</p>
-            </div>
-          ) : (
-            <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-                Sleep Duration Over Time
-              </h2>
-              <ResponsiveContainer width="100%" height={400}>
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    stroke="#e5e7eb"
-                  />
-                  <XAxis 
-                    dataKey="timestamp" 
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                  />
-                  <YAxis 
-                    stroke="#6b7280"
-                    style={{ fontSize: '12px' }}
-                    label={{ value: 'Hours', angle: -90, position: 'insideLeft' }}
-                    domain={[0, 12]}
-                  />
-                  {/* Reference lines for optimal range */}
-                  <ReferenceLine 
-                    y={RECOMMENDED_MIN} 
-                    stroke="#10b981" 
-                    strokeDasharray="3 3"
-                    strokeWidth={2}
-                    label={{ 
-                      value: `Optimal Range`, 
-                      position: 'right', 
-                      fill: '#10b981', 
-                      fontSize: 11,
-                      fontWeight: 'bold'
-                    }}
-                  />
-                  <ReferenceLine 
-                    y={RECOMMENDED_MAX} 
-                    stroke="#10b981" 
-                    strokeDasharray="3 3"
-                    strokeWidth={2}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: '#1f2937',
-                      border: '1px solid #6366f1',
-                      borderRadius: '8px',
-                      color: '#fff'
-                    }}
-                    formatter={(value) => [value + ' hours', 'Sleep Duration']}
-                    labelFormatter={(label) => `Date: ${label}`}
-                  />
-                  <Legend />
-                  <Bar 
-                    dataKey="value" 
-                    name="Sleep Hours"
-                    radius={[8, 8, 0, 0]}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={getSleepQuality(entry.value).color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              
-              {/* Legend for colors */}
-              <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Optimal (7-9h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Extended (9-10h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Below Optimal (6-7h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-orange-600 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Insufficient (5-6h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Critical (&lt;5h)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-indigo-500 rounded"></div>
-                  <span className="text-gray-600 dark:text-gray-400">Oversleep (&gt;10h)</span>
-                </div>
-              </div>
-            </div>
-          )}
+        {/* Statistics Cards */}
+        {stats && stats.latest > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <StatCard 
+              label="Last Night's Sleep" 
+              value={`${stats.latest}h`}
+              sublabel={getSleepQuality(stats.latest).label}
+              color={getSleepQuality(stats.latest).color}
+            />
+            <StatCard 
+              label="Average Sleep" 
+              value={`${stats.average}h`}
+              sublabel={`${stats.count} nights tracked`}
+              color="#a855f7"
+            />
+            <StatCard 
+              label="Best Sleep" 
+              value={`${stats.max}h`}
+              sublabel="longest night"
+              color="#10b981"
+            />
+            <StatCard 
+              label="Sleep Quality" 
+              value={`${stats.optimalPercentage}%`}
+              sublabel={`${stats.optimalNights}/${stats.count} optimal`}
+              color="#4f46e5"
+            />
+          </div>
+        )}
+
+        {/* Radial Progress Chart & History */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Current Progress - Radial Chart */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+            <RadialChartCard
+              dataLoading={dataLoading}
+              error={error}
+              stats={stats}
+              selectedDate={selectedDate}
+              RECOMMENDED_MIN={RECOMMENDED_MIN}
+              getRadialData={getRadialData}
+            />
+          </div>
+
+          {/* Sleep Tips */}
+          <InfoCard
+            icon="😴"
+            title="Sleep Tips"
+            bgColor="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800"
+            textColor="text-purple-900 dark:text-purple-200"
+            items={[
+              { label: '🕐 Consistent Schedule', description: 'Go to bed and wake up at the same time daily' },
+              { label: '🌡️ Cool Environment', description: 'Keep bedroom temperature between 60-67°F' },
+              { label: '📱 Limit Screen Time', description: 'Avoid screens 1 hour before bedtime' },
+              { label: '☕ Avoid Caffeine', description: 'No caffeine 6 hours before sleep' }
+            ]}
+          />
         </div>
 
-        {/* Sleep Tips */}
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 p-6 rounded-lg">
-            <h3 className="font-semibold text-indigo-900 dark:text-indigo-200 text-lg mb-3">😴 Better Sleep Tips</h3>
-            <ul className="space-y-2 text-sm text-indigo-800 dark:text-indigo-300">
-              <li>• <strong>Consistent Schedule:</strong> Go to bed and wake up at the same time daily</li>
-              <li>• <strong>Cool Environment:</strong> Keep bedroom temperature between 60-67°F (15-19°C)</li>
-              <li>• <strong>Limit Screen Time:</strong> Avoid screens 1 hour before bedtime</li>
-              <li>• <strong>Relaxation Routine:</strong> Practice meditation or light reading</li>
-              <li>• <strong>Avoid Caffeine:</strong> No caffeine 6 hours before sleep</li>
-            </ul>
-          </div>
+        {/* Sleep Quality Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <InfoCard
+            icon="💚"
+            title="Sleep Benefits"
+            bgColor="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800"
+            textColor="text-green-900 dark:text-green-200"
+            items={[
+              { label: 'Memory & Learning', description: 'Consolidates memories and improves focus' },
+              { label: 'Physical Health', description: 'Repairs tissues and strengthens immune system' },
+              { label: 'Emotional Balance', description: 'Regulates mood and reduces stress' },
+              { label: 'Metabolism', description: 'Helps maintain healthy weight and blood sugar' }
+            ]}
+          />
 
-          <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 p-6 rounded-lg">
-            <h3 className="font-semibold text-purple-900 dark:text-purple-200 text-lg mb-3">💡 Sleep Benefits</h3>
-            <ul className="space-y-2 text-sm text-purple-800 dark:text-purple-300">
-              <li>• <strong>Memory & Learning:</strong> Consolidates memories and improves focus</li>
-              <li>• <strong>Physical Health:</strong> Repairs tissues and strengthens immune system</li>
-              <li>• <strong>Emotional Balance:</strong> Regulates mood and reduces stress</li>
-              <li>• <strong>Metabolism:</strong> Helps maintain healthy weight and blood sugar</li>
-              <li>• <strong>Heart Health:</strong> Reduces risk of cardiovascular disease</li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Sleep Quality Categories */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-red-900 dark:text-red-200">Sleep Deprived</h4>
-            <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-2">&lt; 6h</p>
-            <p className="text-sm text-red-700 dark:text-red-300 mt-1">Poor quality</p>
-          </div>
-          <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-orange-900 dark:text-orange-200">Suboptimal</h4>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-2">6-7h</p>
-            <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">Below recommended</p>
-          </div>
-          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-green-900 dark:text-green-200">Optimal</h4>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-2">7-9h</p>
-            <p className="text-sm text-green-700 dark:text-green-300 mt-1">Recommended range</p>
-          </div>
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
-            <h4 className="font-semibold text-blue-900 dark:text-blue-200">Extended</h4>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-2">&gt; 9h</p>
-            <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">May vary by need</p>
-          </div>
-        </div>
-
-        {/* Additional Info */}
-        <div className="mt-6 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800 p-4 rounded-lg">
-          <h3 className="font-semibold text-indigo-900 dark:text-indigo-200">Sleep Quality Information</h3>
-          <div className="mt-2 text-sm text-indigo-800 dark:text-indigo-300 space-y-1">
-            <p>• <strong>Adults (18-64):</strong> 7-9 hours recommended per night</p>
-            <p>• <strong>Quality matters:</strong> Uninterrupted sleep in a dark, quiet environment is more restorative</p>
-            <p>• <strong>Sleep debt:</strong> Chronic sleep deprivation accumulates and affects health over time</p>
-            <p>• <strong>Individual needs:</strong> Some people naturally need more or less sleep than average</p>
-          </div>
+          <InfoCard
+            icon="📊"
+            title="Sleep Guidelines"
+            bgColor="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800"
+            textColor="text-indigo-900 dark:text-indigo-200"
+            items={[
+              { label: 'Adults (18-64)', description: '7-9 hours recommended per night' },
+              { label: 'Quality matters', description: 'Uninterrupted sleep is more restorative' },
+              { label: 'Sleep cycles', description: 'About 90 minutes per cycle; 5-6 cycles optimal' },
+              { label: 'Individual needs', description: 'Some need more or less than average' }
+            ]}
+          />
         </div>
       </main>
     </div>
