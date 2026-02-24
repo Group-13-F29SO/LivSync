@@ -10,13 +10,13 @@ export default function GoalCard({
   currentValue,
   targetValue,
   unit,
+  frequency = 'daily',
   iconBgColor = 'bg-indigo-100',
   iconColor = 'text-indigo-600',
   onUpdateTarget,
 }) {
   const [newTarget, setNewTarget] = useState(String(targetValue ?? ''));
 
-  // Keep input synced if targetValue changes after fetch/PATCH
   useEffect(() => {
     setNewTarget(String(targetValue ?? ''));
   }, [targetValue]);
@@ -28,11 +28,7 @@ export default function GoalCard({
   const handleUpdate = async () => {
     const next = Number(newTarget);
     if (!Number.isFinite(next) || next <= 0) return;
-
-    // call parent handler (PATCH + state update)
-    if (typeof onUpdateTarget === 'function') {
-      await onUpdateTarget(next);
-    }
+    if (typeof onUpdateTarget === 'function') await onUpdateTarget(next);
   };
 
   return (
@@ -44,14 +40,10 @@ export default function GoalCard({
         </div>
 
         <div className="flex-1">
-          <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">
-            {title ?? ''}
-          </h3>
+          <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">{title}</h3>
           <div className="flex items-center gap-1 mt-1">
             <FlameIcon className="w-4 h-4 text-orange-500" />
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              {Number(streak) || 0} day streak
-            </span>
+            <span className="text-sm text-gray-500 dark:text-gray-400">{Number(streak) || 0} day streak</span>
           </div>
         </div>
       </div>
@@ -62,9 +54,7 @@ export default function GoalCard({
           <span className="text-5xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">
             {safeCurrent}
           </span>
-          <span className="text-xl text-gray-400 dark:text-gray-500">
-            / {safeTarget} {unit}
-          </span>
+          <span className="text-xl text-gray-400 dark:text-gray-500">/ {safeTarget} {unit}</span>
         </div>
       </div>
 
@@ -84,15 +74,15 @@ export default function GoalCard({
       {/* Input & Action Area */}
       <div className="mt-6 pt-4 border-t border-slate-100 dark:border-gray-800">
         <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 block">
-          Daily Target
+          {frequency === 'weekly' ? 'Weekly Target' : 'Daily Target'}
         </label>
+
         <div className="flex gap-2">
           <input
             type="number"
             value={newTarget}
             onChange={(e) => setNewTarget(e.target.value)}
-            className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400"
-            placeholder={String(targetValue ?? '')}
+            className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
           />
           <button
             onClick={handleUpdate}

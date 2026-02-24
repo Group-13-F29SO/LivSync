@@ -1,153 +1,180 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import GoalCard from '@/components/GoalCard/GoalCard';
-import { FootprintsIcon, FlameIcon, DropIcon, MoonIcon, PlusIcon } from '@/components/Icons/GoalIcons';
+import { PlusIcon } from '@/components/Icons/GoalIcons';
 import { useAuth } from '@/hooks/useAuth';
+import { GOAL_CATALOG } from '@/constants/goalCatalog';
 
 export default function GoalsPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
 
-  // Prefer patient_id if your auth provides it; otherwise fallback to id
-  const patientId = useMemo(() => {
-    return user?.patient_id || user?.id || null;
-  }, [user]);
+  const patientId = useMemo(() => user?.patient_id || user?.id || null, [user]);
 
-  const [goalsData, setGoalsData] = useState([]);
+  const [cards, setCards] = useState([]);
+
+  // Add Goal modal state
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [selectedMetric, setSelectedMetric] = useState('workouts');
+  const [newTarget, setNewTarget] = useState('');
+  const [newFrequency, setNewFrequency] = useState('daily');
+  const [addError, setAddError] = useState('');
 
   useEffect(() => {
-    if (!isLoading && !user) {
-      router.push('/login');
-    }
+    if (!isLoading && !user) router.push('/login');
   }, [user, isLoading, router]);
 
-  // Base UI definition (keeps your same styling/labels)
-  const baseCards = useMemo(
-    () => [
-      {
-        metric_type: 'steps',
-        title: 'Daily Steps',
-        icon: FootprintsIcon,
-        streak: 12,
-        currentValue: 7834,
-        defaultTarget: 10000,
-        unit: 'steps',
-        iconBgColor: 'bg-blue-100',
-        iconColor: 'text-blue-600',
-      },
-      {
-        metric_type: 'calories',
-        title: 'Calories Burned',
-        icon: FlameIcon,
-        streak: 8,
-        currentValue: 1847,
-        defaultTarget: 2200,
-        unit: 'kcal',
-        iconBgColor: 'bg-orange-100',
-        iconColor: 'text-orange-600',
-      },
-      {
-        metric_type: 'water',
-        title: 'Water Intake',
-        icon: DropIcon,
-        streak: 15,
-        currentValue: 6,
-        defaultTarget: 8,
-        unit: 'glasses',
-        iconBgColor: 'bg-cyan-100',
-        iconColor: 'text-cyan-600',
-      },
-      {
-        metric_type: 'sleep',
-        title: 'Sleep Duration',
-        icon: MoonIcon,
-        streak: 5,
-        currentValue: 7.5,
-        defaultTarget: 8,
-        unit: 'hours',
-        iconBgColor: 'bg-indigo-100',
-        iconColor: 'text-indigo-600',
-      },
-    ],
-    []
-  );
+  const buildCardsFromDb = useCallback((dbGoals) => {
+    const byMetric = new Map(dbGoals.map((g) => [g.metric_type, g]));
 
-  // Load goals from DB and merge into the base UI cards
-  useEffect(() => {
-    if (!patientId) return;
-
-    const loadGoals = async () => {
-      try {
-        const res = await fetch(`/api/biometrics/goals?patientId=${patientId}`, { cache: 'no-store' });
-        const data = await res.json();
-
-        const rows = Array.isArray(data?.goals) ? data.goals : [];
-        const byMetric = new Map(rows.map((g) => [g.metric_type, g]));
-
-        const merged = baseCards.map((card, idx) => {
-          const dbGoal = byMetric.get(card.metric_type);
-
-          return {
-            // UI fields
-            id: idx + 1,
-            title: card.title,
-            icon: card.icon,
-            streak: card.streak,
-            currentValue: card.currentValue,
-            unit: card.unit,
-            iconBgColor: card.iconBgColor,
-            iconColor: card.iconColor,
-
-            // DB fields
-            goalId: dbGoal?.id ?? null, // primary key in goals table
-            metric_type: card.metric_type,
-            targetValue: dbGoal?.target_value ?? card.defaultTarget,
-          };
-        });
-
-        setGoalsData(merged);
-      } catch (e) {
-        console.error('Failed to load goals:', e);
-      }
+    // These are placeholders until you implement logging.
+    // Core goals show your existing demo current values; add-ons show 0 for now.
+    const defaultCurrentByMetric = {
+      steps: 7834,
+      calories: 1847,
+      water: 6,
+      sleep: 7.5,
+      workouts: 0,
+      protein: 0,
+      medication: 0,
     };
 
-    loadGoals();
-  }, [patientId, baseCards]);
+    // Keep streak placeholder values (you can calculate later)
+    const defaultStreakByMetric = {
+      steps: 12,
+      calories: 8,
+      water: 15,
+      sleep: 5,
+      workouts: 0,
+      protein: 0,
+      medication: 0,
+    };
 
-  // PATCH update target in DB, then update UI state immediately
-  const updateTarget = async ({ goalId, metric_type, targetValue }) => {
-    if (!patientId) return;
+    const toRender = [];
 
-    // If goalId doesn't exist, it means DB row missing; for now we bail
-    // (Later we can implement "create if missing")
-    if (!goalId) {
-      console.warn('No goalId found for', metric_type);
-      return;
+    for (const item of GOAL_CATALOG) {
+      const row = byMetric.get(item.metric_type);
+
+      if (item.core) {
+        // core always shown
+        toRender.push({
+          metric_type: item.metric_type,
+          goalId: row?.id ?? null,
+          title: item.title,
+          icon: item.icon,
+          unit: item.unit,
+          iconBgColor: item.iconBgColor,
+          iconColor: item.iconColor,
+          streak: defaultStreakByMetric[item.metric_type] ?? 0,
+          currentValue: defaultCurrentByMetric[item.metric_type] ?? 0,
+          targetValue: row?.target_value ?? item.defaultTarget,
+          frequency: row?.frequency ?? item.defaultFrequency ?? 'daily',
+        });
+      } else {
+        // add-ons only shown if they exist in DB
+        if (row) {
+          toRender.push({
+            metric_type: item.metric_type,
+            goalId: row.id,
+            title: item.title,
+            icon: item.icon,
+            unit: item.unit,
+            iconBgColor: item.iconBgColor,
+            iconColor: item.iconColor,
+            streak: defaultStreakByMetric[item.metric_type] ?? 0,
+            currentValue: defaultCurrentByMetric[item.metric_type] ?? 0,
+            targetValue: row.target_value ?? item.defaultTarget,
+            frequency: row.frequency ?? item.defaultFrequency ?? 'daily',
+          });
+        }
+      }
     }
+
+    setCards(toRender);
+  }, []);
+
+  const fetchGoals = useCallback(async () => {
+    if (!patientId) return;
+    const res = await fetch(`/api/biometrics/goals?patientId=${patientId}`, { cache: 'no-store' });
+    const data = await res.json().catch(() => ({}));
+    const goals = Array.isArray(data?.goals) ? data.goals : [];
+    buildCardsFromDb(goals);
+  }, [patientId, buildCardsFromDb]);
+
+  useEffect(() => {
+    if (patientId) fetchGoals();
+  }, [patientId, fetchGoals]);
+
+  const updateTarget = async (goalId, targetValue) => {
+    if (!patientId || !goalId) return;
 
     const res = await fetch('/api/biometrics/goals', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        goalId,
-        patientId,
-        targetValue,
-      }),
+      body: JSON.stringify({ goalId, patientId, targetValue }),
     });
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      console.error('Failed to update goal:', err);
+      console.error(err);
+      alert(err?.error || 'Failed to update target');
       return;
     }
 
-    // Update local UI state so it reflects immediately
-    setGoalsData((prev) =>
-      prev.map((g) => (g.goalId === goalId ? { ...g, targetValue: Number(targetValue) } : g))
+    setCards((prev) =>
+      prev.map((c) => (c.goalId === goalId ? { ...c, targetValue: Number(targetValue) } : c))
     );
+  };
+
+  const availableAddOns = useMemo(() => {
+    const existing = new Set(cards.map((c) => c.metric_type));
+    return GOAL_CATALOG.filter((g) => !g.core && !existing.has(g.metric_type));
+  }, [cards]);
+
+  const openAdd = () => {
+    setAddError('');
+
+    const first = availableAddOns[0]?.metric_type || 'workouts';
+    const item = GOAL_CATALOG.find((g) => g.metric_type === first);
+
+    setSelectedMetric(first);
+    setNewTarget(String(item?.defaultTarget ?? ''));
+    setNewFrequency(item?.defaultFrequency || 'daily'); // ✅ workouts defaults to weekly
+    setIsAddOpen(true);
+  };
+
+  const submitAdd = async () => {
+    setAddError('');
+
+    const target = Number(newTarget);
+    if (!Number.isFinite(target) || target <= 0) {
+      setAddError('Target must be a positive number.');
+      return;
+    }
+
+    const res = await fetch('/api/biometrics/goals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        patientId,
+        metricType: selectedMetric,
+        targetValue: target,
+        frequency: newFrequency,
+      }),
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setAddError(data?.error || 'Failed to add goal.');
+      return;
+    }
+
+    setIsAddOpen(false);
+    await fetchGoals();
   };
 
   if (isLoading || !user) {
@@ -173,7 +200,7 @@ export default function GoalsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {goalsData.map((goal) => (
+          {cards.map((goal) => (
             <GoalCard
               key={goal.metric_type}
               title={goal.title}
@@ -182,32 +209,110 @@ export default function GoalsPage() {
               currentValue={goal.currentValue}
               targetValue={goal.targetValue}
               unit={goal.unit}
+              frequency={goal.frequency}
               iconBgColor={goal.iconBgColor}
               iconColor={goal.iconColor}
-              onUpdateTarget={(newTarget) =>
-                updateTarget({
-                  goalId: goal.goalId,
-                  metric_type: goal.metric_type,
-                  targetValue: newTarget,
-                })
-              }
+              onUpdateTarget={(newTargetValue) => updateTarget(goal.goalId, newTargetValue)}
             />
           ))}
         </div>
 
         <button
           type="button"
-          className="w-full bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-8 flex items-center justify-center gap-3 hover:border-gray-400 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group"
-          onClick={() => {
-            // Not implemented yet (we can add a modal + POST later)
-            alert('Add New Goal is not wired yet.');
-          }}
+          onClick={openAdd}
+          disabled={availableAddOns.length === 0}
+          className="w-full bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-8 flex items-center justify-center gap-3 hover:border-gray-400 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <PlusIcon className="w-6 h-6 text-gray-400 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400" />
           <span className="text-gray-500 dark:text-gray-400 font-medium group-hover:text-gray-600 dark:group-hover:text-gray-300">
-            Add New Goal
+            {availableAddOns.length === 0 ? 'All goals added' : 'Add New Goal'}
           </span>
         </button>
+
+        {isAddOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl border border-slate-200 dark:border-gray-800 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Add New Goal</h2>
+                <button
+                  className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+                  onClick={() => setIsAddOpen(false)}
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 block">
+                    Goal Type
+                  </label>
+                  <select
+                    value={selectedMetric}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      const item = GOAL_CATALOG.find((g) => g.metric_type === next);
+
+                      setSelectedMetric(next);
+                      setNewTarget(String(item?.defaultTarget ?? ''));
+                      setNewFrequency(item?.defaultFrequency || 'daily');
+                    }}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
+                  >
+                    {availableAddOns.map((g) => (
+                      <option key={g.metric_type} value={g.metric_type}>
+                        {g.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 block">
+                    Target
+                  </label>
+                  <input
+                    type="number"
+                    value={newTarget}
+                    onChange={(e) => setNewTarget(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2 block">
+                    Frequency
+                  </label>
+                  <select
+                    value={newFrequency}
+                    onChange={(e) => setNewFrequency(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-sm"
+                  >
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                  </select>
+                </div>
+
+                {addError && <p className="text-sm text-red-500">{addError}</p>}
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    onClick={() => setIsAddOpen(false)}
+                    className="flex-1 px-4 py-2 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-sm rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={submitAdd}
+                    className="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-lg transition-colors"
+                  >
+                    Add Goal
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
