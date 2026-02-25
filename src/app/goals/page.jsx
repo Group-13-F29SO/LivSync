@@ -98,6 +98,15 @@ export default function GoalsPage() {
 
   const fetchGoals = useCallback(async () => {
     if (!patientId) return;
+
+    // Initialize core goals if not already done
+    await fetch(`/api/biometrics/goals/init`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patientId }),
+    }).catch(console.error);
+
+    // Then fetch all goals
     const res = await fetch(`/api/biometrics/goals?patientId=${patientId}`, { cache: 'no-store' });
     const data = await res.json().catch(() => ({}));
     const goals = Array.isArray(data?.goals) ? data.goals : [];
