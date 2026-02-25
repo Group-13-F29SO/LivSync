@@ -95,8 +95,18 @@ export async function GET(req) {
     // Get latest reading for current progress
     const latest = values[values.length - 1] || 0;
 
-    // Calculate goal achievement (assuming 8 glasses goal)
-    const goal = 8;
+    // Fetch the user's water goal
+    const waterGoal = await prisma.goals.findFirst({
+      where: {
+        patient_id: patientId,
+        metric_type: 'water'
+      },
+      select: {
+        target_value: true
+      }
+    });
+
+    const goal = waterGoal?.target_value || 8; // Default to 8 if no goal set
     const goalAchievement = latest >= goal ? 1 : 0;
     const goalPercentage = latest >= goal ? 100 : ((latest / goal) * 100).toFixed(1);
     const currentProgress = ((latest / goal) * 100).toFixed(1);
@@ -113,7 +123,8 @@ export async function GET(req) {
           latest,
           goalAchievement,
           goalPercentage: Number(goalPercentage),
-          currentProgress: Number(currentProgress)
+          currentProgress: Number(currentProgress),
+          goal
         }
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }

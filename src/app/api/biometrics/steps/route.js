@@ -277,6 +277,19 @@ export async function GET(req) {
       }
     }
 
+    // Fetch the user's steps goal
+    const stepsGoal = await prisma.goals.findFirst({
+      where: {
+        patient_id: patientId,
+        metric_type: 'steps'
+      },
+      select: {
+        target_value: true
+      }
+    });
+
+    const goalValue = stepsGoal?.target_value || 10000; // Default to 10000 if no goal set
+
     // Calculate statistics based on the fetched data
     let statsToReturn;
     
@@ -294,8 +307,8 @@ export async function GET(req) {
         average: Number(avgHourly),
         max: maxHourly,
         min: Math.min(...hourlyValues.filter(v => v > 0)) || 0,
-        goalAchieved: totalSteps >= 10000,
-        goal: 10000
+        goalAchieved: totalSteps >= goalValue,
+        goal: goalValue
       };
     } else if (period === 'year') {
       // For year period, calculate stats based on monthly averages
@@ -309,7 +322,8 @@ export async function GET(req) {
         max: maxMonthly,
         min: Math.min(...monthlyValues.filter(v => v > 0)) || 0,
         monthsWithData: monthlyValues.filter(v => v > 0).length,
-        totalMonths: monthlyValues.length
+        totalMonths: monthlyValues.length,
+        goal: goalValue
       };
     } else {
       // For week/month periods, calculate stats from daily aggregates
@@ -323,7 +337,8 @@ export async function GET(req) {
         max: maxDaily,
         min: Math.min(...dailyValues.filter(v => v > 0)) || 0,
         daysWithData: dailyValues.filter(v => v > 0).length,
-        totalDays: dailyValues.length
+        totalDays: dailyValues.length,
+        goal: goalValue
       };
     }
 

@@ -250,10 +250,10 @@ export default function SleepChartPage() {
               color="#10b981"
             />
             <StatCard 
-              label="Sleep Quality" 
-              value={`${stats.optimalPercentage}%`}
-              sublabel={`${stats.optimalNights}/${stats.count} optimal`}
-              color="#4f46e5"
+              label="Goal Achievement" 
+              value={stats.goalAchieved ? 'Achieved' : 'Not Met'}
+              sublabel={`${stats.goal}h/night goal`}
+              color={stats.goalAchieved ? '#10b981' : '#ef4444'}
             />
           </div>
         )}
