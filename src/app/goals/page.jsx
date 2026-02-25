@@ -27,20 +27,8 @@ export default function GoalsPage() {
     if (!isLoading && !user) router.push('/login');
   }, [user, isLoading, router]);
 
-  const buildCardsFromDb = useCallback((dbGoals) => {
+  const buildCardsFromDb = useCallback((dbGoals, todayValues = {}) => {
     const byMetric = new Map(dbGoals.map((g) => [g.metric_type, g]));
-
-    // These are placeholders until you implement logging.
-    // Core goals show your existing demo current values; add-ons show 0 for now.
-    const defaultCurrentByMetric = {
-      steps: 7834,
-      calories: 1847,
-      water: 6,
-      sleep: 7.5,
-      workouts: 0,
-      protein: 0,
-      medication: 0,
-    };
 
     // Keep streak placeholder values (you can calculate later)
     const defaultStreakByMetric = {
@@ -69,7 +57,7 @@ export default function GoalsPage() {
           iconBgColor: item.iconBgColor,
           iconColor: item.iconColor,
           streak: defaultStreakByMetric[item.metric_type] ?? 0,
-          currentValue: defaultCurrentByMetric[item.metric_type] ?? 0,
+          currentValue: todayValues[item.metric_type] ?? 0,
           targetValue: row?.target_value ?? item.defaultTarget,
           frequency: row?.frequency ?? item.defaultFrequency ?? 'daily',
         });
@@ -85,7 +73,7 @@ export default function GoalsPage() {
             iconBgColor: item.iconBgColor,
             iconColor: item.iconColor,
             streak: defaultStreakByMetric[item.metric_type] ?? 0,
-            currentValue: defaultCurrentByMetric[item.metric_type] ?? 0,
+            currentValue: todayValues[item.metric_type] ?? 0,
             targetValue: row.target_value ?? item.defaultTarget,
             frequency: row.frequency ?? item.defaultFrequency ?? 'daily',
           });
@@ -106,11 +94,19 @@ export default function GoalsPage() {
       body: JSON.stringify({ patientId }),
     }).catch(console.error);
 
-    // Then fetch all goals
-    const res = await fetch(`/api/biometrics/goals?patientId=${patientId}`, { cache: 'no-store' });
-    const data = await res.json().catch(() => ({}));
-    const goals = Array.isArray(data?.goals) ? data.goals : [];
-    buildCardsFromDb(goals);
+    // Fetch all goals and today's values in parallel
+    const [goalsRes, todayRes] = await Promise.all([
+      fetch(`/api/biometrics/goals?patientId=${patientId}`, { cache: 'no-store' }),
+      fetch(`/api/biometrics/today?patientId=${patientId}`, { cache: 'no-store' }),
+    ]);
+
+    const goalsData = await goalsRes.json().catch(() => ({}));
+    const todayData = await todayRes.json().catch(() => ({}));
+
+    const goals = Array.isArray(goalsData?.goals) ? goalsData.goals : [];
+    const todayValues = todayData?.currentValues || {};
+
+    buildCardsFromDb(goals, todayValues);
   }, [patientId, buildCardsFromDb]);
 
   useEffect(() => {
