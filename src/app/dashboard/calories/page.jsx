@@ -20,6 +20,8 @@ export default function CaloriesChartPage() {
   const [period, setPeriod] = useState('today');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [goal, setGoal] = useState(null);
+  const [goalLoading, setGoalLoading] = useState(true);
 
   const caloriesPeriodOptions = [
     { value: 'today', label: 'Today' },
@@ -32,6 +34,32 @@ export default function CaloriesChartPage() {
       router.push('/login');
     }
   }, [user, isLoading, router]);
+
+  const fetchGoal = async () => {
+    try {
+      setGoalLoading(true);
+      const patientId = user?.patient_id || user?.id;
+      if (!patientId) return;
+
+      const response = await fetch(`/api/biometrics/goals?patientId=${patientId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const caloriesGoal = data.goals?.find((g) => g.metric_type === 'calories');
+        setGoal(caloriesGoal || null);
+      }
+    } catch (err) {
+      console.error('Error fetching goal:', err);
+      setGoal(null);
+    } finally {
+      setGoalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && !isLoading) {
+      fetchGoal();
+    }
+  }, [user, isLoading]);
 
   const fetchCaloriesData = async () => {
     try {
@@ -138,7 +166,7 @@ export default function CaloriesChartPage() {
         )}
 
         {/* Statistics Cards */}
-        <CaloriesStats stats={stats} period={period} activityLevel={activityLevel} />
+        <CaloriesStats stats={stats} period={period} activityLevel={activityLevel} goal={goal} />
 
         {/* Chart Section */}
         <CaloriesChart chartData={chartData} dataLoading={dataLoading} error={error} period={period} />

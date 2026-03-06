@@ -34,12 +34,40 @@ export default function HydrationChartPage() {
   const [stats, setStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [goal, setGoal] = useState(null);
+  const [goalLoading, setGoalLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/login');
     }
   }, [user, isLoading, router]);
+
+  const fetchGoal = async () => {
+    try {
+      setGoalLoading(true);
+      const patientId = user?.patient_id || user?.id;
+      if (!patientId) return;
+
+      const response = await fetch(`/api/biometrics/goals?patientId=${patientId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const hydrationGoal = data.goals?.find((g) => g.metric_type === 'water');
+        setGoal(hydrationGoal || null);
+      }
+    } catch (err) {
+      console.error('Error fetching goal:', err);
+      setGoal(null);
+    } finally {
+      setGoalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && !isLoading) {
+      fetchGoal();
+    }
+  }, [user, isLoading]);
 
   useEffect(() => {
     const fetchHydrationData = async () => {
@@ -143,7 +171,7 @@ export default function HydrationChartPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <StatCard 
               title="Current Progress" 
-              value={`${stats.latest}/${stats.goal}`}
+              value={`${stats.latest}/${goal ? goal.target_value : stats.goal}`}
               unit="glasses today"
               color="blue"
             />
@@ -159,12 +187,21 @@ export default function HydrationChartPage() {
               unit="glasses"
               color="green"
             />
-            <StatCard 
-              title="Goal Achievement" 
-              value={stats.latest >= stats.goal ? 'Achieved' : 'Not Met'}
-              unit={`${stats.goal} cups/day goal`}
-              color="teal"
-            />
+            {!goal ? (
+              <StatCard 
+                title="Goal Achievement" 
+                value="No Goal Set"
+                unit="Set a goal to track progress"
+                color="teal"
+              />
+            ) : (
+              <StatCard 
+                title="Goal Achievement" 
+                value={stats.latest >= goal.target_value ? 'Achieved' : 'Not Met'}
+                unit={`${goal.target_value} cups/day goal`}
+                color="teal"
+              />
+            )}
           </div>
         )}
 

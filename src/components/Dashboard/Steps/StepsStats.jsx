@@ -1,6 +1,6 @@
 import StatCard from '@/components/Dashboard/StatCard';
 
-export default function StepsStats({ stats, period }) {
+export default function StepsStats({ stats, period, goal }) {
   if (!stats) {
     return null;
   }
@@ -25,12 +25,30 @@ export default function StepsStats({ stats, period }) {
         subLabel={period === 'today' ? 'steps/hour' : period === 'year' ? 'steps/day' : 'steps'}
         color="green"
       />
-      <StatCard
-        label={period === 'today' ? 'Goal Achievement' : period === 'year' ? 'Months with Data' : 'Days with Data'}
-        value={period === 'today' ? (stats.goalAchieved ? 'Achieved' : 'Not Met') : period === 'year' ? stats.monthsWithData : stats.daysWithData}
-        subLabel={period === 'today' ? `${stats.goal} steps/day goal` : period === 'year' ? `of ${stats.totalMonths} months` : `of ${stats.totalDays} days`}
-        color="orange"
-      />
+      {period === 'today' ? (
+        !goal ? (
+          <StatCard
+            label="Goal Achievement"
+            value="No Goal Set"
+            subLabel="Set a goal to track progress"
+            color="orange"
+          />
+        ) : (
+          <StatCard
+            label="Goal Achievement"
+            value={stats.goalAchieved ? 'Achieved' : 'Not Met'}
+            subLabel={`${goal.target_value} steps/day goal`}
+            color="orange"
+          />
+        )
+      ) : (
+        <StatCard
+          label={period === 'year' ? 'Months with Data' : 'Days with Data'}
+          value={period === 'year' ? stats.monthsWithData : stats.daysWithData}
+          subLabel={period === 'year' ? `of ${stats.totalMonths} months` : `of ${stats.totalDays} days`}
+          color="orange"
+        />
+      )}
     </div>
   );
 }

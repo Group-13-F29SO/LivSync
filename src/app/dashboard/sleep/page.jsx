@@ -21,6 +21,8 @@ export default function SleepChartPage() {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
+  const [goal, setGoal] = useState(null);
+  const [goalLoading, setGoalLoading] = useState(true);
 
   const RECOMMENDED_MIN = 7;
   const RECOMMENDED_MAX = 9;
@@ -30,6 +32,32 @@ export default function SleepChartPage() {
       router.push('/login');
     }
   }, [user, isLoading, router]);
+
+  const fetchGoal = async () => {
+    try {
+      setGoalLoading(true);
+      const patientId = user?.patient_id || user?.id;
+      if (!patientId) return;
+
+      const response = await fetch(`/api/biometrics/goals?patientId=${patientId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const sleepGoal = data.goals?.find((g) => g.metric_type === 'sleep');
+        setGoal(sleepGoal || null);
+      }
+    } catch (err) {
+      console.error('Error fetching goal:', err);
+      setGoal(null);
+    } finally {
+      setGoalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && !isLoading) {
+      fetchGoal();
+    }
+  }, [user, isLoading]);
 
   useEffect(() => {
     const fetchSleepData = async () => {
@@ -249,12 +277,21 @@ export default function SleepChartPage() {
               sublabel="longest night"
               color="#10b981"
             />
-            <StatCard 
-              label="Goal Achievement" 
-              value={stats.goalAchieved ? 'Achieved' : 'Not Met'}
-              sublabel={`${stats.goal}h/night goal`}
-              color={stats.goalAchieved ? '#10b981' : '#ef4444'}
-            />
+            {!goal ? (
+              <StatCard 
+                label="Goal Achievement" 
+                value="No Goal Set"
+                sublabel="Set a goal to track progress"
+                color="#94a3b8"
+              />
+            ) : (
+              <StatCard 
+                label="Goal Achievement" 
+                value={stats.goalAchieved ? 'Achieved' : 'Not Met'}
+                sublabel={`${goal.target_value}h/night goal`}
+                color={stats.goalAchieved ? '#10b981' : '#ef4444'}
+              />
+            )}
           </div>
         )}
 
