@@ -110,3 +110,36 @@ export async function POST(req) {
     return Response.json({ error: "Server error" }, { status: 500 });
   }
 }
+
+export async function DELETE(req) {
+  try {
+    const { goalId, patientId } = await req.json();
+
+    if (!goalId) {
+      return Response.json({ error: "goalId is required" }, { status: 400 });
+    }
+    if (!patientId) {
+      return Response.json({ error: "patientId is required" }, { status: 400 });
+    }
+
+    // Verify goal belongs to patient
+    const goal = await prisma.goals.findFirst({
+      where: { id: Number(goalId), patient_id: patientId },
+      select: { id: true },
+    });
+
+    if (!goal) {
+      return Response.json({ error: "Goal not found for this user" }, { status: 404 });
+    }
+
+    const deleted = await prisma.goals.delete({
+      where: { id: Number(goalId) },
+      select: { id: true, metric_type: true },
+    });
+
+    return Response.json({ message: "Goal deleted", goal: deleted }, { status: 200 });
+  } catch (e) {
+    console.error(e);
+    return Response.json({ error: "Server error" }, { status: 500 });
+  }
+}

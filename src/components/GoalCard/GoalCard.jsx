@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FlameIcon } from '../Icons/GoalIcons';
+import { FlameIcon, TrashIcon } from '../Icons/GoalIcons';
 
 export default function GoalCard({
   title,
@@ -14,6 +14,8 @@ export default function GoalCard({
   iconBgColor = 'bg-indigo-100',
   iconColor = 'text-indigo-600',
   onUpdateTarget,
+  onDelete,
+  goalId,
 }) {
   const [newTarget, setNewTarget] = useState(String(targetValue ?? ''));
 
@@ -46,6 +48,16 @@ export default function GoalCard({
             <span className="text-sm text-gray-500 dark:text-gray-400">{Number(streak) || 0} day streak</span>
           </div>
         </div>
+
+        {onDelete && goalId && (
+          <button
+            onClick={() => onDelete(goalId)}
+            className="text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-lg"
+            title="Delete goal"
+          >
+            <TrashIcon className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Progress Display */}

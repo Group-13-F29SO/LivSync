@@ -46,11 +46,11 @@ export default function GoalsPage() {
     for (const item of GOAL_CATALOG) {
       const row = byMetric.get(item.metric_type);
 
-      if (item.core) {
-        // core always shown
+      // Only show goals that exist in the database
+      if (row) {
         toRender.push({
           metric_type: item.metric_type,
-          goalId: row?.id ?? null,
+          goalId: row.id,
           title: item.title,
           icon: item.icon,
           unit: item.unit,
@@ -58,26 +58,9 @@ export default function GoalsPage() {
           iconColor: item.iconColor,
           streak: defaultStreakByMetric[item.metric_type] ?? 0,
           currentValue: todayValues[item.metric_type] ?? 0,
-          targetValue: row?.target_value ?? item.defaultTarget,
-          frequency: row?.frequency ?? item.defaultFrequency ?? 'daily',
+          targetValue: row.target_value ?? item.defaultTarget,
+          frequency: row.frequency ?? item.defaultFrequency ?? 'daily',
         });
-      } else {
-        // add-ons only shown if they exist in DB
-        if (row) {
-          toRender.push({
-            metric_type: item.metric_type,
-            goalId: row.id,
-            title: item.title,
-            icon: item.icon,
-            unit: item.unit,
-            iconBgColor: item.iconBgColor,
-            iconColor: item.iconColor,
-            streak: defaultStreakByMetric[item.metric_type] ?? 0,
-            currentValue: todayValues[item.metric_type] ?? 0,
-            targetValue: row.target_value ?? item.defaultTarget,
-            frequency: row.frequency ?? item.defaultFrequency ?? 'daily',
-          });
-        }
       }
     }
 
@@ -86,13 +69,6 @@ export default function GoalsPage() {
 
   const fetchGoals = useCallback(async () => {
     if (!patientId) return;
-
-    // Initialize core goals if not already done
-    await fetch(`/api/biometrics/goals/init`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ patientId }),
-    }).catch(console.error);
 
     // Fetch all goals and today's values in parallel
     const [goalsRes, todayRes] = await Promise.all([
@@ -134,9 +110,30 @@ export default function GoalsPage() {
     );
   };
 
+  const deleteGoal = async (goalId) => {
+    if (!patientId || !goalId) return;
+
+    if (!confirm('Are you sure you want to delete this goal?')) return;
+
+    const res = await fetch('/api/biometrics/goals', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ goalId, patientId }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error(err);
+      alert(err?.error || 'Failed to delete goal');
+      return;
+    }
+
+    setCards((prev) => prev.filter((c) => c.goalId !== goalId));
+  };
+
   const availableAddOns = useMemo(() => {
     const existing = new Set(cards.map((c) => c.metric_type));
-    return GOAL_CATALOG.filter((g) => !g.core && !existing.has(g.metric_type));
+    return GOAL_CATALOG.filter((g) => !existing.has(g.metric_type));
   }, [cards]);
 
   const openAdd = () => {
@@ -208,6 +205,7 @@ export default function GoalsPage() {
           {cards.map((goal) => (
             <GoalCard
               key={goal.metric_type}
+              goalId={goal.goalId}
               title={goal.title}
               icon={goal.icon}
               streak={goal.streak}
@@ -218,6 +216,7 @@ export default function GoalsPage() {
               iconBgColor={goal.iconBgColor}
               iconColor={goal.iconColor}
               onUpdateTarget={(newTargetValue) => updateTarget(goal.goalId, newTargetValue)}
+              onDelete={deleteGoal}
             />
           ))}
         </div>
