@@ -3,13 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
-import { useAuth } from '@/hooks/useAuth';import { GOAL_CATALOG } from '@/constants/goalCatalog';
+import MetricSelector from '@/components/Streaks/MetricSelector';
+import StreakContent from '@/components/Streaks/StreakContent';
+import StreakPageHeader from '@/components/Streaks/StreakPageHeader';
+import { useAuth } from '@/hooks/useAuth';
 
-const STREAK_METRICS = ['steps', 'calories', 'water', 'sleep'];
-
-const getMetricInfo = (metricType) => {
-  return GOAL_CATALOG.find((item) => item.metric_type === metricType);
-};
 export default function StreaksPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
@@ -70,127 +68,16 @@ export default function StreaksPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <button
-              onClick={() => router.back()}
-              className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 mb-4"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 19l-7-7 7-7"
-                />
-              </svg>
-              Back
-            </button>
-            <h1 className="inline-block text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">
-              Streaks
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Track your consecutive days of goal achievements
-            </p>
-          </div>
-        </div>
+        <StreakPageHeader />
 
-        {/* Metric Selector Tabs */}
-        <div className="mb-8 flex gap-2 overflow-x-auto pb-2">
-          {STREAK_METRICS.map((metricType) => {
-            const metricInfo = getMetricInfo(metricType);
-            return (
-              <button
-                key={metricType}
-                onClick={() => setMetric(metricType)}
-                className={`px-4 py-2 rounded-lg font-medium transition-all whitespace-nowrap ${
-                  metric === metricType
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
-              >
-                {metricInfo?.title || metricType}
-              </button>
-            );
-          })}
-        </div>
+        <MetricSelector selectedMetric={metric} onMetricChange={setMetric} />
 
-        {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400">
-            {error}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <p className="text-gray-600 dark:text-gray-400">
-              Loading streak data...
-            </p>
-          </div>
-        ) : !streakData ? (
-          <div className="p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-sm text-center">
-            <p className="text-gray-600 dark:text-gray-400">
-              No streak data available
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Current Streak Card */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Large Current Streak */}
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
-                    <span className="text-3xl">🔥</span>
-                  </div>
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-                    Current Streak
-                  </h2>
-                  <div className="flex items-baseline justify-center gap-2 mb-4">
-                    <span className="text-5xl font-bold bg-gradient-to-r from-indigo-500 to-purple-500 bg-clip-text text-transparent">
-                      {streakData.currentStreak}
-                    </span>
-                    <span className="text-xl font-medium text-gray-900 dark:text-gray-100">
-                      days
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Keep it up!
-                  </p>
-                </div>
-              </div>
-
-              {/* Goal Value */}
-              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm">
-                <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
-                    <span className="text-3xl">🎯</span>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
-                    Daily Goal
-                  </h3>
-                  <div className="flex items-baseline justify-center gap-2 mb-4">
-                    <span className="text-5xl font-bold text-green-600 dark:text-green-400">
-                      {streakData.goalValue?.toLocaleString()}
-                    </span>
-                    <span className="text-xl font-medium text-gray-900 dark:text-gray-100">
-                      {getMetricInfo(metric)?.unit || metric}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    for {getMetricInfo(metric)?.title?.toLowerCase() || metric}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+        <StreakContent
+          loading={loading}
+          error={error}
+          streakData={streakData}
+          metric={metric}
+        />
       </main>
     </div>
   );
