@@ -34,14 +34,40 @@ export default function HydrationChartPage() {
   const [stats, setStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  const GOAL = 8; // Daily hydration goal in glasses
+  const [goal, setGoal] = useState(null);
+  const [goalLoading, setGoalLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push('/login');
     }
   }, [user, isLoading, router]);
+
+  const fetchGoal = async () => {
+    try {
+      setGoalLoading(true);
+      const patientId = user?.patient_id || user?.id;
+      if (!patientId) return;
+
+      const response = await fetch(`/api/biometrics/goals?patientId=${patientId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const hydrationGoal = data.goals?.find((g) => g.metric_type === 'water');
+        setGoal(hydrationGoal || null);
+      }
+    } catch (err) {
+      console.error('Error fetching goal:', err);
+      setGoal(null);
+    } finally {
+      setGoalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && !isLoading) {
+      fetchGoal();
+    }
+  }, [user, isLoading]);
 
   useEffect(() => {
     const fetchHydrationData = async () => {
@@ -87,9 +113,10 @@ export default function HydrationChartPage() {
 
   // Get bar color based on goal achievement
   const getBarColor = (value) => {
-    if (value >= GOAL) return '#10b981'; // Green - goal achieved
-    if (value >= GOAL * 0.75) return '#3b82f6'; // Blue - 75%+ of goal
-    if (value >= GOAL * 0.5) return '#f59e0b'; // Orange - 50%+ of goal
+    if (!stats) return '#94a3b8';
+    if (value >= stats.goal) return '#10b981'; // Green - goal achieved
+    if (value >= stats.goal * 0.75) return '#3b82f6'; // Blue - 75%+ of goal
+    if (value >= stats.goal * 0.5) return '#f59e0b'; // Orange - 50%+ of goal
     return '#ef4444'; // Red - below 50%
   };
 
@@ -144,7 +171,7 @@ export default function HydrationChartPage() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <StatCard 
               title="Current Progress" 
-              value={`${stats.latest}/${GOAL}`}
+              value={`${stats.latest}/${goal ? goal.target_value : stats.goal}`}
               unit="glasses today"
               color="blue"
             />
@@ -160,12 +187,21 @@ export default function HydrationChartPage() {
               unit="glasses"
               color="green"
             />
-            <StatCard 
-              title="Goal Achievement" 
-              value={`${stats.goalPercentage}%`}
-              unit={`${stats.goalAchievement} of ${stats.count} days`}
-              color="teal"
-            />
+            {!goal ? (
+              <StatCard 
+                title="Goal Achievement" 
+                value="No Goal Set"
+                unit="Set a goal to track progress"
+                color="teal"
+              />
+            ) : (
+              <StatCard 
+                title="Goal Achievement" 
+                value={stats.latest >= goal.target_value ? 'Achieved' : 'Not Met'}
+                unit={`${goal.target_value} cups/day goal`}
+                color="teal"
+              />
+            )}
           </div>
         )}
 
@@ -228,7 +264,7 @@ export default function HydrationChartPage() {
                       dominantBaseline="middle"
                       className="text-lg fill-gray-600 dark:fill-gray-400"
                     >
-                      of {GOAL} glasses
+                      of {stats.goal} glasses
                     </text>
                   </RadialBarChart>
                 </ResponsiveContainer>
@@ -237,7 +273,7 @@ export default function HydrationChartPage() {
                     {stats.currentProgress}%
                   </p>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    {stats.latest >= GOAL ? '🎉 Goal Achieved!' : `${GOAL - stats.latest} glasses to go`}
+                    {stats.latest >= stats.goal ? '🎉 Goal Achieved!' : `${stats.goal - stats.latest} glasses to go`}
                   </p>
                 </div>
               </div>
@@ -299,12 +335,12 @@ export default function HydrationChartPage() {
                   label={{ value: 'Glasses', angle: -90, position: 'insideLeft' }}
                 />
                 <ReferenceLine 
-                  y={GOAL} 
+                  y={stats.goal} 
                   stroke="#10b981" 
                   strokeDasharray="3 3"
                   strokeWidth={2}
                   label={{ 
-                    value: `Goal: ${GOAL} glasses`, 
+                    value: `Goal: ${stats.goal} glasses`, 
                     position: 'right', 
                     fill: '#10b981', 
                     fontSize: 12,

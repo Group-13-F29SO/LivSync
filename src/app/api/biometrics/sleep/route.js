@@ -187,8 +187,21 @@ export async function GET(req) {
       ? parseFloat(((optimalNights / sleepValues.length) * 100).toFixed(1))
       : 0;
 
+    // Fetch the user's sleep goal
+    const sleepGoal = await prisma.goals.findFirst({
+      where: {
+        patient_id: patientId,
+        metric_type: 'sleep'
+      },
+      select: {
+        target_value: true
+      }
+    });
+
+    const goal = sleepGoal?.target_value || 8; // Default to 8 hours if no goal set
+
     // Calculate current progress (percentage of recommended sleep)
-    const currentProgress = Math.min((selectedDateSleep / recommendedMax) * 100, 100);
+    const currentProgress = Math.min((selectedDateSleep / goal) * 100, 100);
 
     return new Response(
       JSON.stringify({
@@ -204,7 +217,9 @@ export async function GET(req) {
           optimalPercentage,
           currentProgress: parseFloat(currentProgress.toFixed(1)),
           recommendedMin,
-          recommendedMax
+          recommendedMax,
+          goal,
+          goalAchieved: selectedDateSleep >= goal
         }
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } }

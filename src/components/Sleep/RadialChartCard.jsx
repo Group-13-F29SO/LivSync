@@ -91,7 +91,7 @@ export default function RadialChartCard({
             dominantBaseline="middle"
             className="text-lg fill-gray-600 dark:fill-gray-400"
           >
-            of {stats.recommendedMax}h goal
+            of {stats.goal}h goal
           </text>
         </RadialBarChart>
       </ResponsiveContainer>

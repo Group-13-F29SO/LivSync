@@ -30,3 +30,9 @@ export const PlusIcon = ({ className = "w-5 h-5" }) => (
     <line x1="5" y1="12" x2="19" y2="12"/>
   </svg>
 );
+
+export const TrashIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z"/>
+  </svg>
+);

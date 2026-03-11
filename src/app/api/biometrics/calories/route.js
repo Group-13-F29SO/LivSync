@@ -246,6 +246,19 @@ export async function GET(req) {
       }
     }
 
+    // Fetch the user's calories goal
+    const caloriesGoal = await prisma.goals.findFirst({
+      where: {
+        patient_id: patientId,
+        metric_type: 'calories'
+      },
+      select: {
+        target_value: true
+      }
+    });
+
+    const goalValue = caloriesGoal?.target_value || 2200; // Default to 2200 if no goal set
+
     // Calculate statistics
     let statsToReturn;
     
@@ -261,7 +274,9 @@ export async function GET(req) {
         average: Number(avgHourly),
         max: maxHourly,
         min: Math.min(...hourlyValues.filter(v => v > 0)) || 0,
-        latest: hourlyValues[new Date().getHours()] || 0
+        latest: hourlyValues[new Date().getHours()] || 0,
+        goalAchieved: totalCalories >= goalValue,
+        goal: goalValue
       };
     } else if (period === 'year') {
       const monthlyValues = chartData.map(d => d.value);
@@ -274,7 +289,8 @@ export async function GET(req) {
         max: maxMonthly,
         min: Math.min(...monthlyValues.filter(v => v > 0)) || 0,
         monthsWithData: monthlyValues.filter(v => v > 0).length,
-        totalMonths: monthlyValues.length
+        totalMonths: monthlyValues.length,
+        goal: goalValue
       };
     } else {
       const dailyValues = chartData.map(d => d.value);
@@ -288,7 +304,8 @@ export async function GET(req) {
         min: Math.min(...dailyValues.filter(v => v > 0)) || 0,
         latest: dailyValues[dailyValues.length - 1] || 0,
         daysWithData: dailyValues.filter(v => v > 0).length,
-        totalDays: dailyValues.length
+        totalDays: dailyValues.length,
+        goal: goalValue
       };
     }
 

@@ -21,8 +21,8 @@ export default function StepsChartPage() {
   const [period, setPeriod] = useState('today');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  const GOAL = 10000; // Daily step goal
+  const [goal, setGoal] = useState(null);
+  const [goalLoading, setGoalLoading] = useState(true);
 
   const stepsPeriodOptions = [
     { value: 'today', label: 'Today' },
@@ -36,6 +36,32 @@ export default function StepsChartPage() {
       router.push('/login');
     }
   }, [user, isLoading, router]);
+
+  const fetchGoal = async () => {
+    try {
+      setGoalLoading(true);
+      const patientId = user?.patient_id || user?.id;
+      if (!patientId) return;
+
+      const response = await fetch(`/api/biometrics/goals?patientId=${patientId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const stepsGoal = data.goals?.find((g) => g.metric_type === 'steps');
+        setGoal(stepsGoal || null);
+      }
+    } catch (err) {
+      console.error('Error fetching goal:', err);
+      setGoal(null);
+    } finally {
+      setGoalLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user && !isLoading) {
+      fetchGoal();
+    }
+  }, [user, isLoading]);
 
   const fetchStepsData = async () => {
     try {
@@ -125,7 +151,7 @@ export default function StepsChartPage() {
 
         {/* Statistics Cards */}
         {stats && (
-          <StepsStats stats={stats} period={period} goal={GOAL} />
+          <StepsStats stats={stats} period={period} goal={goal} />
         )}
 
         {/* Chart Section */}
