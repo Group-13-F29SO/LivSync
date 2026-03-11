@@ -2,7 +2,7 @@ import React from 'react';
 
 const StreakCard = ({ currentStreak, targetMetric, message }) => {
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer">
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-2.5">
@@ -64,6 +64,14 @@ const StreakCard = ({ currentStreak, targetMetric, message }) => {
       <p className="mt-4 text-gray-600 dark:text-gray-400">
         {message} Goal: {targetMetric}
       </p>
+
+      {/* Click indicator - hidden but shows on hover for accessibility */}
+      <div className="mt-4 flex items-center gap-1 text-blue-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
+        <span className="text-xs font-medium">View all streaks</span>
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
     </div>
   );
 };

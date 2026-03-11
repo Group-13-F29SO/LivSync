@@ -13,13 +13,11 @@ export default function DashboardPage() {
   const router = useRouter();
   const { user, logout, isLoading } = useAuth();
   const [lastSyncTime, setLastSyncTime] = useState('Just now');
-
-  // Streak data
-  const streakData = {
-    currentStreak: 12,
+  const [streakData, setStreakData] = useState({
+    currentStreak: 0,
     targetMetric: "10,000 steps",
     message: "Keep going!"
-  };
+  });
 
   // Summary data
   const summaryData = {
@@ -35,6 +33,34 @@ export default function DashboardPage() {
       router.push('/login');
     }
   }, [user, isLoading, router]);
+
+  useEffect(() => {
+    // Fetch streak data when user is available
+    const fetchStreakData = async () => {
+      if (!user || !user.patient_id) return;
+
+      try {
+        const response = await fetch(
+          `/api/biometrics/streaks?metric=steps&daysBack=365`,
+          { cache: 'no-store' }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setStreakData({
+            currentStreak: data.currentStreak || 0,
+            targetMetric: `${data.goalValue?.toLocaleString()} steps`,
+            message: "Keep going!"
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching streak data:', error);
+        // Keep default values if fetch fails
+      }
+    };
+
+    fetchStreakData();
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -194,13 +220,16 @@ export default function DashboardPage() {
         </div>
 
         {/* Current Streak Card - Full Width */}
-        <div className="mt-8">
+        <button
+          onClick={() => router.push('/dashboard/streaks')}
+          className="w-full mt-8 bg-transparent border-none p-0 cursor-pointer"
+        >
           <StreakCard 
             currentStreak={streakData.currentStreak}
             targetMetric={streakData.targetMetric}
             message={streakData.message}
           />
-        </div>
+        </button>
 
         {/* Today's Summary Card - Full Width */}
         <div className="mt-6">
