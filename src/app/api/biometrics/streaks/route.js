@@ -31,8 +31,19 @@ export async function GET(req) {
 
     const patientId = session.userId;
     const url = new URL(req.url);
-    const metric = url.searchParams.get('metric') || 'steps';
+    let metric = url.searchParams.get('metric') || 'steps';
     const daysBack = parseInt(url.searchParams.get('daysBack')) || 365;
+
+    // Map goal catalog metric names to database metric names
+    const metricMapping = {
+      water: 'hydration',
+      calories: 'calories',
+      steps: 'steps',
+      sleep: 'sleep',
+    };
+
+    // Convert goal name to database metric name if needed
+    const dbMetric = metricMapping[metric] || metric;
 
     // Fetch the goal for this metric
     const goal = await prisma.goals.findFirst({
@@ -65,11 +76,11 @@ export async function GET(req) {
     startDate.setDate(startDate.getDate() - daysBack);
     startDate.setHours(0, 0, 0, 0);
 
-    // Fetch biometric data for the period
+    // Fetch biometric data for the period using the database metric name
     const biometricData = await prisma.biometric_data.findMany({
       where: {
         patient_id: patientId,
-        metric_type: metric,
+        metric_type: dbMetric,
         timestamp: {
           gte: startDate,
           lte: endDate,
@@ -79,6 +90,7 @@ export async function GET(req) {
     });
 
     // Group data by day and calculate daily totals
+    // Different metrics need different aggregation strategies
     const dailyTotals = new Map();
 
     biometricData.forEach((entry) => {
@@ -86,11 +98,23 @@ export async function GET(req) {
       const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD format
 
       if (!dailyTotals.has(dateKey)) {
-        dailyTotals.set(dateKey, 0);
+        dailyTotals.set(dateKey, null);
       }
 
-      const currentTotal = dailyTotals.get(dateKey);
-      dailyTotals.set(dateKey, currentTotal + parseFloat(entry.value));
+      const value = parseFloat(entry.value);
+      
+      // Different metrics use different aggregation strategies
+      if (dbMetric === 'sleep') {
+        // For sleep: take the maximum value (it's a daily duration, not cumulative)
+        const currentValue = dailyTotals.get(dateKey);
+        if (currentValue === null || value > currentValue) {
+          dailyTotals.set(dateKey, value);
+        }
+      } else {
+        // For steps, calories, hydration: sum all readings (cumulative throughout day)
+        const currentTotal = dailyTotals.get(dateKey) || 0;
+        dailyTotals.set(dateKey, currentTotal + value);
+      }
     });
 
     // Get all dates in range, sorted
@@ -101,103 +125,29 @@ export async function GET(req) {
       current.setDate(current.getDate() + 1);
     }
 
-    // Calculate streaks
+    // Calculate streaks - iterate through all dates in range
     let currentStreak = 0;
-    let longestStreak = 0;
-    let longestStreakEnd = null;
-    let streakStartDate = null;
 
-    // Calculate current streak (from most recent backwards)
-    const sortedDates = Array.from(dailyTotals.keys()).sort().reverse();
+    // Calculate current streak (from most recent with data backwards)
+    // Get dates that have data, sorted in reverse (most recent first)
+    const datesWithData = Array.from(dailyTotals.keys()).sort().reverse();
 
-    for (const dateStr of sortedDates) {
+    for (const dateStr of datesWithData) {
       const dailyValue = dailyTotals.get(dateStr);
+      // Count only if goal is achieved
       if (dailyValue >= targetValue) {
         currentStreak++;
       } else {
+        // Stop counting when we hit a day that doesn't meet goal
         break;
       }
     }
 
-    // Calculate longest streak
-    let tempStreak = 0;
-    let tempStreakStart = null;
-
-    for (const dateStr of Array.from(dailyTotals.keys()).sort()) {
-      const dailyValue = dailyTotals.get(dateStr);
-      if (dailyValue >= targetValue) {
-        if (tempStreak === 0) {
-          tempStreakStart = dateStr;
-        }
-        tempStreak++;
-
-        if (tempStreak > longestStreak) {
-          longestStreak = tempStreak;
-          longestStreakEnd = dateStr;
-        }
-      } else {
-        tempStreak = 0;
-      }
-    }
-
-    // Build streak history data
-    const streakHistory = [];
-    let historyStreak = 0;
-    let historyStreakStart = null;
-
-    for (const dateStr of Array.from(dailyTotals.keys()).sort()) {
-      const dailyValue = dailyTotals.get(dateStr);
-      const goalAchieved = dailyValue >= targetValue;
-
-      if (goalAchieved) {
-        if (historyStreak === 0) {
-          historyStreakStart = dateStr;
-        }
-        historyStreak++;
-      } else {
-        if (historyStreak > 0) {
-          streakHistory.push({
-            startDate: historyStreakStart,
-            endDate: Array.from(dailyTotals.keys())
-              .sort()
-              .filter((d) => dailyTotals.get(d) >= targetValue)
-              .slice(
-                Array.from(dailyTotals.keys())
-                  .sort()
-                  .indexOf(historyStreakStart)
-              )[historyStreak - 1],
-            length: historyStreak,
-          });
-        }
-        historyStreak = 0;
-        historyStreakStart = null;
-      }
-    }
-
-    // Add the last streak if it's still ongoing
-    if (historyStreak > 0) {
-      streakHistory.push({
-        startDate: historyStreakStart,
-        endDate: Array.from(dailyTotals.keys()).sort()[
-          Array.from(dailyTotals.keys()).sort().length - 1
-        ],
-        length: historyStreak,
-      });
-    }
-
-    // Sort by most recent first
-    streakHistory.sort(
-      (a, b) => new Date(b.endDate) - new Date(a.endDate)
-    );
-
     return NextResponse.json(
       {
         currentStreak,
-        longestStreak,
         goalValue: targetValue,
         metric,
-        streakHistory: streakHistory.slice(0, 10), // Return top 10 streaks
-        dailyData: Object.fromEntries(dailyTotals),
       },
       { status: 200 }
     );

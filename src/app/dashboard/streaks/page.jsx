@@ -142,9 +142,9 @@ export default function StreaksPage() {
         ) : (
           <>
             {/* Current Streak Card */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Large Current Streak */}
-              <div className="lg:col-span-1 bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm">
                 <div className="text-center">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-4">
                     <span className="text-3xl">🔥</span>
@@ -166,113 +166,29 @@ export default function StreaksPage() {
                 </div>
               </div>
 
-              {/* Stats */}
-              <div className="lg:col-span-2 grid grid-cols-2 gap-6">
-                {/* Longest Streak */}
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30">
-                      <span className="text-lg">👑</span>
-                    </div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100">
-                      Longest Streak
-                    </h3>
+              {/* Goal Value */}
+              <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-sm">
+                <div className="text-center">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
+                    <span className="text-3xl">🎯</span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent">
-                      {streakData.longestStreak}
-                    </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
-                      days
-                    </span>
-                  </div>
-                </div>
-
-                {/* Goal Value */}
-                <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30">
-                      <span className="text-lg">🎯</span>
-                    </div>
-                    <h3 className="font-bold text-gray-900 dark:text-gray-100">
-                      Daily Goal
-                    </h3>
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-green-600 dark:text-green-400">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">
+                    Daily Goal
+                  </h3>
+                  <div className="flex items-baseline justify-center gap-2 mb-4">
+                    <span className="text-5xl font-bold text-green-600 dark:text-green-400">
                       {streakData.goalValue?.toLocaleString()}
                     </span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">
+                    <span className="text-xl font-medium text-gray-900 dark:text-gray-100">
                       {getMetricInfo(metric)?.unit || metric}
                     </span>
                   </div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    for {getMetricInfo(metric)?.title?.toLowerCase() || metric}
+                  </p>
                 </div>
               </div>
             </div>
-
-            {/* Streak History */}
-            {streakData.streakHistory && streakData.streakHistory.length > 0 && (
-              <div className="mt-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
-                  Streak History
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {streakData.streakHistory.map((streak, index) => (
-                    <div
-                      key={index}
-                      className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-sm border border-gray-200 dark:border-gray-800"
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                            {streak.length}
-                          </span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            days
-                          </span>
-                        </div>
-                        {index === 0 && (
-                          <span className="text-xs font-semibold px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
-                            Latest
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        <p>
-                          {new Date(streak.startDate).toLocaleDateString(
-                            'en-US',
-                            {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            }
-                          )}{' '}
-                          →{' '}
-                          {new Date(streak.endDate).toLocaleDateString(
-                            'en-US',
-                            {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            }
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Empty State */}
-            {streakData.streakHistory?.length === 0 && (
-              <div className="mt-8 p-8 bg-white dark:bg-gray-900 rounded-2xl shadow-sm text-center">
-                <p className="text-gray-600 dark:text-gray-400">
-                  No streak history yet. Start achieving your {getMetricInfo(metric)?.title?.toLowerCase() || metric} goal to
-                  build a streak!
-                </p>
-              </div>
-            )}
           </>
         )}
       </main>
