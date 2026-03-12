@@ -49,20 +49,27 @@ export async function GET(req) {
         startDate.setDate(startDate.getDate() - 29);
         startDate.setHours(0, 0, 0, 0);
         break;
-      case 'all':
-        if (startDateParam && endDateParam) {
-          // User provided a custom date range
-          // Parse date strings to create local midnight (not UTC)
-          const [startYear, startMonth, startDay] = startDateParam.split('-').map(Number);
-          const [endYear, endMonth, endDay] = endDateParam.split('-').map(Number);
-          startDate = new Date(startYear, startMonth - 1, startDay, 0, 0, 0, 0);
-          endDate = new Date(endYear, endMonth - 1, endDay, 23, 59, 59, 999);
-        } else {
-          // Default: fetch from epoch if no range specified
-          startDate = new Date(0);
-        }
-        break;
-      case 'today':
+case 'all':
+  if (startDateParam && endDateParam) {
+    const parsedStart = new Date(startDateParam);
+    const parsedEnd = new Date(endDateParam);
+
+    if (isNaN(parsedStart.getTime()) || isNaN(parsedEnd.getTime())) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid date range' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    startDate = new Date(parsedStart);
+    startDate.setHours(0, 0, 0, 0);
+
+    endDate = new Date(parsedEnd);
+    endDate.setHours(23, 59, 59, 999);
+  } else {
+    startDate = new Date(0);
+  }
+  break;      case 'today':
       default:
         if (dateParam) {
           // Parse date string to create local midnight (not UTC)
@@ -274,58 +281,51 @@ export async function GET(req) {
     }
 
     // Calculate statistics based on the chart data that will be displayed
-    let statsToReturn;
-    
-    if (period === 'today' && heartRateData.length > 0) {
-      // For single day, calculate stats directly from the raw data for that day
-      // This ensures accurate min/max/average regardless of bucketing
-      const rawValues = heartRateData.map(item => Number(item.value));
-      const minVal = Math.min(...rawValues);
-      const maxVal = Math.max(...rawValues);
-      const avgVal = (rawValues.reduce((a, b) => a + b, 0) / rawValues.length).toFixed(1);
-      
-      statsToReturn = {
-        average: Number(avgVal),
-        max: maxVal,
-        min: minVal,
-        count: rawValues.length
-      };
-    } else {
-      // For multi-day periods, calculate stats from raw data
-      const rawValues = heartRateData.map(item => Number(item.value));
-      const averageRaw = (rawValues.reduce((a, b) => a + b, 0) / rawValues.length).toFixed(1);
-      const maxRaw = Math.max(...rawValues);
-      const minRaw = Math.min(...rawValues);
-      const count = heartRateData.length; // Total raw readings
-      
-      statsToReturn = {
-        average: Number(averageRaw),
-        max: maxRaw,
-        min: minRaw,
-        count: count
-      };
-    }
+        let sum = 0;
+        let minVal = Infinity;
+        let maxVal = -Infinity;
+        let count = 0;
 
+        for (const item of heartRateData) {
+          const value = Number(item.value);
+          if (!Number.isFinite(value)) continue;
+
+          sum += value;
+          count += 1;
+          if (value < minVal) minVal = value;
+          if (value > maxVal) maxVal = value;
+        }
+
+        const statsToReturn = {
+          average: count > 0 ? Number((sum / count).toFixed(1)) : 0,
+          max: count > 0 ? maxVal : 0,
+          min: count > 0 ? minVal : 0,
+          count,
+        };
     // Get earliest and latest dates for available data
-    const allDates = await prisma.biometric_data.findMany({
-      where: {
-        patient_id: patientId,
-        metric_type: 'heart_rate'
-      },
-      select: {
-        timestamp: true
-      },
-      orderBy: [
-        { timestamp: 'asc' },
-        { timestamp: 'desc' }
-      ],
-      take: 2
-    });
+const earliestDateRow = await prisma.biometric_data.findFirst({
+  where: {
+    patient_id: patientId,
+    metric_type: 'heart_rate'
+  },
+  select: { timestamp: true },
+  orderBy: { timestamp: 'asc' }
+});
 
-    const availableDates = {
-      earliest: allDates.length > 0 ? new Date(allDates[allDates.length - 1].timestamp) : null,
-      latest: allDates.length > 0 ? new Date(allDates[0].timestamp) : null
-    };
+const latestDateRow = await prisma.biometric_data.findFirst({
+  where: {
+    patient_id: patientId,
+    metric_type: 'heart_rate'
+  },
+  select: { timestamp: true },
+  orderBy: { timestamp: 'desc' }
+});
+
+const availableDates = {
+  earliest: earliestDateRow ? new Date(earliestDateRow.timestamp) : null,
+  latest: latestDateRow ? new Date(latestDateRow.timestamp) : null
+};
+
 
     return new Response(
       JSON.stringify({

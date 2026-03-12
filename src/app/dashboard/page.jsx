@@ -12,39 +12,47 @@ import { useAuth } from '@/hooks/useAuth';
 export default function DashboardPage() {
   const router = useRouter();
   const { user, logout, isLoading } = useAuth();
-  const [lastSyncTime, setLastSyncTime] = useState('Just now');
 
-  // Streak data
+  const [lastSyncTime, setLastSyncTime] = useState('Just now');
+  const [dashboardData, setDashboardData] = useState(null);
+
   const streakData = {
     currentStreak: 12,
     targetMetric: "10,000 steps",
     message: "Keep going!"
   };
 
-  // Summary data
-  const summaryData = {
-    steps: 7834,
-    calories: 1847,
-    sleep: "7.5h",
-    hydration: "6/8"
-  };
-
   useEffect(() => {
-    // Redirect to login if no user is found
     if (!isLoading && !user) {
       router.push('/login');
     }
   }, [user, isLoading, router]);
 
+  useEffect(() => {
+    async function fetchDashboardData() {
+      try {
+        const res = await fetch('/api/biometrics/dashboard-summary');
+        const json = await res.json();
+
+        if (json.success) {
+          setDashboardData(json.data);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard data', err);
+      }
+    }
+
+    if (!isLoading && user) {
+      fetchDashboardData();
+    }
+  }, [isLoading, user]);
+
   const handleLogout = () => {
     logout();
   };
 
-  const handleSyncComplete = (syncData) => {
-    // Update last sync time
+  const handleSyncComplete = () => {
     setLastSyncTime('Just now');
-    // Here you could also refresh the dashboard data
-    // For example, fetch the latest biometric data and update the summary
   };
 
   if (isLoading || !user) {
@@ -59,14 +67,20 @@ export default function DashboardPage() {
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
       <Navbar />
 
-      {/* Main Content Area */}
       <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="inline-block text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">Dashboard</h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">Welcome back, {user?.firstName || 'User'}</p>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Last Synced: {lastSyncTime}</p>
+            <h1 className="inline-block text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">
+              Dashboard
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">
+              Welcome back, {user?.firstName || 'User'}
+            </p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Last Synced: {lastSyncTime}
+            </p>
           </div>
+
           <div className="flex flex-col gap-2">
             <SyncButton onSyncComplete={handleSyncComplete} />
             <button
@@ -77,17 +91,15 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
-        
-        {/* Dashboard content will go here */}
+
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-          {/* Steps Card */}
           <button
             onClick={() => router.push('/dashboard/steps')}
             className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
           >
             <DashboardCard
               title="Steps"
-              value="7,834"
+              value={dashboardData ? dashboardData.steps : "..."}
               unit="steps"
               icon={
                 <svg className="w-6 h-6 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -99,14 +111,13 @@ export default function DashboardPage() {
             />
           </button>
 
-          {/* Heart Rate Card */}
           <button
             onClick={() => router.push('/dashboard/heart-rate')}
             className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
           >
             <DashboardCard
               title="Heart Rate"
-              value="72"
+              value={dashboardData ? dashboardData.heart_rate : "..."}
               unit="bpm"
               subtitle="Resting: 65 bpm"
               icon={
@@ -117,14 +128,13 @@ export default function DashboardPage() {
             />
           </button>
 
-          {/* Calories Burned Card */}
           <button
             onClick={() => router.push('/dashboard/calories')}
             className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
           >
             <DashboardCard
               title="Calories Burned"
-              value="1847"
+              value={dashboardData ? dashboardData.calories : "..."}
               unit="kcal"
               icon={
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -135,14 +145,13 @@ export default function DashboardPage() {
             />
           </button>
 
-          {/* Hydration Card */}
           <button
             onClick={() => router.push('/dashboard/hydration')}
             className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
           >
             <DashboardCard
               title="Hydration"
-              value="6"
+              value={dashboardData ? dashboardData.hydration : "..."}
               unit="glasses"
               icon={
                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -152,14 +161,13 @@ export default function DashboardPage() {
             />
           </button>
 
-          {/* Sleep Card */}
           <button
             onClick={() => router.push('/dashboard/sleep')}
             className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
           >
             <DashboardCard
               title="Sleep"
-              value="7.5"
+              value={dashboardData ? dashboardData.sleep : "..."}
               unit="hours"
               subtitle="Quality: Good"
               icon={
@@ -170,14 +178,13 @@ export default function DashboardPage() {
             />
           </button>
 
-          {/* Blood Glucose Card */}
           <button
             onClick={() => router.push('/dashboard/blood-glucose')}
             className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
           >
             <DashboardCard
               title="Blood Glucose"
-              value="95"
+              value={dashboardData ? dashboardData.blood_glucose : "..."}
               unit="mg/dL"
               subtitle="Status: Normal"
               iconBgColor="bg-indigo-50"
@@ -193,18 +200,16 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Current Streak Card - Full Width */}
         <div className="mt-8">
-          <StreakCard 
+          <StreakCard
             currentStreak={streakData.currentStreak}
             targetMetric={streakData.targetMetric}
             message={streakData.message}
           />
         </div>
 
-        {/* Today's Summary Card - Full Width */}
         <div className="mt-6">
-          <SummaryCard summaryData={summaryData} />
+          <SummaryCard summaryData={dashboardData} />
         </div>
       </main>
     </div>

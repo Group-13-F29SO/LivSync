@@ -33,33 +33,40 @@ export default function CaloriesChartPage() {
     }
   }, [user, isLoading, router]);
 
-  const fetchCaloriesData = async () => {
-    try {
-      setDataLoading(true);
-      let url = `/api/biometrics/calories?period=${period}`;
-      
-      // If period is "today", include the selected date
-      if (period === 'today') {
-        url += `&date=${selectedDate}`;
-      }
-      
-      const response = await fetch(url);
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch calories data');
-      }
+const fetchCaloriesData = async () => {
+  try {
+    setDataLoading(true);
+    let url = `/api/biometrics/calories?period=${period}`;
 
-      const result = await response.json();
-      setChartData(result.data);
-      setStats(result.stats);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching calories data:', err);
-      setError(err.message);
-    } finally {
-      setDataLoading(false);
+    if (period === 'today') {
+      url += `&date=${selectedDate}`;
     }
-  };
+
+    const response = await fetch(url, {
+      credentials: 'include',
+      cache: 'no-store',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch calories data');
+    }
+
+    const result = await response.json();
+
+    if (period === 'today' && result.selectedDate) {
+      setSelectedDate(result.selectedDate);
+    }
+
+    setChartData(result.data);
+    setStats(result.stats);
+    setError(null);
+  } catch (err) {
+    console.error('Error fetching calories data:', err);
+    setError(err.message);
+  } finally {
+    setDataLoading(false);
+  }
+};
 
   useEffect(() => {
     if (user) {

@@ -50,7 +50,7 @@ export const GOAL_CATALOG = [
     iconColor: 'text-indigo-600',
     core: true,
   },
-
+ 
   // Structured add-on goals (only shown once added)
   {
     metric_type: 'workouts',

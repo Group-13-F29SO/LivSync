@@ -62,6 +62,7 @@ export async function POST(req) {
       where: {
         patient_id: patientId,
         metric_type: 'sleep',
+        source: 'apple_health',
         timestamp: {
           gte: startOfDay,
           lte: endOfDay

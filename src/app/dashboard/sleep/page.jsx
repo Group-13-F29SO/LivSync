@@ -35,13 +35,20 @@ export default function SleepChartPage() {
     const fetchSleepData = async () => {
       try {
         setDataLoading(true);
-        const response = await fetch(`/api/biometrics/sleep?date=${selectedDate}`);
-        
+        const response = await fetch(`/api/biometrics/sleep?date=${selectedDate}`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });        
         if (!response.ok) {
           throw new Error('Failed to fetch sleep data');
         }
 
         const result = await response.json();
+        if (result.selectedDate) {
+          setSelectedDate(result.selectedDate);
+        }
+
+        
         setChartData(result.data);
         setStats(result.stats);
       } catch (err) {
