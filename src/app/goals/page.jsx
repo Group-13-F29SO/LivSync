@@ -27,19 +27,8 @@ export default function GoalsPage() {
     if (!isLoading && !user) router.push('/login');
   }, [user, isLoading, router]);
 
-  const buildCardsFromDb = useCallback((dbGoals, todayValues = {}) => {
+  const buildCardsFromDb = useCallback((dbGoals, todayValues = {}, streakByMetric = {}) => {
     const byMetric = new Map(dbGoals.map((g) => [g.metric_type, g]));
-
-    // Keep streak placeholder values (you can calculate later)
-    const defaultStreakByMetric = {
-      steps: 12,
-      calories: 8,
-      water: 15,
-      sleep: 5,
-      workouts: 0,
-      protein: 0,
-      medication: 0,
-    };
 
     const toRender = [];
 
@@ -56,7 +45,7 @@ export default function GoalsPage() {
           unit: item.unit,
           iconBgColor: item.iconBgColor,
           iconColor: item.iconColor,
-          streak: defaultStreakByMetric[item.metric_type] ?? 0,
+          streak: streakByMetric[item.metric_type] ?? 0,
           currentValue: todayValues[item.metric_type] ?? 0,
           targetValue: row.target_value ?? item.defaultTarget,
           frequency: row.frequency ?? item.defaultFrequency ?? 'daily',
@@ -82,7 +71,30 @@ export default function GoalsPage() {
     const goals = Array.isArray(goalsData?.goals) ? goalsData.goals : [];
     const todayValues = todayData?.currentValues || {};
 
-    buildCardsFromDb(goals, todayValues);
+    // Fetch streak data for each metric that has a goal
+    const streakByMetric = {};
+    const metricsWithGoals = goals.map((g) => g.metric_type);
+
+    // Fetch streaks in parallel for all metrics
+    const streakPromises = metricsWithGoals.map(async (metric) => {
+      try {
+        const res = await fetch(
+          `/api/biometrics/streaks?metric=${metric}&daysBack=365`,
+          { cache: 'no-store' }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          streakByMetric[metric] = data.currentStreak ?? 0;
+        }
+      } catch (error) {
+        console.error(`Failed to fetch streak for ${metric}:`, error);
+        streakByMetric[metric] = 0;
+      }
+    });
+
+    await Promise.all(streakPromises);
+
+    buildCardsFromDb(goals, todayValues, streakByMetric);
   }, [patientId, buildCardsFromDb]);
 
   useEffect(() => {
