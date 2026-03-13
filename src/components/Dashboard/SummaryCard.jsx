@@ -2,10 +2,10 @@ import React from 'react';
 
 const SummaryCard = ({ summaryData }) => {
   const metrics = [
-    { label: 'Steps Taken', value: summaryData.steps?.toLocaleString() || '0', key: 'steps' },
-    { label: 'Calories Burned', value: summaryData.calories?.toLocaleString() || '0', key: 'calories' },
-    { label: 'Sleep Duration', value: summaryData.sleep || '0h', key: 'sleep' },
-    { label: 'Hydration Goal', value: summaryData.hydration || '0/8', key: 'hydration' },
+    { label: 'Steps Taken', value: summaryData?.steps?.toLocaleString() || '0' || '0', key: 'steps' },
+    { label: 'Calories Burned', value: summaryData?.calories?.toLocaleString() || '0', key: 'calories' },
+    { label: 'Sleep Duration', value: summaryData?.sleep || '0h', key: 'sleep' },
+    { label: 'Hydration Goal', value: summaryData?.hydration || '0/8', key: 'hydration' },
   ];
 
   return (

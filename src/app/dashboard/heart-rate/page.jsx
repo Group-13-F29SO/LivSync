@@ -45,13 +45,34 @@ export default function HeartRateChartPage() {
           url += `&startDate=${startDateRange}&endDate=${endDateRange}`;
         }
         
-        const response = await fetch(url);
-        
+        const response = await fetch(url, {
+          credentials: 'include',
+          cache: 'no-store',
+        });        
         if (!response.ok) {
           throw new Error('Failed to fetch heart rate data');
         }
 
         const result = await response.json();
+
+        if (period === 'today' && result.selectedDate) {
+          setSelectedDate(result.selectedDate);
+        }
+
+
+      if (period === 'all' && result.availableDates) {
+        if (!startDateRange && result.availableDates.earliest) {
+          setStartDateRange(result.availableDates.earliest.slice(0, 10));
+        }
+        if (result.availableDates.latest) {
+          setEndDateRange(result.availableDates.latest.slice(0, 10));
+        }
+      }
+
+
+
+
+
         setChartData(result.data);
         setStats(result.stats);
         setChartType(result.chartType || 'area');
