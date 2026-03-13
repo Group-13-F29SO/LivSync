@@ -7,6 +7,7 @@ import DashboardCard from '@/components/DashboardCard/DashboardCard';
 import StreakCard from '@/components/Dashboard/StreakCard';
 import SummaryCard from '@/components/Dashboard/SummaryCard';
 import SyncButton from '@/components/SyncButton/SyncButton';
+import ConnectionRequestsNotification from '@/components/Provider/ConnectionRequestsNotification';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function DashboardPage() {
@@ -86,7 +87,10 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <SyncButton onSyncComplete={handleSyncComplete} />
+            <div className="flex gap-2 items-center">
+              <ConnectionRequestsNotification patientId={user?.id} />
+              <SyncButton onSyncComplete={handleSyncComplete} />
+            </div>
             <button
               onClick={handleLogout}
               className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-medium rounded-lg transition-colors"

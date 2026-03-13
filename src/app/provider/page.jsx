@@ -92,24 +92,6 @@ export default function ProviderPage() {
     setIsModalOpen(true);
   };
 
-  const handleSendRequest = async (emailOrUsername) => {
-    try {
-      // Here you would typically send an API request
-      console.log('Sending connection request to:', emailOrUsername);
-      // const response = await fetch('/api/provider/connection-request', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ emailOrUsername })
-      // });
-      setIsModalOpen(false);
-      // Show success message
-      alert('Connection request sent successfully!');
-    } catch (error) {
-      console.error('Error sending connection request:', error);
-      alert('Failed to send connection request');
-    }
-  };
-
   const handleDisconnect = (patientId) => {
     setPatients(patients.filter(p => p.id !== patientId));
     setPatientCount(prev => prev - 1);
@@ -128,7 +110,7 @@ export default function ProviderPage() {
       <ConnectionRequestModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSend={handleSendRequest}
+        providerId={user?.id}
       />
 
       <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
