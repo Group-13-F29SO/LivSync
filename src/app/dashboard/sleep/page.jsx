@@ -21,8 +21,6 @@ export default function SleepChartPage() {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState(null);
-  const [goal, setGoal] = useState(null);
-  const [goalLoading, setGoalLoading] = useState(true);
 
   const RECOMMENDED_MIN = 7;
   const RECOMMENDED_MAX = 9;
@@ -33,43 +31,24 @@ export default function SleepChartPage() {
     }
   }, [user, isLoading, router]);
 
-  const fetchGoal = async () => {
-    try {
-      setGoalLoading(true);
-      const patientId = user?.patient_id || user?.id;
-      if (!patientId) return;
-
-      const response = await fetch(`/api/biometrics/goals?patientId=${patientId}`);
-      if (response.ok) {
-        const data = await response.json();
-        const sleepGoal = data.goals?.find((g) => g.metric_type === 'sleep');
-        setGoal(sleepGoal || null);
-      }
-    } catch (err) {
-      console.error('Error fetching goal:', err);
-      setGoal(null);
-    } finally {
-      setGoalLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (user && !isLoading) {
-      fetchGoal();
-    }
-  }, [user, isLoading]);
-
   useEffect(() => {
     const fetchSleepData = async () => {
       try {
         setDataLoading(true);
-        const response = await fetch(`/api/biometrics/sleep?date=${selectedDate}`);
-        
+        const response = await fetch(`/api/biometrics/sleep?date=${selectedDate}`, {
+          credentials: 'include',
+          cache: 'no-store',
+        });        
         if (!response.ok) {
           throw new Error('Failed to fetch sleep data');
         }
 
         const result = await response.json();
+        if (result.selectedDate) {
+          setSelectedDate(result.selectedDate);
+        }
+
+        
         setChartData(result.data);
         setStats(result.stats);
       } catch (err) {
@@ -277,7 +256,7 @@ export default function SleepChartPage() {
               sublabel="longest night"
               color="#10b981"
             />
-            {!goal ? (
+            {!stats.goal ? (
               <StatCard 
                 label="Goal Achievement" 
                 value="No Goal Set"
@@ -288,7 +267,7 @@ export default function SleepChartPage() {
               <StatCard 
                 label="Goal Achievement" 
                 value={stats.goalAchieved ? 'Achieved' : 'Not Met'}
-                sublabel={`${goal.target_value}h/night goal`}
+                sublabel={`${stats.goal}h/night goal`}
                 color={stats.goalAchieved ? '#10b981' : '#ef4444'}
               />
             )}

@@ -38,18 +38,50 @@ export default function DevicesPage() {
     },
   ]);
 
+  const [importFile, setImportFile] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+
   const handleRemoveDevice = (deviceId) => {
     setDevices(devices.filter(device => device.id !== deviceId));
   };
 
   const handleSyncDevice = (deviceId) => {
-    // In a real implementation, this would sync the device
     console.log('Syncing device:', deviceId);
   };
 
   const handleAddDevice = () => {
-    // In a real implementation, this would open a device pairing dialog
     console.log('Opening device pairing dialog');
+  };
+
+  const handleImportAppleHealth = async () => {
+    if (!importFile) return;
+
+    try {
+      setImporting(true);
+      setImportResult(null);
+
+      const formData = new FormData();
+      formData.append('file', importFile);
+
+      const res = await fetch('/api/apple-health/import', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      setImportResult({
+        ok: res.ok,
+        data,
+      });
+    } catch (error) {
+      setImportResult({
+        ok: false,
+        data: { error: 'Upload failed.' },
+      });
+    } finally {
+      setImporting(false);
+    }
   };
 
   return (
@@ -60,12 +92,19 @@ export default function DevicesPage() {
         <div className="p-8 max-w-4xl">
           <BackButton onClick={() => router.push('/settings')} />
           <PageHeader />
-          <ConnectedDevicesSection 
+          <ConnectedDevicesSection
             devices={devices}
             onSync={handleSyncDevice}
             onRemove={handleRemoveDevice}
           />
           <AddDeviceSection onAddDevice={handleAddDevice} />
+          <AppleHealthImportSection
+            importFile={importFile}
+            setImportFile={setImportFile}
+            importing={importing}
+            importResult={importResult}
+            onImport={handleImportAppleHealth}
+          />
           <DevicePermissionsSection />
         </div>
       </main>
@@ -156,6 +195,85 @@ function AddDeviceSection({ onAddDevice }) {
               </div>
             </PrimaryButton>
           </div>
+        </div>
+      </SettingsSection>
+    </div>
+  );
+}
+
+function AppleHealthImportSection({
+  importFile,
+  setImportFile,
+  importing,
+  importResult,
+  onImport,
+}) {
+  const ImportIcon = () => (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16V4m0 12l-4-4m4 4l4-4M4 20h16" />
+    </svg>
+  );
+
+  return (
+    <div className="mb-8">
+      <SettingsSection icon={<ImportIcon />} title="Import Apple Health Data">
+        <div className="space-y-5">
+          <p className="text-slate-600 dark:text-slate-400">
+            Upload your Apple Health <span className="font-semibold">export.zip</span> or <span className="font-semibold">export.xml</span> to import steps, calories, heart rate, sleep, hydration, blood glucose, and workout sessions.
+          </p>
+
+          <div className="space-y-3">
+            <input
+              type="file"
+              accept=".zip,.xml,text/xml,application/zip,application/x-zip-compressed"
+              onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+              className="block w-full text-sm text-slate-700 dark:text-slate-300
+                         file:mr-4 file:py-2 file:px-4
+                         file:rounded-lg file:border-0
+                         file:bg-slate-200 dark:file:bg-gray-800
+                         file:text-slate-800 dark:file:text-slate-200
+                         file:font-medium hover:file:bg-slate-300 dark:hover:file:bg-gray-700"
+            />
+
+            {importFile && (
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Selected: {importFile.name}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <PrimaryButton onClick={onImport} disabled={!importFile || importing}>
+              {importing ? 'Importing...' : 'Import Apple Health'}
+            </PrimaryButton>
+          </div>
+
+          {importResult && (
+            <div
+              className={`rounded-lg border p-4 text-sm ${
+                importResult.ok
+                  ? 'bg-green-50 border-green-200 text-green-800 dark:bg-green-950/20 dark:border-green-900 dark:text-green-300'
+                  : 'bg-red-50 border-red-200 text-red-800 dark:bg-red-950/20 dark:border-red-900 dark:text-red-300'
+              }`}
+            >
+              {importResult.ok ? (
+                <div className="space-y-2">
+                  <p className="font-semibold">{importResult.data.message}</p>
+                  <p>Imported: {importResult.data.imported}</p>
+                  <p>Skipped duplicates: {importResult.data.skippedDuplicates}</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pt-2">
+                    {Object.entries(importResult.data.counts || {}).map(([key, value]) => (
+                      <div key={key} className="rounded-md bg-white/50 dark:bg-black/20 px-3 py-2">
+                        <span className="font-medium">{key}</span>: {value}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="font-semibold">{importResult.data.error || 'Import failed.'}</p>
+              )}
+            </div>
+          )}
         </div>
       </SettingsSection>
     </div>

@@ -3,6 +3,10 @@ export default function CaloriesStats({ stats, period, activityLevel, goal }) {
     return null;
   }
 
+  // Determine the goal value from stats or goal prop
+  const goalValue = stats.goal !== undefined ? stats.goal : (goal?.target_value || null);
+  const hasGoal = goalValue !== null && goalValue !== undefined;
+
   return (
     <div className={`grid gap-4 mb-8 ${period === 'today' ? 'grid-cols-1 md:grid-cols-5' : 'grid-cols-1 md:grid-cols-4'}`}>
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
@@ -51,7 +55,7 @@ export default function CaloriesStats({ stats, period, activityLevel, goal }) {
       {period === 'today' && (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
           <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Goal Achievement</p>
-          {!goal ? (
+          {!hasGoal ? (
             <>
               <p className="text-3xl font-bold mt-2 text-gray-600">
                 No Goal Set
@@ -66,7 +70,7 @@ export default function CaloriesStats({ stats, period, activityLevel, goal }) {
                 {stats.goalAchieved ? 'Achieved' : 'Not Met'}
               </p>
               <p className="text-gray-500 dark:text-gray-400 text-xs mt-1">
-                {goal.target_value} kcal/day goal
+                {goalValue} kcal/day goal
               </p>
             </>
           )}

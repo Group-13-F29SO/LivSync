@@ -11,15 +11,21 @@
   },
   "dependencies": {
     "@prisma/client": "^5.20.0",
+    "adm-zip": "^0.5.16",
     "axios": "^1.6.0",
     "bcrypt": "^6.0.0",
+    "fast-xml-parser": "^5.5.1",
     "next": "^14.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-query": "^3.39.3",
-    "recharts": "^3.7.0"
+    "recharts": "^3.7.0",
+    "sax": "^1.5.0",
+    "yauzl": "^3.2.1"
   },
   "devDependencies": {
+    "@types/node": "25.5.0",
+    "@types/react": "19.2.14",
     "autoprefixer": "^10.4.16",
     "eslint": "^8.50.0",
     "eslint-config-next": "^14.0.0",
