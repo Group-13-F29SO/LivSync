@@ -5,6 +5,10 @@ export default function StepsStats({ stats, period, goal }) {
     return null;
   }
 
+  // Determine the goal value from stats or goal prop
+  const goalValue = stats.goal !== undefined ? stats.goal : (goal?.target_value || null);
+  const hasGoal = goalValue !== null && goalValue !== undefined;
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
       <StatCard
@@ -26,7 +30,7 @@ export default function StepsStats({ stats, period, goal }) {
         color="green"
       />
       {period === 'today' ? (
-        !goal ? (
+        !hasGoal ? (
           <StatCard
             label="Goal Achievement"
             value="No Goal Set"
@@ -37,7 +41,7 @@ export default function StepsStats({ stats, period, goal }) {
           <StatCard
             label="Goal Achievement"
             value={stats.goalAchieved ? 'Achieved' : 'Not Met'}
-            subLabel={`${goal.target_value} steps/day goal`}
+            subLabel={`${goalValue} steps/day goal`}
             color="orange"
           />
         )
