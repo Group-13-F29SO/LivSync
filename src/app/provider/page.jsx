@@ -70,6 +70,10 @@ export default function ProviderPage() {
     if (!isLoading && !user) {
       router.push('/login');
     }
+    // Redirect patient to their dashboard
+    if (!isLoading && user && user.userType !== 'provider') {
+      router.push('/dashboard');
+    }
   }, [user, isLoading, router]);
 
   useEffect(() => {

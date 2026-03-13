@@ -28,6 +28,10 @@ export default function PatientDetailPage() {
     if (!isLoading && !user) {
       router.push('/login');
     }
+    // Only allow providers to access this page
+    if (!isLoading && user && user.userType !== 'provider') {
+      router.push('/dashboard');
+    }
   }, [user, isLoading, router]);
 
   useEffect(() => {

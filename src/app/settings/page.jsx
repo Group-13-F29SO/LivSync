@@ -1,14 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import SettingsSection from '@/components/Settings/SettingsSection';
 import ToggleRow from '@/components/Settings/ToggleRow';
+import { useAuth } from '@/hooks/useAuth';
 import { PrimaryButton, SecondaryButton, DangerButton } from '@/components/Settings/Buttons';
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
   const [settings, setSettings] = useState({
     notifications: {
       goalReminders: true,
@@ -26,6 +28,16 @@ export default function SettingsPage() {
     },
     twoFactor: false,
   });
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+    // Only allow patients to access this page
+    if (!isLoading && user && user.userType === 'provider') {
+      router.push('/provider');
+    }
+  }, [user, isLoading, router]);
 
 
 

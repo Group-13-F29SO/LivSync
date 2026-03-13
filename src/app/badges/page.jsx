@@ -1,9 +1,26 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import CategorySection from '@/components/CategorySection/CategorySection';
 import Navbar from '@/components/Navbar/Navbar';
+import { useAuth } from '@/hooks/useAuth';
 
-const badgesData = [
+export default function BadgesPage() {
+  const router = useRouter();
+  const { user, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.push('/login');
+    }
+    // Only allow patients to access this page
+    if (!isLoading && user && user.userType === 'provider') {
+      router.push('/provider');
+    }
+  }, [user, isLoading, router]);
+
+  const badgesData = [
   {
     category: 'Activity',
     badges: [

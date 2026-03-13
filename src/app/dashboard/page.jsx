@@ -26,6 +26,10 @@ export default function DashboardPage() {
     if (!isLoading && !user) {
       router.push('/login');
     }
+    // Redirect provider to their dashboard
+    if (!isLoading && user && user.userType === 'provider') {
+      router.push('/provider');
+    }
   }, [user, isLoading, router]);
 
   useEffect(() => {

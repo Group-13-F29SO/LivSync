@@ -47,6 +47,7 @@ export async function POST(request) {
           email: user.email,
           firstName: user.first_name,
           lastName: user.last_name,
+          userType: 'patient',
         },
       },
       { status: 200 }
@@ -57,6 +58,7 @@ export async function POST(request) {
       userId: user.id,
       username: user.username,
       email: user.email,
+      userType: 'patient',
     }), {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

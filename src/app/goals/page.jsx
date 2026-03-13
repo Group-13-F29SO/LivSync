@@ -25,6 +25,10 @@ export default function GoalsPage() {
 
   useEffect(() => {
     if (!isLoading && !user) router.push('/login');
+    // Only allow patients to access this page
+    if (!isLoading && user && user.userType === 'provider') {
+      router.push('/provider');
+    }
   }, [user, isLoading, router]);
 
   const buildCardsFromDb = useCallback((dbGoals, todayValues = {}, streakByMetric = {}) => {

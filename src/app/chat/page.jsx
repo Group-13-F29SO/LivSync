@@ -32,6 +32,10 @@ export default function ChatPage() {
     if (!isLoading && !user) {
       router.push('/login');
     }
+    // Only allow patients to access this page
+    if (!isLoading && user && user.userType === 'provider') {
+      router.push('/provider');
+    }
   }, [user, isLoading, router]);
 
   // Auto-scroll to bottom
