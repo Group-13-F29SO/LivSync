@@ -41,6 +41,35 @@ export async function POST(req) {
     // Parse the date
     const targetDate = new Date(date + 'T00:00:00');
 
+    // Check if ANY data exists for this date
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const existingData = await prisma.biometric_data.findFirst({
+      where: {
+        patient_id: patientId,
+        metric_type: 'sleep',
+        timestamp: {
+          gte: startOfDay,
+          lte: endOfDay
+        }
+      },
+      select: { source: true }
+    });
+
+    if (existingData) {
+      return new Response(
+        JSON.stringify({
+          error: 'Cannot generate data for this date',
+          message: `Data already exists for ${date} (source: ${existingData.source}). Please delete existing data first to generate simulated data.`
+        }),
+        { status: 409, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Generate sleep data using the SleepGenerator
     const sleepGenerator = new SleepGenerator();
     const generatedData = sleepGenerator.generate(targetDate);
@@ -50,24 +79,6 @@ export async function POST(req) {
       ...item,
       patient_id: patientId
     }));
-
-    // Delete existing sleep data for this date first
-    const startOfDay = new Date(targetDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    
-    const endOfDay = new Date(targetDate);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    await prisma.biometric_data.deleteMany({
-      where: {
-        patient_id: patientId,
-        metric_type: 'sleep',
-        timestamp: {
-          gte: startOfDay,
-          lte: endOfDay
-        }
-      }
-    });
 
     // Create new sleep data
     const created = await prisma.biometric_data.createMany({
