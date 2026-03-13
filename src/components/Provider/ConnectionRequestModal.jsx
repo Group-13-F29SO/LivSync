@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { X, Search, AlertCircle } from 'lucide-react';
 
-export default function ConnectionRequestModal({ isOpen, onClose, providerId }) {
+export default function ConnectionRequestModal({ isOpen, onClose, onSuccess, providerId }) {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -71,6 +71,9 @@ export default function ConnectionRequestModal({ isOpen, onClose, providerId }) 
       setTimeout(() => {
         resetForm();
         onClose();
+        if (onSuccess) {
+          onSuccess();
+        }
       }, 2000);
     } catch (err) {
       setError(err.message);

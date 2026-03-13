@@ -16,55 +16,7 @@ export default function ProviderPage() {
   const [patientCount, setPatientCount] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-  // Sample patient data
-  const samplePatients = [
-    {
-      id: 1,
-      name: 'Sarah Mitchell',
-      age: 34,
-      status: 'Active',
-      lastSync: 5,
-      statusColor: 'green',
-      alert: null
-    },
-    {
-      id: 2,
-      name: 'John Anderson',
-      age: 52,
-      status: 'Active',
-      lastSync: 12,
-      statusColor: 'orange',
-      alert: { icon: '⚠️', message: 'High Heart Rate — 185 bpm' }
-    },
-    {
-      id: 3,
-      name: 'Emma Johnson',
-      age: 28,
-      status: 'Active',
-      lastSync: 2,
-      statusColor: 'green',
-      alert: null
-    },
-    {
-      id: 4,
-      name: 'Robert Chen',
-      age: 67,
-      status: 'Active',
-      lastSync: 45,
-      statusColor: 'red',
-      alert: { icon: '⚠️', message: 'Critical Blood Glucose — 450 mg/dL' }
-    },
-    {
-      id: 5,
-      name: 'Maria Garcia',
-      age: 41,
-      status: 'Active',
-      lastSync: 8,
-      statusColor: 'green',
-      alert: null
-    }
-  ];
+  const [isLoadingPatients, setIsLoadingPatients] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -77,13 +29,35 @@ export default function ProviderPage() {
   }, [user, isLoading, router]);
 
   useEffect(() => {
-    // Set initial patient data
-    setPatients(samplePatients);
-    setPatientCount(samplePatients.length);
-  }, []);
+    // Fetch actual patient data from the database
+    if (!isLoading && user && user.id && user.userType === 'provider') {
+      fetchPatients();
+    }
+  }, [user, isLoading]);
+
+  const fetchPatients = async () => {
+    try {
+      setIsLoadingPatients(true);
+      const response = await fetch(`/api/provider/get-patients?providerId=${user.id}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch patients');
+      }
+
+      const data = await response.json();
+      setPatients(data.patients);
+      setPatientCount(data.count.total);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+      // Handle error silently or show a toast notification
+    } finally {
+      setIsLoadingPatients(false);
+    }
+  };
 
   const filteredPatients = patients.filter(patient => {
-    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         patient.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterType === 'All Patients' || patient.status === filterType;
     return matchesSearch && matchesFilter;
   });
@@ -95,6 +69,12 @@ export default function ProviderPage() {
   const handleDisconnect = (patientId) => {
     setPatients(patients.filter(p => p.id !== patientId));
     setPatientCount(prev => prev - 1);
+  };
+
+  const handleConnectionSuccess = () => {
+    // Refresh patients after successful connection
+    fetchPatients();
+    setIsModalOpen(false);
   };
 
   if (isLoading || !user) {
@@ -110,6 +90,7 @@ export default function ProviderPage() {
       <ConnectionRequestModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSuccess={handleConnectionSuccess}
         providerId={user?.id}
       />
 
@@ -186,7 +167,11 @@ export default function ProviderPage() {
 
         {/* Patient Cards Section */}
         <div className="space-y-4">
-          {filteredPatients.length > 0 ? (
+          {isLoadingPatients ? (
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              <p>Loading patients...</p>
+            </div>
+          ) : filteredPatients.length > 0 ? (
             filteredPatients.map(patient => (
               <PatientCard
                 key={patient.id}
@@ -196,7 +181,11 @@ export default function ProviderPage() {
             ))
           ) : (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-              <p>No patients found matching "{searchTerm}"</p>
+              <p>
+                {searchTerm
+                  ? `No patients found matching "${searchTerm}"`
+                  : 'No patients connected yet. Click "Connect Patient" to get started.'}
+              </p>
             </div>
           )}
         </div>

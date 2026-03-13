@@ -54,17 +54,31 @@ export default function PatientCard({ patient, onDisconnect }) {
           <h3 className="text-lg font-bold text-gray-900 dark:text-gray-50">
             {patient.name}
           </h3>
-          <span className="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 text-xs font-semibold rounded-full flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-green-600 dark:bg-green-400 rounded-full"></span>
+          <span className={`px-2 py-1 ${
+            patient.status === 'Active' 
+              ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' 
+              : 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-100'
+          } text-xs font-semibold rounded-full flex items-center gap-1`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${
+              patient.status === 'Active' 
+                ? 'bg-green-600 dark:bg-green-400' 
+                : 'bg-orange-600 dark:bg-orange-400'
+            }`}></span>
             {patient.status}
           </span>
         </div>
 
         {/* Demographics */}
         <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-          <span>Age: {patient.age}</span>
-          <span className="mx-2">•</span>
-          <span>Last sync: {patient.lastSync} min ago</span>
+          {patient.age && (
+            <>
+              <span>Age: {patient.age}</span>
+              <span className="mx-2">•</span>
+            </>
+          )}
+          <span>
+            Last sync: {patient.lastSync !== null ? `${patient.lastSync} min ago` : 'Never'}
+          </span>
         </div>
 
         {/* Alert Message */}
