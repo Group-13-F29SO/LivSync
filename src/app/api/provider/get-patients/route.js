@@ -87,6 +87,44 @@ export async function GET(request) {
       },
     });
 
+    // Get revoked connection requests
+    const revokedRequests = await prisma.connection_requests.findMany({
+      where: {
+        provider_id: providerId,
+        status: 'revoked',
+      },
+      select: {
+        patient_id: true,
+        created_at: true,
+        updated_at: true,
+        patients: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            created_at: true,
+            patient_profiles: {
+              select: {
+                date_of_birth: true,
+              },
+            },
+            biometric_data: {
+              orderBy: {
+                timestamp: 'desc',
+              },
+              take: 1,
+              select: {
+                timestamp: true,
+                metric_type: true,
+                value: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
     // Format connected patients
     const formattedConnected = connectedPatients.map(patient => ({
       id: patient.id,
@@ -120,8 +158,26 @@ export async function GET(request) {
       requestCreatedAt: request.created_at,
     }));
 
+    // Format revoked patients
+    const formattedRevoked = revokedRequests.map(request => ({
+      id: request.patients.id,
+      firstName: request.patients.first_name,
+      lastName: request.patients.last_name,
+      name: `${request.patients.first_name} ${request.patients.last_name}`,
+      email: request.patients.email,
+      age: request.patients.patient_profiles?.date_of_birth ? calculateAge(request.patients.patient_profiles.date_of_birth) : null,
+      status: 'Revoked',
+      connectionStatus: 'revoked',
+      lastSync: request.patients.biometric_data.length > 0 ? getMinutesAgo(request.patients.biometric_data[0].timestamp) : null,
+      statusColor: 'red',
+      alert: null,
+      createdAt: request.patients.created_at,
+      requestCreatedAt: request.created_at,
+      revokedAt: request.updated_at,
+    }));
+
     // Combine all patients
-    const allPatients = [...formattedConnected, ...formattedPending];
+    const allPatients = [...formattedConnected, ...formattedPending, ...formattedRevoked];
 
     return NextResponse.json(
       {
@@ -130,6 +186,7 @@ export async function GET(request) {
           total: allPatients.length,
           active: formattedConnected.length,
           pending: formattedPending.length,
+          revoked: formattedRevoked.length,
         },
       },
       { status: 200 }

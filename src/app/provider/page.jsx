@@ -67,8 +67,9 @@ export default function ProviderPage() {
   };
 
   const handleDisconnect = (patientId) => {
-    setPatients(patients.filter(p => p.id !== patientId));
-    setPatientCount(prev => prev - 1);
+    // On disconnect, refresh the list to show revoked status
+    // On dismiss, remove the patient from the list
+    fetchPatients();
   };
 
   const handleConnectionSuccess = () => {
@@ -177,6 +178,7 @@ export default function ProviderPage() {
                 key={patient.id}
                 patient={patient}
                 onDisconnect={handleDisconnect}
+                providerId={user?.id}
               />
             ))
           ) : (

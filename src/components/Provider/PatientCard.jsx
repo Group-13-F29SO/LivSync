@@ -2,9 +2,12 @@
 
 import { useRouter } from 'next/navigation';
 import { AlertCircle } from 'lucide-react';
+import { useState } from 'react';
 
-export default function PatientCard({ patient, onDisconnect }) {
+export default function PatientCard({ patient, onDisconnect, providerId }) {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
   const getStatusColor = (color) => {
     switch (color) {
       case 'red':
@@ -27,9 +30,47 @@ export default function PatientCard({ patient, onDisconnect }) {
   };
 
   const handleCardClick = (e) => {
-    // Only navigate if not clicking the disconnect button
+    // Prevent navigation if revoked or clicking the button
+    if (patient.status === 'Revoked') {
+      return;
+    }
     if (!e.target.closest('button')) {
       router.push(`/provider/${patient.id}`);
+    }
+  };
+
+  const handleButtonClick = async () => {
+    try {
+      setIsLoading(true);
+      const isRevoked = patient.status === 'Revoked';
+      const endpoint = isRevoked 
+        ? '/api/provider/dismiss-patient'
+        : '/api/provider/disconnect-patient';
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          providerId: providerId || patient.providerId,
+          patientId: patient.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${isRevoked ? 'dismiss' : 'disconnect'} patient`);
+      }
+
+      // Always call onDisconnect to refresh the patient list
+      // For disconnect: shows card with updated "Revoked" status
+      // For dismiss: removes card entirely
+      onDisconnect(patient.id);
+    } catch (error) {
+      console.error('Error:', error);
+      // Handle error silently or show a toast notification
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -57,11 +98,15 @@ export default function PatientCard({ patient, onDisconnect }) {
           <span className={`px-2 py-1 ${
             patient.status === 'Active' 
               ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100' 
+              : patient.status === 'Revoked'
+              ? 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-100'
               : 'bg-orange-100 dark:bg-orange-900 text-orange-800 dark:text-orange-100'
           } text-xs font-semibold rounded-full flex items-center gap-1`}>
             <span className={`w-1.5 h-1.5 rounded-full ${
               patient.status === 'Active' 
                 ? 'bg-green-600 dark:bg-green-400' 
+                : patient.status === 'Revoked'
+                ? 'bg-red-600 dark:bg-red-400'
                 : 'bg-orange-600 dark:bg-orange-400'
             }`}></span>
             {patient.status}
@@ -90,12 +135,17 @@ export default function PatientCard({ patient, onDisconnect }) {
         )}
       </div>
 
-      {/* Disconnect Button */}
+      {/* Disconnect/Dismiss Button */}
       <button
-        onClick={() => onDisconnect(patient.id)}
-        className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium transition-colors flex-shrink-0"
+        onClick={handleButtonClick}
+        disabled={isLoading}
+        className={`font-medium transition-colors flex-shrink-0 ${
+          patient.status === 'Revoked'
+            ? 'text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 disabled:opacity-50'
+            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 disabled:opacity-50'
+        }`}
       >
-        Disconnect
+        {isLoading ? 'Loading...' : patient.status === 'Revoked' ? 'Dismiss' : 'Disconnect'}
       </button>
     </div>
   );
