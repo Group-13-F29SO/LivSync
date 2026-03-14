@@ -28,6 +28,8 @@ export default function SettingsPage() {
     },
     twoFactor: false,
   });
+  const [isLoadingPrivacy, setIsLoadingPrivacy] = useState(false);
+  const [privacyError, setPrivacyError] = useState(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -38,6 +40,68 @@ export default function SettingsPage() {
       router.push('/provider');
     }
   }, [user, isLoading, router]);
+
+  // Fetch current privacy consent status
+  useEffect(() => {
+    if (!isLoading && user && user.id && user.userType === 'patient') {
+      fetchPrivacyConsent();
+    }
+  }, [user, isLoading]);
+
+  const fetchPrivacyConsent = async () => {
+    try {
+      const response = await fetch(`/api/patient/privacy-consent?patientId=${user.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch privacy setting');
+      }
+      const data = await response.json();
+      setSettings(prev => ({
+        ...prev,
+        privacy: {
+          ...prev.privacy,
+          shareData: data.shareDataWithProviders,
+        },
+      }));
+    } catch (error) {
+      console.error('Error fetching privacy consent:', error);
+    }
+  };
+
+  const handleShareDataToggle = async (newValue) => {
+    try {
+      setIsLoadingPrivacy(true);
+      setPrivacyError(null);
+
+      const response = await fetch('/api/patient/privacy-consent', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          shareData: newValue,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update privacy setting');
+      }
+
+      const data = await response.json();
+      setSettings(prev => ({
+        ...prev,
+        privacy: {
+          ...prev.privacy,
+          shareData: data.data.shareDataWithProviders,
+        },
+      }));
+    } catch (error) {
+      console.error('Error updating privacy consent:', error);
+      setPrivacyError(error.message || 'Failed to update privacy setting');
+    } finally {
+      setIsLoadingPrivacy(false);
+    }
+  };
 
 
 
@@ -311,10 +375,16 @@ export default function SettingsPage() {
             >
               <div className="space-y-4">
                 <ToggleRow
-                  label="Share Data with Partners"
-                  description="Allow us to share your data with trusted partners"
+                  label="Share Data with Healthcare Providers"
+                  description={settings.privacy.shareData ? "You can connect with healthcare providers" : "You cannot connect with healthcare providers"}
                   value={settings.privacy.shareData}
+                  onChange={handleShareDataToggle}
                 />
+                {privacyError && (
+                  <div className="text-red-600 dark:text-red-400 text-sm">
+                    {privacyError}
+                  </div>
+                )}
                 <ToggleRow
                   label="Anonymous Analytics"
                   description="Help us improve by sharing anonymous usage data"

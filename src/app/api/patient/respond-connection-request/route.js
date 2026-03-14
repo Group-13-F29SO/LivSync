@@ -34,6 +34,21 @@ export async function POST(request) {
     }
 
     if (action === 'accept') {
+      // Check if patient has consented to share data with providers
+      const patient = await prisma.patients.findUnique({
+        where: { id: connectionRequest.patient_id },
+        select: {
+          provider_consent_status: true,
+        },
+      });
+
+      if (patient?.provider_consent_status === 'denied') {
+        return NextResponse.json(
+          { error: 'Patient has disabled data sharing with healthcare providers' },
+          { status: 403 }
+        );
+      }
+
       // Update the connection request to accepted
       const updatedRequest = await prisma.connection_requests.update({
         where: { id: requestId },
