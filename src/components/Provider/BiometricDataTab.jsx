@@ -10,6 +10,8 @@ export default function BiometricDataTab({ patientId }) {
     return new Date().toISOString().split('T')[0];
   });
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+  const [showHeartRate, setShowHeartRate] = useState(true);
+  const [showBloodGlucose, setShowBloodGlucose] = useState(true);
   
   const [heartRateData, setHeartRateData] = useState([]);
   const [bloodGlucoseData, setBloodGlucoseData] = useState([]);
@@ -108,7 +110,7 @@ export default function BiometricDataTab({ patientId }) {
   return (
     <div>
       {/* Date Range Picker */}
-      <div className="flex items-center gap-4 mb-8 bg-gray-100 dark:bg-gray-800 rounded-2xl p-4">
+      <div className="flex items-center gap-4 mb-6 bg-gray-100 dark:bg-gray-800 rounded-2xl p-4">
         <div className="flex-1 relative">
           <Calendar className="absolute left-3 top-3 text-gray-400" size={18} />
           <input
@@ -132,6 +134,31 @@ export default function BiometricDataTab({ patientId }) {
         </div>
       </div>
 
+      {/* Chart Filter */}
+      <div className="mb-6 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
+        <p className="text-sm font-semibold text-gray-900 dark:text-gray-50 mb-3">Show Charts</p>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showHeartRate}
+              onChange={(e) => setShowHeartRate(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Heart Rate</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={showBloodGlucose}
+              onChange={(e) => setShowBloodGlucose(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+            />
+            <span className="text-sm text-gray-700 dark:text-gray-300">Blood Glucose</span>
+          </label>
+        </div>
+      </div>
+
       {/* Determine period for charts */}
       {(() => {
         const isSingleDay = startDate === endDate;
@@ -140,112 +167,104 @@ export default function BiometricDataTab({ patientId }) {
         return (
           <>
             {/* Heart Rate Chart Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-shadow mb-6">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full">
-                  <Heart size={20} className="text-blue-600 dark:text-blue-400" />
+            {showHeartRate && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-shadow mb-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center justify-center w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full">
+                    <Heart size={20} className="text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+                    Heart Rate
+                  </h3>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm ml-auto">
+                    (bpm)
+                  </span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-                  Heart Rate
-                </h3>
-                <span className="text-gray-500 dark:text-gray-400 text-sm ml-auto">
-                  (bpm)
-                </span>
+
+                {/* Stats */}
+                {heartRateStats && !heartRateLoading && (
+                  <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Min</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                        {Math.round(heartRateStats.min)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Max</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                        {Math.round(heartRateStats.max)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Average</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                        {heartRateStats.average}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Chart */}
+                <HeartRateChart
+                  chartData={heartRateData}
+                  period={period}
+                  dataLoading={heartRateLoading}
+                  error={heartRateError}
+                  chartType="area"
+                  useRangeBar={false}
+                />
               </div>
-
-              {/* Stats */}
-              {heartRateStats && !heartRateLoading && (
-                <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Min</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {Math.round(heartRateStats.min)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Max</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {Math.round(heartRateStats.max)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Average</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {heartRateStats.average}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Data Points</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {heartRateStats.count}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Chart */}
-              <HeartRateChart
-                chartData={heartRateData}
-                period={period}
-                dataLoading={heartRateLoading}
-                error={heartRateError}
-                chartType="area"
-                useRangeBar={false}
-              />
-            </div>
+            )}
 
             {/* Blood Glucose Chart Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="flex items-center justify-center w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-full">
-                  <Droplets size={20} className="text-purple-600 dark:text-purple-400" />
+            {showBloodGlucose && (
+              <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex items-center justify-center w-10 h-10 bg-purple-100 dark:bg-purple-900 rounded-full">
+                    <Droplets size={20} className="text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+                    Blood Glucose
+                  </h3>
+                  <span className="text-gray-500 dark:text-gray-400 text-sm ml-auto">
+                    (mg/dL)
+                  </span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-                  Blood Glucose
-                </h3>
-                <span className="text-gray-500 dark:text-gray-400 text-sm ml-auto">
-                  (mg/dL)
-                </span>
+
+                {/* Stats */}
+                {bloodGlucoseStats && !bloodGlucoseLoading && (
+                  <div className="grid grid-cols-3 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Min</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                        {Math.round(bloodGlucoseStats.min)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Max</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                        {Math.round(bloodGlucoseStats.max)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400">Average</p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
+                        {bloodGlucoseStats.average}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Chart */}
+                <BloodGlucoseChart
+                  chartData={bloodGlucoseData}
+                  period={period}
+                  dataLoading={bloodGlucoseLoading}
+                  error={bloodGlucoseError}
+                />
               </div>
-
-              {/* Stats */}
-              {bloodGlucoseStats && !bloodGlucoseLoading && (
-                <div className="grid grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Min</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {Math.round(bloodGlucoseStats.min)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Max</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {Math.round(bloodGlucoseStats.max)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Average</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {bloodGlucoseStats.average}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">Data Points</p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-gray-50">
-                      {bloodGlucoseStats.count}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Chart */}
-              <BloodGlucoseChart
-                chartData={bloodGlucoseData}
-                period={period}
-                dataLoading={bloodGlucoseLoading}
-                error={bloodGlucoseError}
-              />
-            </div>
+            )}
           </>
         );
       })()}

@@ -105,7 +105,7 @@ export default function ConnectionRequestModal({ isOpen, onClose, onSuccess, pro
       ></div>
 
       {/* Modal Container */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-md w-full mx-4 p-8">
+      <div className="relative bg-white dark:bg-gray-800 rounded-3xl shadow-2xl max-w-2xl w-full mx-4 p-8">
         
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
@@ -122,33 +122,21 @@ export default function ConnectionRequestModal({ isOpen, onClose, onSuccess, pro
         </div>
 
         {/* Search Section */}
-        <div className="mb-6">
+        <div>
           <p className="text-slate-600 dark:text-slate-300 text-sm mb-4">
             Enter the patient's email address to send them a connection request. They will need to review and accept your request.
           </p>
 
           {/* Search Input */}
-          <div className="flex gap-2">
-            <input
-              type="email"
-              placeholder="patient@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && !patient && handleSearch()}
-              disabled={!!patient}
-              className="flex-1 px-4 py-3 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-50 placeholder-slate-500 dark:placeholder-slate-400 rounded-lg border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 transition-colors disabled:opacity-50"
-            />
-            {!patient && (
-              <button
-                onClick={handleSearch}
-                disabled={isLoading}
-                className="px-4 py-3 bg-indigo-400 hover:bg-indigo-500 disabled:bg-indigo-300 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
-              >
-                <Search size={18} />
-                {isLoading ? 'Searching...' : 'Search'}
-              </button>
-            )}
-          </div>
+          <input
+            type="email"
+            placeholder="patient@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && !patient && handleSearch()}
+            disabled={!!patient}
+            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-slate-50 placeholder-slate-500 dark:placeholder-slate-400 rounded-lg border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500 transition-colors disabled:opacity-50 mb-4"
+          />
         </div>
 
         {/* Error Message */}
@@ -208,6 +196,16 @@ export default function ConnectionRequestModal({ isOpen, onClose, onSuccess, pro
 
         {/* Action Buttons */}
         <div className="flex gap-3 justify-end">
+          {!patient && (
+            <button
+              onClick={handleSearch}
+              disabled={isLoading}
+              className="px-4 py-2 bg-indigo-400 hover:bg-indigo-500 disabled:bg-indigo-300 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Search size={18} />
+              {isLoading ? 'Searching...' : 'Search'}
+            </button>
+          )}
           <button
             onClick={handleClose}
             className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-50 font-medium rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
