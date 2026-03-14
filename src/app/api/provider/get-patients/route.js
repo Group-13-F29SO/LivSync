@@ -161,5 +161,6 @@ function getMinutesAgo(timestamp) {
   const now = new Date();
   const diff = now - new Date(timestamp);
   const minutes = Math.floor(diff / (1000 * 60));
-  return minutes;
+  // Return absolute value if calculation is negative (timezone or clock issues)
+  return Math.max(0, minutes);
 }

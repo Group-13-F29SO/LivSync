@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowLeft, Heart, AlertCircle } from 'lucide-react';
 import BiometricDataTab from '@/components/Provider/BiometricDataTab';
@@ -12,7 +11,7 @@ export default function PatientDetailPage() {
   const router = useRouter();
   const params = useParams();
   const { isLoading, user } = useAuth();
-  const [activeTab, setActiveTab] = useState('biometric');
+  const [activeTab, setActiveTab] = useState('critical');
   const [patient, setPatient] = useState(null);
   const [patientLoading, setPatientLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -102,10 +101,8 @@ export default function PatientDetailPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+    <div className="min-h-screen bg-white dark:bg-gray-950">
+      <main className="p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         {/* Header Section */}
         <div className="flex justify-between items-start mb-8">
           <div className="flex items-start gap-4">
@@ -125,7 +122,7 @@ export default function PatientDetailPage() {
               </h1>
               <p className="text-gray-500 dark:text-gray-400">
                 {patient.age && `Age: ${patient.age}`}
-                {patient.lastSync && ` • Last sync: ${patient.lastSync} ago`}
+                {patient.lastSync && ` • Last sync: ${patient.lastSync}${patient.lastSync === 'just now' ? '' : ' ago'}`}
               </p>
             </div>
           </div>

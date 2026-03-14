@@ -7,9 +7,7 @@ import BloodGlucoseChart from '@/components/BloodGlucose/BloodGlucoseChart';
 
 export default function BiometricDataTab({ patientId }) {
   const [startDate, setStartDate] = useState(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 7);
-    return date.toISOString().split('T')[0];
+    return new Date().toISOString().split('T')[0];
   });
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   

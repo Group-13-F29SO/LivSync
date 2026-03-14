@@ -9,6 +9,14 @@ export default function ConnectionRequestsNotification({ patientId }) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingRequestId, setLoadingRequestId] = useState(null);
 
+  // Fetch notifications on component mount
+  useEffect(() => {
+    if (patientId) {
+      fetchRequests();
+    }
+  }, [patientId]);
+
+  // Refresh notifications when dropdown is opened
   useEffect(() => {
     if (isOpen && patientId) {
       fetchRequests();
@@ -58,7 +66,7 @@ export default function ConnectionRequestsNotification({ patientId }) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-        aria-label="Connection requests"
+        aria-label="Notifications"
       >
         <Bell size={24} />
         {requests.length > 0 && (
@@ -72,7 +80,7 @@ export default function ConnectionRequestsNotification({ patientId }) {
           {/* Header */}
           <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
             <h3 className="font-semibold text-gray-900 dark:text-gray-50">
-              Connection Requests
+              Notifications
               {requests.length > 0 && (
                 <span className="ml-2 text-sm font-normal text-gray-500">
                   ({requests.length})
@@ -96,7 +104,7 @@ export default function ConnectionRequestsNotification({ patientId }) {
             ) : requests.length === 0 ? (
               <div className="p-6 text-center">
                 <Bell size={32} className="mx-auto text-gray-300 dark:text-gray-600 mb-2" />
-                <p className="text-gray-500 dark:text-gray-400">No connection requests</p>
+                <p className="text-gray-500 dark:text-gray-400">No notifications</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
