@@ -10,19 +10,12 @@ import CriticalEventsTab from '@/components/Provider/CriticalEventsTab';
 
 export default function PatientDetailPage() {
   const router = useRouter();
+  const params = useParams();
   const { isLoading, user } = useAuth();
   const [activeTab, setActiveTab] = useState('biometric');
   const [patient, setPatient] = useState(null);
-
-  // Sample patient data
-  const samplePatient = {
-    id: 1,
-    name: 'John Anderson',
-    age: 52,
-    status: 'Connected',
-    statusColor: 'green',
-    lastSync: 12,
-  };
+  const [patientLoading, setPatientLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -35,14 +28,75 @@ export default function PatientDetailPage() {
   }, [user, isLoading, router]);
 
   useEffect(() => {
-    // In a real app, fetch patient data based on ID
-    setPatient(samplePatient);
-  }, []);
+    const fetchPatientData = async () => {
+      try {
+        setPatientLoading(true);
+        const patientId = params.id;
+        
+        const response = await fetch(
+          `/api/provider/patient-details?patientId=${patientId}`
+        );
 
-  if (isLoading || !patient) {
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch patient data');
+        }
+
+        const data = await response.json();
+        setPatient(data.patient);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching patient data:', err);
+        setError(err.message);
+        setPatient(null);
+      } finally {
+        setPatientLoading(false);
+      }
+    };
+
+    if (!isLoading && user && params.id) {
+      fetchPatientData();
+    }
+  }, [isLoading, user, params.id]);
+
+  if (isLoading || patientLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
         <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
+        <div className="text-center">
+          <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
+          <p className="text-gray-600 dark:text-gray-400 mb-4">{error}</p>
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
+        <div className="text-center">
+          <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Patient not found</p>
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
+          >
+            Go Back
+          </button>
+        </div>
       </div>
     );
   }
@@ -69,7 +123,10 @@ export default function PatientDetailPage() {
               <h1 className="inline-block text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-500 bg-clip-text text-transparent mb-2">
                 {patient.name}
               </h1>
-              <p className="text-gray-500 dark:text-gray-400">Age: {patient.age}</p>
+              <p className="text-gray-500 dark:text-gray-400">
+                {patient.age && `Age: ${patient.age}`}
+                {patient.lastSync && ` • Last sync: ${patient.lastSync} ago`}
+              </p>
             </div>
           </div>
 
@@ -105,8 +162,8 @@ export default function PatientDetailPage() {
 
         {/* Tab Content */}
         <div>
-          {activeTab === 'biometric' && <BiometricDataTab />}
-          {activeTab === 'critical' && <CriticalEventsTab />}
+          {activeTab === 'biometric' && <BiometricDataTab patientId={params.id} />}
+          {activeTab === 'critical' && <CriticalEventsTab patientId={params.id} />}
           {activeTab === 'manual' && (
             <div className="text-center py-12 text-gray-500 dark:text-gray-400">
               <p>Manual Entries tab coming soon</p>
