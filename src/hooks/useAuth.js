@@ -19,7 +19,7 @@ export const useAuth = () => {
       
       // Redirect based on user type
       if (data.user.userType === 'provider') {
-        router.push('/provider/dashboard');
+        router.push('/provider');
       } else {
         router.push('/dashboard');
       }

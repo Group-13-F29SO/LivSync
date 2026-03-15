@@ -78,23 +78,24 @@ model patient_profiles {
 }
 
 model patients {
-  id                      String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  first_name              String              @db.VarChar(50)
-  last_name               String              @db.VarChar(50)
-  username                String              @unique @db.VarChar(50)
-  email                   String              @unique @db.VarChar(255)
-  password_hash           String              @db.VarChar(255)
-  profile_picture_url     String?             @db.VarChar(255)
-  provider_id             String?             @db.Uuid
-  provider_consent_status String              @default("none") @db.VarChar(20)
-  created_at              DateTime            @default(now()) @db.Timestamptz(6)
-  updated_at              DateTime            @default(now()) @db.Timestamptz(6)
+  id                      String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  first_name              String                   @db.VarChar(50)
+  last_name               String                   @db.VarChar(50)
+  username                String                   @unique @db.VarChar(50)
+  email                   String                   @unique @db.VarChar(255)
+  password_hash           String                   @db.VarChar(255)
+  profile_picture_url     String?                  @db.VarChar(255)
+  provider_id             String?                  @db.Uuid
+  provider_consent_status String                   @default("none") @db.VarChar(20)
+  created_at              DateTime                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime                 @default(now()) @db.Timestamptz(6)
   biometric_data          biometric_data[]
   goals                   goals[]
   patient_profiles        patient_profiles?
-  providers               providers?          @relation(fields: [provider_id], references: [id], onUpdate: NoAction)
+  providers               providers?               @relation(fields: [provider_id], references: [id], onUpdate: NoAction)
   user_achievements       user_achievements[]
   devices                 devices[]
+  connection_requests     connection_requests[]
 
   @@index([email], map: "idx_patients_email")
   @@index([provider_id], map: "idx_patients_provider_id")
@@ -121,20 +122,36 @@ model devices {
 }
 
 model providers {
-  id                      String     @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
-  first_name              String     @db.VarChar(50)
-  last_name               String     @db.VarChar(50)
-  email                   String     @unique @db.VarChar(255)
-  password_hash           String     @db.VarChar(255)
-  medical_license_number  String     @unique @db.VarChar(100)
-  workplace_name          String?    @db.VarChar(200)
-  work_phone              String?    @db.VarChar(20)
-  specialty               String     @db.VarChar(100)
-  is_verified             Boolean    @default(false)
-  created_at              DateTime   @default(now()) @db.Timestamptz(6)
+  id                      String                   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  first_name              String                   @db.VarChar(50)
+  last_name               String                   @db.VarChar(50)
+  email                   String                   @unique @db.VarChar(255)
+  password_hash           String                   @db.VarChar(255)
+  medical_license_number  String                   @unique @db.VarChar(100)
+  workplace_name          String?                  @db.VarChar(200)
+  work_phone              String?                  @db.VarChar(20)
+  specialty               String                   @db.VarChar(100)
+  is_verified             Boolean                  @default(false)
+  created_at              DateTime                 @default(now()) @db.Timestamptz(6)
   patients                patients[]
+  connection_requests     connection_requests[]
 
   @@index([email], map: "idx_providers_email")
+}
+
+model connection_requests {
+  id           String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  provider_id  String    @db.Uuid
+  patient_id   String    @db.Uuid
+  status       String    @default("pending") @db.VarChar(20)
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
+  providers    providers @relation(fields: [provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  patients     patients  @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([provider_id], map: "idx_connection_requests_provider_id")
+  @@index([patient_id], map: "idx_connection_requests_patient_id")
+  @@index([status], map: "idx_connection_requests_status")
 }
 
 model user_achievements {

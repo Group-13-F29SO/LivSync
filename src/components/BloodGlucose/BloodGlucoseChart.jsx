@@ -59,7 +59,7 @@ export default function BloodGlucoseChart({ chartData, period, dataLoading, erro
         {period === 'today' ? (
           <AreaChart
             data={chartData}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            margin={{ top: 10, right: 30, left: 40, bottom: 0 }}
           >
             <defs>
               <linearGradient id="colorGlucose" x1="0" y1="0" x2="0" y2="1">
@@ -122,10 +122,16 @@ export default function BloodGlucoseChart({ chartData, period, dataLoading, erro
             />
           </AreaChart>
         ) : (
-          <LineChart
+          <AreaChart
             data={chartData}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            margin={{ top: 10, right: 30, left: 40, bottom: 0 }}
           >
+            <defs>
+              <linearGradient id="colorGlucoseMulti" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <CartesianGrid 
               strokeDasharray="3 3" 
               stroke="#e5e7eb"
@@ -135,11 +141,6 @@ export default function BloodGlucoseChart({ chartData, period, dataLoading, erro
               dataKey="timestamp" 
               stroke="#6b7280"
               style={{ fontSize: '12px' }}
-              {...(period === 'month' ? { 
-                interval: 0,
-                angle: -35,
-                textAnchor: 'end'
-              } : {})}
             />
             <YAxis 
               stroke="#6b7280"
@@ -176,17 +177,19 @@ export default function BloodGlucoseChart({ chartData, period, dataLoading, erro
               labelFormatter={(label) => label}
             />
             <Legend />
-            <Line 
+            <Area 
               type="monotone" 
               dataKey="value" 
               stroke="#6366f1" 
               strokeWidth={2}
+              fillOpacity={1}
+              fill="url(#colorGlucoseMulti)"
               dot={{ fill: '#6366f1', r: 4 }}
-              activeDot={{ r: 6 }}
+              activeDot={{ fill: '#6366f1', r: 6 }}
               name="Blood Glucose (mg/dL)"
               isAnimationActive={true}
             />
-          </LineChart>
+          </AreaChart>
         )}
       </ResponsiveContainer>
     </div>

@@ -34,30 +34,24 @@ export default function HeartRateChart({ period, chartData, dataLoading, error, 
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-        <div className="text-red-600 dark:text-red-400 p-4 bg-red-50 dark:bg-red-900/20 rounded">
-          Error: {error}
-        </div>
+      <div className="text-red-600 dark:text-red-400 p-4 bg-red-50 dark:bg-red-900/20 rounded">
+        Error: {error}
       </div>
     );
   }
 
   if (dataLoading) {
     return (
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-        <div className="flex items-center justify-center h-96">
-          <p className="text-gray-600 dark:text-gray-400">Loading heart rate data...</p>
-        </div>
+      <div className="flex items-center justify-center h-96">
+        <p className="text-gray-600 dark:text-gray-400">Loading heart rate data...</p>
       </div>
     );
   }
 
   if (chartData.length === 0) {
     return (
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-        <div className="flex items-center justify-center h-96">
-          <p className="text-gray-600 dark:text-gray-400">No heart rate data available yet.</p>
-        </div>
+      <div className="flex items-center justify-center h-96">
+        <p className="text-gray-600 dark:text-gray-400">No heart rate data available yet.</p>
       </div>
     );
   }
@@ -65,14 +59,12 @@ export default function HeartRateChart({ period, chartData, dataLoading, error, 
   // Use special range bar chart for 7-day view
   if (useRangeBar) {
     return (
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
-        <RangeBarChart chartData={chartData} period={period} />
-      </div>
+      <RangeBarChart chartData={chartData} period={period} />
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg">
+    <div>
       <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
         Heart Rate Over Time
         {getPeriodLabel()}
@@ -81,7 +73,7 @@ export default function HeartRateChart({ period, chartData, dataLoading, error, 
         {chartType === 'bar' ? (
           <ComposedChart
             data={chartData}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            margin={{ top: 10, right: 30, left: 40, bottom: 0 }}
           >
             <CartesianGrid 
               strokeDasharray="3 3" 
@@ -129,6 +121,8 @@ export default function HeartRateChart({ period, chartData, dataLoading, error, 
               dataKey="average" 
               stroke="#3b82f6" 
               strokeWidth={2}
+              dot={{ fill: '#3b82f6', r: 4 }}
+              activeDot={{ fill: '#3b82f6', r: 6 }}
               name="Average BPM"
               isAnimationActive={false}
             />
@@ -136,7 +130,7 @@ export default function HeartRateChart({ period, chartData, dataLoading, error, 
         ) : (
           <AreaChart
             data={chartData}
-            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+            margin={{ top: 10, right: 30, left: 40, bottom: 0 }}
           >
             <defs>
               <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
@@ -171,7 +165,7 @@ export default function HeartRateChart({ period, chartData, dataLoading, error, 
             <Legend />
             <Area 
               type="monotone" 
-              dataKey="average" 
+              dataKey={chartData.length > 0 && chartData[0].average !== undefined ? 'average' : 'value'} 
               stroke="#3b82f6" 
               strokeWidth={2}
               fillOpacity={1}
