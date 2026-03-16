@@ -125,9 +125,17 @@ export async function POST(request) {
       });
     }
 
+    // Get the active device for this patient
+    const activeDevice = await prisma.devices.findFirst({
+      where: {
+        patient_id: patientId,
+        is_active: true
+      }
+    });
+
     // Create generator and generate data
     const generator = new BiometricDataGenerator(prisma);
-    const result = await generator.generate(patientId, date);
+    const result = await generator.generate(patientId, date, activeDevice?.device_name || 'manual');
 
     // Return success response
     return NextResponse.json(
