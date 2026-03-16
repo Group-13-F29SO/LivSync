@@ -31,9 +31,10 @@ class BiometricDataGenerator {
    * Generate biometric data for a patient and date
    * @param {string} patientId - Patient UUID
    * @param {Date|string} date - Date to generate for (defaults to today)
+   * @param {string} deviceName - Name of the device generating the data (for source field)
    * @returns {Promise<Object>} Result object with generation stats
    */
-  async generate(patientId, date = new Date()) {
+  async generate(patientId, date = new Date(), deviceName = 'manual') {
     try {
       // Normalize date
       if (typeof date === 'string') {
@@ -48,9 +49,10 @@ class BiometricDataGenerator {
       for (const [metricName, generator] of Object.entries(this.generators)) {
         const metricData = generator.generate(date);
 
-        // Add patient_id to each point
+        // Add patient_id and source (device name) to each point
         metricData.forEach(point => {
           point.patient_id = patientId;
+          point.source = deviceName;
         });
 
         allData.push(...metricData);

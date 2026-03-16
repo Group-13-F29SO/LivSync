@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import SettingsSection from '@/components/Settings/SettingsSection';
 import DeviceCard from '@/components/Settings/DeviceCard';
 import EmptyDevicesState from '@/components/Settings/EmptyDevicesState';
+import AddDeviceForm from '@/components/Settings/AddDeviceForm';
 import { PrimaryButton } from '@/components/Settings/Buttons';
 
 const SUPPORTED_DEVICES = [
@@ -27,31 +28,63 @@ const DEVICE_PERMISSIONS = [
 
 export default function DevicesPage() {
   const router = useRouter();
-  const [devices, setDevices] = useState([
-    {
-      id: 1,
-      name: 'Apple Watch Series 8',
-      type: 'watch',
-      status: 'connected',
-      lastSync: '2 minutes ago',
-      battery: 85,
-    },
-  ]);
+  const [devices, setDevices] = useState([]);
+  const [isLoadingDevices, setIsLoadingDevices] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [error, setError] = useState(null);
 
   const [importFile, setImportFile] = useState(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
 
+  // Fetch devices on mount
+  useEffect(() => {
+    fetchDevices();
+  }, []);
+
+  const fetchDevices = async () => {
+    try {
+      setIsLoadingDevices(true);
+      setError(null);
+      const response = await fetch('/api/patient/devices');
+      const data = await response.json();
+
+      if (data.success) {
+        setDevices(data.data || []);
+      } else {
+        setError(data.error || 'Failed to load devices');
+      }
+    } catch (err) {
+      console.error('Error fetching devices:', err);
+      setError('Failed to load devices');
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  };
+
   const handleRemoveDevice = (deviceId) => {
     setDevices(devices.filter(device => device.id !== deviceId));
   };
 
-  const handleSyncDevice = (deviceId) => {
-    console.log('Syncing device:', deviceId);
+  const handleUpdateDevice = (updatedDevice) => {
+    setDevices(devices.map(device => 
+      device.id === updatedDevice.id ? updatedDevice : device
+    ));
   };
 
   const handleAddDevice = () => {
-    console.log('Opening device pairing dialog');
+    setShowAddForm(true);
+  };
+
+  const handleDeviceAdded = (newDevice) => {
+    // Refresh the device list to show all devices with updated status
+    // (old devices will be disconnected, new device will be connected)
+    fetchDevices();
+    setShowAddForm(false);
+  };
+
+  const handleCancelAddDevice = () => {
+    setShowAddForm(false);
   };
 
   const handleImportAppleHealth = async () => {
@@ -94,10 +127,17 @@ export default function DevicesPage() {
           <PageHeader />
           <ConnectedDevicesSection
             devices={devices}
-            onSync={handleSyncDevice}
+            isLoading={isLoadingDevices}
+            error={error}
+            onUpdate={handleUpdateDevice}
             onRemove={handleRemoveDevice}
           />
-          <AddDeviceSection onAddDevice={handleAddDevice} />
+          <AddDeviceSection 
+            onAddDevice={handleAddDevice}
+            showForm={showAddForm}
+            onDeviceAdded={handleDeviceAdded}
+            onCancel={handleCancelAddDevice}
+          />
           <AppleHealthImportSection
             importFile={importFile}
             setImportFile={setImportFile}
@@ -140,7 +180,7 @@ function PageHeader() {
   );
 }
 
-function ConnectedDevicesSection({ devices, onSync, onRemove }) {
+function ConnectedDevicesSection({ devices, isLoading, error, onUpdate, onRemove }) {
   const DevicesIcon = () => (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -150,14 +190,25 @@ function ConnectedDevicesSection({ devices, onSync, onRemove }) {
   return (
     <div className="mb-8">
       <SettingsSection icon={<DevicesIcon />} title="Your Devices">
-        {devices.length > 0 ? (
+        {error && (
+          <div className="mb-4 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
+        {isLoading ? (
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto"></div>
+            <p className="mt-4 text-slate-600 dark:text-slate-400">Loading devices...</p>
+          </div>
+        ) : devices.length > 0 ? (
           <div className="space-y-4">
             {devices.map((device) => (
               <DeviceCard
                 key={device.id}
                 device={device}
-                onSync={() => onSync(device.id)}
-                onRemove={() => onRemove(device.id)}
+                allDevices={devices}
+                onUpdate={onUpdate}
+                onRemove={onRemove}
               />
             ))}
           </div>
@@ -169,12 +220,22 @@ function ConnectedDevicesSection({ devices, onSync, onRemove }) {
   );
 }
 
-function AddDeviceSection({ onAddDevice }) {
+function AddDeviceSection({ onAddDevice, showForm, onDeviceAdded, onCancel }) {
   const AddIcon = () => (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
   );
+
+  if (showForm) {
+    return (
+      <div className="mb-8">
+        <SettingsSection icon={<AddIcon />} title="Add New Device">
+          <AddDeviceForm onDeviceAdded={onDeviceAdded} onCancel={onCancel} />
+        </SettingsSection>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-8">

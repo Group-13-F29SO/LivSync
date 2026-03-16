@@ -1,8 +1,9 @@
 'use client';
 
-export function PrimaryButton({ children, onClick, disabled = false }) {
+export function PrimaryButton({ children, onClick, disabled = false, type = 'button' }) {
   return (
     <button
+      type={type}
       onClick={onClick}
       disabled={disabled}
       className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors disabled:bg-slate-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed"
