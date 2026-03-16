@@ -77,7 +77,9 @@ export default function DevicesPage() {
   };
 
   const handleDeviceAdded = (newDevice) => {
-    setDevices([newDevice, ...devices]);
+    // Refresh the device list to show all devices with updated status
+    // (old devices will be disconnected, new device will be connected)
+    fetchDevices();
     setShowAddForm(false);
   };
 
@@ -204,6 +206,7 @@ function ConnectedDevicesSection({ devices, isLoading, error, onUpdate, onRemove
               <DeviceCard
                 key={device.id}
                 device={device}
+                allDevices={devices}
                 onUpdate={onUpdate}
                 onRemove={onRemove}
               />

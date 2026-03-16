@@ -117,7 +117,19 @@ export async function POST(request) {
       );
     }
 
-    // Create new device
+    // Disconnect all existing active devices for this patient
+    // Only one device can be active at a time
+    await prisma.devices.updateMany({
+      where: {
+        patient_id: patientId,
+        is_active: true
+      },
+      data: {
+        is_active: false
+      }
+    });
+
+    // Create new device (will be the only active device)
     const device = await prisma.devices.create({
       data: {
         patient_id: patientId,
@@ -145,7 +157,7 @@ export async function POST(request) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Device added successfully',
+        message: 'Device added successfully. Previous devices have been disconnected.',
         data: device
       },
       { status: 201 }

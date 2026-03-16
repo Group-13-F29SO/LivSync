@@ -60,6 +60,20 @@ export async function PATCH(request, { params }) {
 
     if (body.is_active !== undefined) {
       updateData.is_active = body.is_active;
+      
+      // If setting device to active, disconnect all other devices
+      if (body.is_active === true) {
+        await prisma.devices.updateMany({
+          where: {
+            patient_id: patientId,
+            id: { not: deviceId },
+            is_active: true
+          },
+          data: {
+            is_active: false
+          }
+        });
+      }
     }
 
     if (body.battery_level !== undefined) {
@@ -111,7 +125,7 @@ export async function PATCH(request, { params }) {
 
 /**
  * DELETE - Remove a device
- * Note: This does not remove the biometric data associated with this device
+ * Optional: Can delete associated biometric data if deleteData=true in request body
  */
 export async function DELETE(request, { params }) {
   try {
@@ -126,6 +140,17 @@ export async function DELETE(request, { params }) {
 
     const patientId = session.userId;
     const { deviceId } = params;
+
+    // Parse request body to check for deleteData flag
+    let deleteData = false;
+    try {
+      const body = await request.json();
+      if (body.deleteData === true) {
+        deleteData = true;
+      }
+    } catch (e) {
+      // Request body is optional
+    }
 
     // Verify device belongs to patient
     const device = await prisma.devices.findFirst({
@@ -142,7 +167,17 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Delete device (biometric data is NOT deleted)
+    // If deleteData flag is set, delete all biometric data for this device
+    if (deleteData) {
+      await prisma.biometric_data.deleteMany({
+        where: {
+          patient_id: patientId,
+          source: device.device_type
+        }
+      });
+    }
+
+    // Delete device
     await prisma.devices.delete({
       where: { id: deviceId }
     });
@@ -150,7 +185,9 @@ export async function DELETE(request, { params }) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Device removed successfully. Your health data remains intact.'
+        message: deleteData 
+          ? 'Device and associated data removed successfully.' 
+          : 'Device removed successfully. Your health data remains intact.'
       },
       { status: 200 }
     );

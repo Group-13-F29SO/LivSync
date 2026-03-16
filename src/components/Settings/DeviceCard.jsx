@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { SecondaryButton, DangerButton, PrimaryButton } from './Buttons';
 import axios from 'axios';
 
-export default function DeviceCard({ device, onUpdate, onRemove }) {
+export default function DeviceCard({ device, allDevices = [], onUpdate, onRemove }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -128,6 +128,23 @@ export default function DeviceCard({ device, onUpdate, onRemove }) {
   };
 
   const handleToggleConnection = async () => {
+    // If trying to reconnect (is_active is false and user wants to set it to true)
+    if (!device.is_active) {
+      // Check if there are other active devices
+      const otherActiveDevices = allDevices.filter(d => d.id !== device.id && d.is_active);
+      
+      if (otherActiveDevices.length > 0) {
+        // Show confirmation dialog
+        const userConfirmed = window.confirm(
+          'Connecting to this device will disconnect all the other devices. Do you want to continue?'
+        );
+        
+        if (!userConfirmed) {
+          return;
+        }
+      }
+    }
+
     setIsLoading(true);
     setError(null);
     setSuccess(null);
@@ -160,16 +177,26 @@ export default function DeviceCard({ device, onUpdate, onRemove }) {
   };
 
   const handleRemove = async () => {
-    if (!window.confirm('Are you sure you want to remove this device? Your health data will be preserved.')) {
+    // First confirmation: confirm removal
+    if (!window.confirm('Are you sure you want to remove this device?')) {
       return;
     }
+
+    // Second confirmation: ask about data
+    const shouldDeleteData = window.confirm(
+      'Do you want to delete the health data associated with this device?\n\n' +
+      'OK = Delete data\n' +
+      'Cancel = Keep data'
+    );
 
     setIsLoading(true);
     setError(null);
 
     try {
       const response = await fetch(`/api/patient/devices/${device.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deleteData: shouldDeleteData })
       });
 
       if (!response.ok) {
