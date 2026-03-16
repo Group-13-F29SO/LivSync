@@ -79,7 +79,49 @@ export default function DeviceCard({ device, onUpdate, onRemove }) {
       }
     } catch (err) {
       console.error('Sync error:', err);
-      setError(err.message || 'Failed to sync data');
+
+      // Check if this is a "data already exists" error
+      if (err.response?.status === 409 && err.response?.data?.needsConfirmation) {
+        const userConfirmed = window.confirm(
+          'Data already exists for today. Syncing again will replace existing data. Do you want to continue?'
+        );
+
+        if (userConfirmed) {
+          // Retry with force flag
+          try {
+            const forceResponse = await axios.post('/api/biometrics/generate', {
+              date: new Date().toISOString().split('T')[0],
+              force: true
+            });
+
+            if (forceResponse.data.success) {
+              setSuccess('Data synced successfully (replaced existing data)!');
+
+              // Update device with new last_sync time
+              const updateResponse = await fetch(`/api/patient/devices/${device.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ last_sync: new Date().toISOString() })
+              });
+
+              if (updateResponse.ok) {
+                const updatedDevice = await updateResponse.json();
+                if (onUpdate) {
+                  onUpdate(updatedDevice.data);
+                }
+              }
+
+              setTimeout(() => setSuccess(null), 3000);
+            }
+          } catch (forceErr) {
+            console.error('Force sync error:', forceErr);
+            setError(forceErr.message || 'Failed to sync data');
+          }
+        }
+        // If user cancelled, don't show error
+      } else {
+        setError(err.message || 'Failed to sync data');
+      }
     } finally {
       setIsLoading(false);
     }

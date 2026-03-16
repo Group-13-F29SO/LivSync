@@ -48,6 +48,7 @@ export async function POST(request) {
 
     // Parse request body
     let date = new Date();
+    let forceUpdate = false;
     try {
       const body = await request.json();
       if (body.date) {
@@ -55,6 +56,9 @@ export async function POST(request) {
         if (!isNaN(parsedDate.getTime())) {
           date = parsedDate;
         }
+      }
+      if (body.force === true) {
+        forceUpdate = true;
       }
     } catch (e) {
       // Request body is optional, use default date
@@ -77,6 +81,48 @@ export async function POST(request) {
         { success: false, error: 'Patient not found in database. Please ensure you are logged in correctly.' },
         { status: 404 }
       );
+    }
+
+    // Check if data already exists for this date
+    const dateStart = new Date(date);
+    dateStart.setHours(0, 0, 0, 0);
+    const dateEnd = new Date(date);
+    dateEnd.setHours(23, 59, 59, 999);
+
+    const existingData = await prisma.biometric_data.findFirst({
+      where: {
+        patient_id: patientId,
+        timestamp: {
+          gte: dateStart,
+          lt: dateEnd
+        }
+      }
+    });
+
+    // If data exists and no force flag, ask for confirmation
+    if (existingData && !forceUpdate) {
+      return NextResponse.json(
+        {
+          success: false,
+          needsConfirmation: true,
+          message: 'Data already exists for this date',
+          error: 'Data already exists for today. Syncing again will replace existing data.'
+        },
+        { status: 409 }
+      );
+    }
+
+    // If force update, delete existing data first
+    if (existingData && forceUpdate) {
+      await prisma.biometric_data.deleteMany({
+        where: {
+          patient_id: patientId,
+          timestamp: {
+            gte: dateStart,
+            lt: dateEnd
+          }
+        }
+      });
     }
 
     // Create generator and generate data

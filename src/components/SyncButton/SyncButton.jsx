@@ -67,18 +67,55 @@ export default function SyncButton({ onSyncComplete }) {
         setTimeout(() => {
           setSuccess(false);
         }, 3000);
-      } else {
-        setError(response.data.error || 'Sync failed');
       }
     } catch (err) {
       console.error('Sync error:', err);
-      const errorMessage = 
-        err.response?.data?.error ||
-        err.response?.statusText ||
-        err.message ||
-        'Failed to sync biometric data';
-      
-      setError(errorMessage);
+
+      // Check if this is a "data already exists" error
+      if (err.response?.status === 409 && err.response?.data?.needsConfirmation) {
+        const userConfirmed = window.confirm(
+          'Data already exists for today. Syncing again will replace existing data. Do you want to continue?'
+        );
+
+        if (userConfirmed) {
+          // Retry with force flag
+          try {
+            const forceResponse = await axios.post('/api/biometrics/generate', {
+              date: new Date().toISOString().split('T')[0],
+              force: true
+            });
+
+            if (forceResponse.data.success) {
+              setSuccess(true);
+
+              if (onSyncComplete) {
+                onSyncComplete(forceResponse.data.data);
+              }
+
+              setTimeout(() => {
+                setSuccess(false);
+              }, 3000);
+            }
+          } catch (forceErr) {
+            console.error('Force sync error:', forceErr);
+            const errorMessage = 
+              forceErr.response?.data?.error ||
+              forceErr.response?.statusText ||
+              forceErr.message ||
+              'Failed to sync biometric data';
+            setError(errorMessage);
+          }
+        }
+        // If user cancelled, don't show error
+      } else {
+        const errorMessage = 
+          err.response?.data?.error ||
+          err.response?.statusText ||
+          err.message ||
+          'Failed to sync biometric data';
+        
+        setError(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
