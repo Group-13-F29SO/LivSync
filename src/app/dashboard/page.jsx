@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar/Navbar';
 import DashboardCard from '@/components/DashboardCard/DashboardCard';
 import StreakCard from '@/components/Dashboard/StreakCard';
 import SummaryCard from '@/components/Dashboard/SummaryCard';
+import ArticlesCard from '@/components/Dashboard/ArticlesCard';
 import SyncButton from '@/components/SyncButton/SyncButton';
 import ConnectionRequestsNotification from '@/components/Provider/ConnectionRequestsNotification';
 import { useAuth } from '@/hooks/useAuth';
@@ -206,6 +207,8 @@ export default function DashboardPage() {
               }
             />
           </button>
+
+          {/* <ArticlesCard /> */}
         </div>
 
         <div className="mt-8">
