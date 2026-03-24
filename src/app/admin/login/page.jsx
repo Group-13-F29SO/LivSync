@@ -44,6 +44,11 @@ export default function AdminLoginPage() {
         return;
       }
 
+      // Store admin credentials in localStorage
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+
       // Redirect to admin dashboard on success
       router.push('/admin/dashboard');
     } catch (err) {
@@ -70,6 +75,11 @@ export default function AdminLoginPage() {
         setError(data.error || 'Test login failed');
         setIsLoading(false);
         return;
+      }
+
+      // Store admin credentials in localStorage
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
       }
 
       // Redirect to admin dashboard on success
