@@ -147,6 +147,73 @@ export async function POST(request) {
       // Don't fail the request if badge checking fails
     }
 
+    // Check for triggered alerts
+    let alerts = [];
+    try {
+      if (result && result.length > 0) {
+        for (const biomarker of result) {
+          // Fetch alert thresholds for this metric
+          const threshold = await prisma.alert_thresholds.findUnique({
+            where: {
+              unique_patient_metric_threshold: {
+                patient_id: patientId,
+                metric_type: biomarker.metric_type,
+              },
+            },
+          });
+
+          if (threshold && threshold.is_active) {
+            const numValue = parseFloat(biomarker.value);
+            
+            // Check min threshold
+            if (threshold.min_value && numValue < parseFloat(threshold.min_value)) {
+              const event = await prisma.critical_events.create({
+                data: {
+                  patient_id: patientId,
+                  metric_type: biomarker.metric_type,
+                  value: numValue,
+                  threshold_type: 'min',
+                  threshold_value: parseFloat(threshold.min_value),
+                  is_acknowledged: false,
+                },
+              });
+              alerts.push({
+                id: event.id,
+                metric_type: event.metric_type,
+                value: event.value,
+                threshold_type: event.threshold_type,
+                threshold_value: event.threshold_value,
+              });
+            }
+
+            // Check max threshold
+            if (threshold.max_value && numValue > parseFloat(threshold.max_value)) {
+              const event = await prisma.critical_events.create({
+                data: {
+                  patient_id: patientId,
+                  metric_type: biomarker.metric_type,
+                  value: numValue,
+                  threshold_type: 'max',
+                  threshold_value: parseFloat(threshold.max_value),
+                  is_acknowledged: false,
+                },
+              });
+              alerts.push({
+                id: event.id,
+                metric_type: event.metric_type,
+                value: event.value,
+                threshold_type: event.threshold_type,
+                threshold_value: event.threshold_value,
+              });
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking alert thresholds:', error);
+      // Don't fail the request if threshold checking fails
+    }
+
     // Trigger recommendation generation after biometric data is created
     try {
       const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/patient/recommendations`, {
@@ -176,6 +243,7 @@ export async function POST(request) {
           id: b.badgeId,
           name: b.badgeName,
         })),
+        alerts: alerts,
       },
       { status: 200 }
     );
