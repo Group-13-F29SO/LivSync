@@ -150,33 +150,81 @@ export async function POST(request) {
     // Check for triggered alerts
     let alerts = [];
     try {
-      if (result && result.length > 0) {
-        for (const biomarker of result) {
+      // Fetch all the biometric data points that were just created for this date
+      const biomarkerData = await prisma.biometric_data.findMany({
+        where: {
+          patient_id: patientId,
+          timestamp: {
+            gte: dateStart,
+            lt: dateEnd
+          }
+        }
+      });
+
+      if (biomarkerData && biomarkerData.length > 0) {
+        // Group data by metric type to find max values
+        const dataByMetric = {};
+        biomarkerData.forEach(point => {
+          if (!dataByMetric[point.metric_type]) {
+            dataByMetric[point.metric_type] = [];
+          }
+          dataByMetric[point.metric_type].push(point);
+        });
+
+        // Check thresholds for each metric
+        for (const [metricType, dataPoints] of Object.entries(dataByMetric)) {
           // Fetch alert thresholds for this metric
           const threshold = await prisma.alert_thresholds.findUnique({
             where: {
               patient_id_metric_type: {
                 patient_id: patientId,
-                metric_type: biomarker.metric_type,
+                metric_type: metricType,
               },
             },
           });
 
+
           if (threshold && threshold.is_active) {
-            const numValue = parseFloat(biomarker.value);
-            
-            // Check min threshold
-            if (threshold.min_value && numValue < parseFloat(threshold.min_value)) {
+            const metricLabel = getMetricLabel(metricType);
+            const metricUnit = getMetricUnit(metricType);
+
+            // Find the max and min values for this metric
+            const values = dataPoints.map(p => parseFloat(p.value));
+            const maxValue = Math.max(...values);
+            const minValue = Math.min(...values);
+            const maxDataPoint = dataPoints.find(p => parseFloat(p.value) === maxValue);
+            const minDataPoint = dataPoints.find(p => parseFloat(p.value) === minValue);
+
+            // Check max threshold
+            if (threshold.max_value && maxValue > parseFloat(threshold.max_value)) {
+              const breachTimestamp = maxDataPoint.timestamp || new Date();
+              
               const event = await prisma.critical_events.create({
                 data: {
                   patient_id: patientId,
-                  metric_type: biomarker.metric_type,
-                  value: numValue,
-                  threshold_type: 'min',
-                  threshold_value: parseFloat(threshold.min_value),
+                  metric_type: metricType,
+                  value: maxValue,
+                  threshold_type: 'max',
+                  threshold_value: parseFloat(threshold.max_value),
                   is_acknowledged: false,
+                  created_at: breachTimestamp,
                 },
               });
+
+              // Create corresponding notification
+              await prisma.notifications.create({
+                data: {
+                  patient_id: patientId,
+                  title: `${metricLabel} Alert - Exceeds Threshold`,
+                  message: `Your ${metricLabel.toLowerCase()} reading (${maxValue}${metricUnit ? ' ' + metricUnit : ''}) exceeded the maximum threshold of ${parseFloat(threshold.max_value)}${metricUnit ? ' ' + metricUnit : ''}.`,
+                  notification_type: 'alert',
+                  priority: 'high',
+                  action_type: 'critical_event',
+                  action_data: JSON.stringify({ event_id: event.id }),
+                  created_at: breachTimestamp,
+                },
+              });
+
               alerts.push({
                 id: event.id,
                 metric_type: event.metric_type,
@@ -186,18 +234,36 @@ export async function POST(request) {
               });
             }
 
-            // Check max threshold
-            if (threshold.max_value && numValue > parseFloat(threshold.max_value)) {
+            // Check min threshold
+            if (threshold.min_value && minValue < parseFloat(threshold.min_value)) {
+              const breachTimestamp = minDataPoint.timestamp || new Date();
+              
               const event = await prisma.critical_events.create({
                 data: {
                   patient_id: patientId,
-                  metric_type: biomarker.metric_type,
-                  value: numValue,
-                  threshold_type: 'max',
-                  threshold_value: parseFloat(threshold.max_value),
+                  metric_type: metricType,
+                  value: minValue,
+                  threshold_type: 'min',
+                  threshold_value: parseFloat(threshold.min_value),
                   is_acknowledged: false,
+                  created_at: breachTimestamp,
                 },
               });
+
+              // Create corresponding notification
+              await prisma.notifications.create({
+                data: {
+                  patient_id: patientId,
+                  title: `${metricLabel} Alert - Below Threshold`,
+                  message: `Your ${metricLabel.toLowerCase()} reading (${minValue}${metricUnit ? ' ' + metricUnit : ''}) fell below the minimum threshold of ${parseFloat(threshold.min_value)}${metricUnit ? ' ' + metricUnit : ''}.`,
+                  notification_type: 'alert',
+                  priority: 'medium',
+                  action_type: 'critical_event',
+                  action_data: JSON.stringify({ event_id: event.id }),
+                  created_at: breachTimestamp,
+                },
+              });
+
               alerts.push({
                 id: event.id,
                 metric_type: event.metric_type,
@@ -212,6 +278,32 @@ export async function POST(request) {
     } catch (error) {
       console.error('Error checking alert thresholds:', error);
       // Don't fail the request if threshold checking fails
+    }
+
+    // Helper function to get metric label
+    function getMetricLabel(metricType) {
+      const labels = {
+        steps: 'Steps',
+        heart_rate: 'Heart Rate',
+        calories: 'Calories',
+        hydration: 'Hydration',
+        sleep: 'Sleep',
+        blood_glucose: 'Blood Glucose',
+      };
+      return labels[metricType] || metricType;
+    }
+
+    // Helper function to get metric unit
+    function getMetricUnit(metricType) {
+      const units = {
+        steps: '',
+        heart_rate: 'bpm',
+        calories: 'kcal',
+        hydration: 'glasses',
+        sleep: 'hrs',
+        blood_glucose: 'mg/dL',
+      };
+      return units[metricType] || '';
     }
 
     // Trigger recommendation generation after biometric data is created
