@@ -11,7 +11,7 @@ export default function CategorySection({ category, badges }) {
         {badges.map((badge) => (
           <BadgeCard
             key={badge.id}
-            icon={badge.icon}
+            id={badge.id}
             name={badge.name}
             description={badge.description}
             status={badge.status}

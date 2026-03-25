@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import StepsGenerator from '@/generators/stepsGenerator';
+import { checkAndAwardNewBadges } from '@/services/badgeEarner';
 
 function getSession() {
   const cookieStore = cookies();
@@ -507,13 +508,26 @@ export async function POST(request) {
       skipDuplicates: false
     });
 
+    // Check for newly earned badges
+    let newBadges = [];
+    try {
+      newBadges = await checkAndAwardNewBadges(patientId);
+    } catch (error) {
+      console.error('Error checking badges:', error);
+      // Don't fail the request if badge checking fails
+    }
+
     return NextResponse.json(
       {
         success: true,
         message: 'Step data generated successfully',
         date: date.toISOString().split('T')[0],
         dataPointsGenerated: result.count,
-        data: stepsData
+        data: stepsData,
+        newBadges: newBadges.filter((b) => b.awarded).map((b) => ({
+          id: b.badgeId,
+          name: b.badgeName,
+        })),
       },
       { status: 201 }
     );

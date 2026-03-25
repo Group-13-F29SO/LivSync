@@ -1,103 +1,18 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CategorySection from '@/components/CategorySection/CategorySection';
 import Navbar from '@/components/Navbar/Navbar';
+import BadgeNotification from '@/components/Badges/BadgeNotification';
 import { useAuth } from '@/hooks/useAuth';
-
-const badgesData = [
-  {
-    category: 'Activity',
-    badges: [
-      {
-        id: 'first-steps',
-        name: 'First Steps',
-        description: 'Completed your first 10,000 steps in a day',
-        status: 'earned',
-        earnedDate: '2025-10-15',
-      },
-      {
-        id: 'marathon-master',
-        name: 'Marathon Master',
-        description: 'Walk 100,000 steps in total',
-        status: 'locked',
-        earnedDate: null,
-      },
-    ],
-  },
-  {
-    category: 'Streaks',
-    badges: [
-      {
-        id: 'week-warrior',
-        name: 'Week Warrior',
-        description: 'Maintained a 7-day streak',
-        status: 'earned',
-        earnedDate: '2025-10-22',
-      },
-      {
-        id: 'consistency-king',
-        name: 'Consistency King',
-        description: 'Maintain a 30-day streak',
-        status: 'locked',
-        earnedDate: null,
-      },
-    ],
-  },
-  {
-    category: 'Health',
-    badges: [
-      {
-        id: 'heart-health-hero',
-        name: 'Heart Health Hero',
-        description: 'Logged heart rate for 30 consecutive days',
-        status: 'earned',
-        earnedDate: '2025-10-28',
-      },
-    ],
-  },
-  {
-    category: 'Goals',
-    badges: [
-      {
-        id: 'goal-getter',
-        name: 'Goal Getter',
-        description: 'Achieved all daily goals for 5 consecutive days',
-        status: 'locked',
-        earnedDate: null,
-      },
-    ],
-  },
-  {
-    category: 'Wellness',
-    badges: [
-      {
-        id: 'hydration-hero',
-        name: 'Hydration Hero',
-        description: 'Meet your hydration goal for 14 days',
-        status: 'locked',
-        earnedDate: null,
-      },
-    ],
-  },
-  {
-    category: 'Sleep',
-    badges: [
-      {
-        id: 'sleep-champion',
-        name: 'Sleep Champion',
-        description: 'Get 8+ hours of sleep for 7 consecutive nights',
-        status: 'locked',
-        earnedDate: null,
-      },
-    ],
-  },
-];
+import { useBadges } from '@/hooks/useBadges';
 
 export default function BadgesPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const { badges, stats, isLoading: badgesLoading, error } = useBadges();
+  const [displayNotification, setDisplayNotification] = useState(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -108,21 +23,28 @@ export default function BadgesPage() {
       router.push('/provider');
     }
   }, [user, isLoading, router]);
-  // Calculate earned badges count
-  const earnedCount = badgesData.reduce(
-    (count, category) =>
-      count + category.badges.filter((badge) => badge.status === 'earned').length,
-    0
-  );
 
-  const totalCount = badgesData.reduce(
-    (count, category) => count + category.badges.length,
-    0
-  );
+  // Convert flat badges object to CategorySection format
+  const badgesData = Object.entries(badges).map(([category, categoryBadges]) => ({
+    category,
+    badges: categoryBadges,
+  }));
+
+  const earnedCount = stats.earned || 0;
+  const totalCount = stats.total || 0;
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
       <Navbar />
+
+      {/* Badge Notification */}
+      <BadgeNotification
+        isVisible={displayNotification !== null}
+        badgeName={displayNotification?.badgeName || ''}
+        badgeDescription={displayNotification?.badgeDescription || ''}
+        badgeId={displayNotification?.badgeId || ''}
+        onClose={() => setDisplayNotification(null)}
+      />
 
       {/* Main Content Area */}
       <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
@@ -135,7 +57,13 @@ export default function BadgesPage() {
 
           {/* Main Subtitle */}
           <p className="mb-8 text-slate-500 dark:text-slate-400">
-            You've earned {earnedCount} out of {totalCount} badges
+            {badgesLoading ? (
+              'Loading your achievements...'
+            ) : (
+              <>
+                You've earned {earnedCount} out of {totalCount} badges
+              </>
+            )}
           </p>
 
           {/* Trophy Case Card */}
@@ -151,23 +79,44 @@ export default function BadgesPage() {
             {/* Right Side */}
             <div className="flex flex-col items-center gap-2">
               <div className="bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-7xl font-bold text-transparent">
-                {earnedCount}
+                {badgesLoading ? '...' : earnedCount}
               </div>
               <p className="text-slate-600 dark:text-slate-400">Badges Earned</p>
             </div>
           </div>
         </div>
 
-        {/* Categories & Badges */}
-        <div>
-          {badgesData.map((section) => (
-            <CategorySection
-              key={section.category}
-              category={section.category}
-              badges={section.badges}
-            />
-          ))}
-        </div>
+        {/* Error State */}
+        {error && (
+          <div className="mb-6 rounded-lg bg-red-50 dark:bg-red-900/20 p-4 text-red-800 dark:text-red-200">
+            <p className="font-semibold">Error loading achievements</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {badgesLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500"></div>
+          </div>
+        ) : badgesData.length === 0 ? (
+          <div className="rounded-lg bg-slate-100 dark:bg-gray-800 p-8 text-center">
+            <p className="text-slate-600 dark:text-slate-400">
+              No badges available yet. Start logging your health metrics to earn achievements!
+            </p>
+          </div>
+        ) : (
+          /* Categories & Badges */
+          <div>
+            {badgesData.map((section) => (
+              <CategorySection
+                key={section.category}
+                category={section.category}
+                badges={section.badges}
+              />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );

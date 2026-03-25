@@ -8,8 +8,10 @@ import StreakCard from '@/components/Dashboard/StreakCard';
 import SummaryCard from '@/components/Dashboard/SummaryCard';
 import ArticlesCard from '@/components/Dashboard/ArticlesCard';
 import SyncButton from '@/components/SyncButton/SyncButton';
+import BadgeNotification from '@/components/Badges/BadgeNotification';
 import ConnectionRequestsNotification from '@/components/Provider/ConnectionRequestsNotification';
 import { useAuth } from '@/hooks/useAuth';
+import { getBadgeDefinition } from '@/services/badgeDefinitions';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -17,6 +19,8 @@ export default function DashboardPage() {
 
   const [lastSyncTime, setLastSyncTime] = useState('Just now');
   const [dashboardData, setDashboardData] = useState(null);
+  const [badgeQueue, setBadgeQueue] = useState([]);
+  const [currentBadge, setCurrentBadge] = useState(null);
 
   const streakData = {
     currentStreak: 12,
@@ -33,6 +37,15 @@ export default function DashboardPage() {
       router.push('/provider');
     }
   }, [user, isLoading, router]);
+
+  // Handle badge queue - show next badge after current one closes
+  useEffect(() => {
+    if (!currentBadge && badgeQueue.length > 0) {
+      const nextBadge = badgeQueue[0];
+      setCurrentBadge(nextBadge);
+      setBadgeQueue(badgeQueue.slice(1));
+    }
+  }, [currentBadge, badgeQueue]);
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -57,8 +70,22 @@ export default function DashboardPage() {
     logout();
   };
 
-  const handleSyncComplete = () => {
+  const handleSyncComplete = (syncResult) => {
     setLastSyncTime('Just now');
+
+    // Handle newly earned badges
+    if (syncResult?.newBadges && syncResult.newBadges.length > 0) {
+      const badgeNotifications = syncResult.newBadges.map((badge) => {
+        const badgeDef = getBadgeDefinition(badge.id);
+        return {
+          id: badge.id,
+          name: badge.name,
+          description: badgeDef?.description || 'Badge unlocked!',
+        };
+      });
+
+      setBadgeQueue(badgeNotifications);
+    }
   };
 
   if (isLoading || !user) {
@@ -72,6 +99,15 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
       <Navbar />
+
+      {/* Badge Notification */}
+      <BadgeNotification
+        isVisible={currentBadge !== null}
+        badgeName={currentBadge?.name || ''}
+        badgeDescription={currentBadge?.description || ''}
+        badgeId={currentBadge?.id || ''}
+        onClose={() => setCurrentBadge(null)}
+      />
 
       <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <div className="flex justify-between items-start">

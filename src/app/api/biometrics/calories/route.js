@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import CaloriesGenerator from '@/generators/caloriesGenerator';
+import { checkAndAwardNewBadges } from '@/services/badgeEarner';
 
 export async function GET(req) {
   try {
@@ -480,13 +481,26 @@ export async function POST(request) {
       skipDuplicates: false
     });
 
+    // Check for newly earned badges
+    let newBadges = [];
+    try {
+      newBadges = await checkAndAwardNewBadges(patientId);
+    } catch (error) {
+      console.error('Error checking badges:', error);
+      // Don't fail the request if badge checking fails
+    }
+
     return NextResponse.json(
       {
         success: true,
         message: 'Calories data generated successfully',
         date: date.toISOString().split('T')[0],
         dataPointsGenerated: result.count,
-        data: caloriesData
+        data: caloriesData,
+        newBadges: newBadges.filter((b) => b.awarded).map((b) => ({
+          id: b.badgeId,
+          name: b.badgeName,
+        })),
       },
       { status: 201 }
     );

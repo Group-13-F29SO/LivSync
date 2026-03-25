@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import BiometricDataGenerator from '@/services/biometricGenerator';
+import { checkAndAwardNewBadges } from '@/services/badgeEarner';
 
 /**
  * Check if user is authenticated via session cookie
@@ -137,6 +138,15 @@ export async function POST(request) {
     const generator = new BiometricDataGenerator(prisma);
     const result = await generator.generate(patientId, date, activeDevice?.device_name || 'manual');
 
+    // Check for newly earned badges
+    let newBadges = [];
+    try {
+      newBadges = await checkAndAwardNewBadges(patientId);
+    } catch (error) {
+      console.error('Error checking badges:', error);
+      // Don't fail the request if badge checking fails
+    }
+
     // Trigger recommendation generation after biometric data is created
     try {
       const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/patient/recommendations`, {
@@ -161,7 +171,11 @@ export async function POST(request) {
       {
         success: true,
         message: 'Data generated successfully',
-        data: result
+        data: result,
+        newBadges: newBadges.filter((b) => b.awarded).map((b) => ({
+          id: b.badgeId,
+          name: b.badgeName,
+        })),
       },
       { status: 200 }
     );

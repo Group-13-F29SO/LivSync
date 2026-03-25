@@ -58,9 +58,12 @@ export default function SyncButton({ onSyncComplete }) {
       if (response.data.success) {
         setSuccess(true);
         
-        // Call callback if provided
+        // Call callback if provided with newBadges
         if (onSyncComplete) {
-          onSyncComplete(response.data.data);
+          onSyncComplete({
+            data: response.data.data,
+            newBadges: response.data.newBadges || []
+          });
         }
 
         // Clear success message after 3 seconds
@@ -89,7 +92,10 @@ export default function SyncButton({ onSyncComplete }) {
               setSuccess(true);
 
               if (onSyncComplete) {
-                onSyncComplete(forceResponse.data.data);
+                onSyncComplete({
+                  data: forceResponse.data.data,
+                  newBadges: forceResponse.data.newBadges || []
+                });
               }
 
               setTimeout(() => {

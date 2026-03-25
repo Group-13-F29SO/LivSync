@@ -3,6 +3,7 @@ import sax from "sax";
 import yauzl from "yauzl";
 import { Readable } from "node:stream";
 import { cookies } from "next/headers";
+import { checkAndAwardNewBadges } from "@/services/badgeEarner";
 
 export const runtime = "nodejs";
 const BATCH_SIZE = 1000;
@@ -420,6 +421,15 @@ export async function POST(req) {
       imported += await flushBatch(batch, existingKeys);
     }
 
+    // Check for newly earned badges
+    let newBadges = [];
+    try {
+      newBadges = await checkAndAwardNewBadges(patientId);
+    } catch (error) {
+      console.error('Error checking badges:', error);
+      // Don't fail the import if badge checking fails
+    }
+
     return Response.json({
       message: "Apple Health import complete.",
       imported,
@@ -427,6 +437,10 @@ export async function POST(req) {
       counts,
       replacedSimulatedData: hasSimulatedOverlap && confirmImport,
       replacedAppleHealthData: hasAppleHealthOverlap && confirmImport,
+      newBadges: newBadges.filter((b) => b.awarded).map((b) => ({
+        id: b.badgeId,
+        name: b.badgeName,
+      })),
     }, { status: 200 });
   } catch (error) {
     console.error("Apple Health import error:", error);
