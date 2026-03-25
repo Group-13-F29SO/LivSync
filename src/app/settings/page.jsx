@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import SettingsSection from '@/components/Settings/SettingsSection';
 import ToggleRow from '@/components/Settings/ToggleRow';
+import AlertThresholdSection from '@/components/Alerts/AlertThresholdSection';
 import { useAuth } from '@/hooks/useAuth';
 import { PrimaryButton, SecondaryButton, DangerButton } from '@/components/Settings/Buttons';
 
@@ -338,6 +339,19 @@ export default function SettingsPage() {
                   value={settings.notifications.weeklySummary}
                 />
               </div>
+            </SettingsSection>
+          </div>
+
+          {/* Alert Thresholds Section */}
+          <div className="mb-8">
+            <SettingsSection
+              icon={<ShieldIcon />}
+              title="Alert Thresholds"
+            >
+              <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">
+                Set custom alert thresholds for your biomarkers. You'll receive notifications when your readings fall outside these ranges.
+              </p>
+              <AlertThresholdSection />
             </SettingsSection>
           </div>
 
