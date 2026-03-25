@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 function getAuthenticatedUser(request) {
   const cookie = request.cookies.get('livsync_session');
@@ -90,7 +90,7 @@ export async function POST(request) {
     // Upsert the threshold
     const threshold = await prisma.alert_thresholds.upsert({
       where: {
-        unique_patient_metric_threshold: {
+        patient_id_metric_type: {
           patient_id: session.userId,
           metric_type: metricType,
         },

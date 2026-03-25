@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 // POST - Check if a biometric value breaches thresholds and create event if needed
 export async function POST(request) {
@@ -17,7 +17,7 @@ export async function POST(request) {
     // Fetch the patient's threshold for this metric
     const threshold = await prisma.alert_thresholds.findUnique({
       where: {
-        unique_patient_metric_threshold: {
+        patient_id_metric_type: {
           patient_id: patientId,
           metric_type: metricType,
         },

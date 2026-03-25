@@ -72,9 +72,18 @@ export default function AlertThresholdSection() {
       setSuccess(false);
       setLoading(true);
 
+      // Validate all thresholds before saving
+      for (const [metricType, values] of Object.entries(thresholds)) {
+        if (values.min >= values.max) {
+          setError(`${BIOMARKER_DEFAULTS[metricType].label}: Minimum must be less than maximum`);
+          setLoading(false);
+          return;
+        }
+      }
+
       // Save each threshold
-      const promises = Object.entries(thresholds).map(([metricType, values]) =>
-        fetch('/api/patient/alert-thresholds', {
+      const savePromises = Object.entries(thresholds).map(async ([metricType, values]) => {
+        const response = await fetch('/api/patient/alert-thresholds', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -82,21 +91,28 @@ export default function AlertThresholdSection() {
             minValue: values.min,
             maxValue: values.max,
           }),
-        })
-      );
+        });
 
-      const responses = await Promise.all(promises);
-      const allSuccess = responses.every((r) => r.ok);
+        const data = await response.json();
 
-      if (allSuccess) {
+        if (!response.ok) {
+          throw new Error(data.error || `Failed to save ${metricType}`);
+        }
+
+        return data;
+      });
+
+      const results = await Promise.all(savePromises);
+
+      if (results && results.length > 0) {
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       } else {
-        setError('Failed to save some thresholds');
+        setError('No thresholds were saved');
       }
     } catch (err) {
       console.error('Error saving thresholds:', err);
-      setError('Failed to save alert thresholds');
+      setError(err.message || 'Failed to save alert thresholds. Please try again.');
     } finally {
       setLoading(false);
     }

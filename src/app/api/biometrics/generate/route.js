@@ -155,7 +155,7 @@ export async function POST(request) {
           // Fetch alert thresholds for this metric
           const threshold = await prisma.alert_thresholds.findUnique({
             where: {
-              unique_patient_metric_threshold: {
+              patient_id_metric_type: {
                 patient_id: patientId,
                 metric_type: biomarker.metric_type,
               },
