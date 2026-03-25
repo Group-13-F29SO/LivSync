@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar/Navbar';
 import DashboardCard from '@/components/DashboardCard/DashboardCard';
 import StreakCard from '@/components/Dashboard/StreakCard';
 import SummaryCard from '@/components/Dashboard/SummaryCard';
+import ArticlesCard from '@/components/Dashboard/ArticlesCard';
 import SyncButton from '@/components/SyncButton/SyncButton';
 import ConnectionRequestsNotification from '@/components/Provider/ConnectionRequestsNotification';
 import { useAuth } from '@/hooks/useAuth';
@@ -206,6 +207,12 @@ export default function DashboardPage() {
               }
             />
           </button>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-1">
+            <ArticlesCard />
+          </div>
         </div>
 
         <div className="mt-8">
