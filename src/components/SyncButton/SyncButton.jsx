@@ -58,11 +58,12 @@ export default function SyncButton({ onSyncComplete }) {
       if (response.data.success) {
         setSuccess(true);
         
-        // Call callback if provided with newBadges
+        // Call callback if provided with newBadges and alerts
         if (onSyncComplete) {
           onSyncComplete({
             data: response.data.data,
-            newBadges: response.data.newBadges || []
+            newBadges: response.data.newBadges || [],
+            alerts: response.data.alerts || []
           });
         }
 
@@ -94,7 +95,8 @@ export default function SyncButton({ onSyncComplete }) {
               if (onSyncComplete) {
                 onSyncComplete({
                   data: forceResponse.data.data,
-                  newBadges: forceResponse.data.newBadges || []
+                  newBadges: forceResponse.data.newBadges || [],
+                  alerts: forceResponse.data.alerts || []
                 });
               }
 

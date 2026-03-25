@@ -10,6 +10,8 @@ import ArticlesCard from '@/components/Dashboard/ArticlesCard';
 import SyncButton from '@/components/SyncButton/SyncButton';
 import BadgeNotification from '@/components/Badges/BadgeNotification';
 import ConnectionRequestsNotification from '@/components/Provider/ConnectionRequestsNotification';
+import AlertNotification from '@/components/Alerts/AlertNotification';
+import CriticalEventsWidget from '@/components/Alerts/CriticalEventsWidget';
 import { useAuth } from '@/hooks/useAuth';
 import { getBadgeDefinition } from '@/services/badgeDefinitions';
 
@@ -21,6 +23,8 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState(null);
   const [badgeQueue, setBadgeQueue] = useState([]);
   const [currentBadge, setCurrentBadge] = useState(null);
+  const [currentAlert, setCurrentAlert] = useState(null);
+  const [alertQueue, setAlertQueue] = useState([]);
 
   const streakData = {
     currentStreak: 12,
@@ -46,6 +50,15 @@ export default function DashboardPage() {
       setBadgeQueue(badgeQueue.slice(1));
     }
   }, [currentBadge, badgeQueue]);
+
+  // Handle alert queue - show next alert after current one closes
+  useEffect(() => {
+    if (!currentAlert && alertQueue.length > 0) {
+      const nextAlert = alertQueue[0];
+      setCurrentAlert(nextAlert);
+      setAlertQueue(alertQueue.slice(1));
+    }
+  }, [currentAlert, alertQueue]);
 
   useEffect(() => {
     async function fetchDashboardData() {
@@ -86,6 +99,19 @@ export default function DashboardPage() {
 
       setBadgeQueue(badgeNotifications);
     }
+
+    // Handle triggered alerts
+    if (syncResult?.alerts && syncResult.alerts.length > 0) {
+      const alertNotifications = syncResult.alerts.map((alert) => ({
+        id: alert.id,
+        metricType: alert.metric_type,
+        value: alert.value,
+        thresholdType: alert.threshold_type,
+        thresholdValue: alert.threshold_value,
+      }));
+
+      setAlertQueue(alertNotifications);
+    }
   };
 
   if (isLoading || !user) {
@@ -107,6 +133,16 @@ export default function DashboardPage() {
         badgeDescription={currentBadge?.description || ''}
         badgeId={currentBadge?.id || ''}
         onClose={() => setCurrentBadge(null)}
+      />
+
+      {/* Alert Notification */}
+      <AlertNotification
+        isVisible={currentAlert !== null}
+        metricType={currentAlert?.metricType || ''}
+        value={currentAlert?.value || ''}
+        thresholdType={currentAlert?.thresholdType || ''}
+        thresholdValue={currentAlert?.thresholdValue || ''}
+        onClose={() => setCurrentAlert(null)}
       />
 
       <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
@@ -261,6 +297,10 @@ export default function DashboardPage() {
 
         <div className="mt-6">
           <SummaryCard summaryData={dashboardData} />
+        </div>
+
+        <div className="mt-8">
+          <CriticalEventsWidget />
         </div>
       </main>
     </div>
