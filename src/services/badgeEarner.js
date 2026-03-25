@@ -585,18 +585,88 @@ export async function getUserBadgesWithStatus(patientId) {
   const earned = await getUserEarnedBadges(patientId);
   const earnedIds = new Set(earned.map((b) => b.id));
 
-  return BADGE_DEFINITIONS.map((badgeDef) => {
-    const isEarned = earnedIds.has(badgeDef.id);
-    const earnedBadge = earned.find((b) => b.id === badgeDef.id);
+  // Recalculate each badge to ensure criteria are still met
+  const badgesWithRecalculation = await Promise.all(
+    BADGE_DEFINITIONS.map(async (badgeDef) => {
+      let isEarned = earnedIds.has(badgeDef.id);
+      
+      // If previously earned, verify criteria are still met
+      if (isEarned) {
+        const stillMeetsCriteria = await checkBadgeCriteria(patientId, badgeDef);
+        isEarned = stillMeetsCriteria;
+      }
 
-    return {
-      id: badgeDef.id,
-      name: badgeDef.name,
-      description: badgeDef.description,
-      icon: badgeDef.icon,
-      category: badgeDef.category,
-      status: isEarned ? 'earned' : 'locked',
-      earnedDate: earnedBadge?.earnedDate || null,
-    };
-  });
+      const earnedBadge = earned.find((b) => b.id === badgeDef.id);
+
+      return {
+        id: badgeDef.id,
+        name: badgeDef.name,
+        description: badgeDef.description,
+        icon: badgeDef.icon,
+        category: badgeDef.category,
+        status: isEarned ? 'earned' : 'locked',
+        earnedDate: isEarned ? earnedBadge?.earnedDate || null : null,
+      };
+    })
+  );
+
+  return badgesWithRecalculation;
+}
+
+/**
+ * Clean up invalid achievements (delete from database if no longer earned)
+ */
+export async function cleanupInvalidAchievements(patientId) {
+  try {
+    const earned = await getUserEarnedBadges(patientId);
+
+    // Check each earned badge to verify criteria are still met
+    const invalidBadges = [];
+
+    for (const earnedBadge of earned) {
+      const badgeDef = BADGE_DEFINITIONS.find((b) => b.id === earnedBadge.id);
+
+      if (badgeDef) {
+        const stillMeetsCriteria = await checkBadgeCriteria(patientId, badgeDef);
+
+        // If criteria no longer met, mark for deletion
+        if (!stillMeetsCriteria) {
+          invalidBadges.push(badgeDef.id);
+        }
+      }
+    }
+
+    // Delete invalid achievements from database
+    const achievementIds = await Promise.all(
+      invalidBadges.map(async (badgeId) => {
+        try {
+          return await getOrCreateAchievement(badgeId);
+        } catch (error) {
+          console.error(`Error getting achievement ID for ${badgeId}:`, error);
+          return null;
+        }
+      })
+    );
+
+    const validAchievementIds = achievementIds.filter((id) => id !== null);
+
+    if (validAchievementIds.length > 0) {
+      const deleteResult = await prisma.user_achievements.deleteMany({
+        where: {
+          patient_id: patientId,
+          achievement_id: {
+            in: validAchievementIds,
+          },
+        },
+      });
+
+      console.log(`Cleaned up ${deleteResult.count} invalid achievements for patient ${patientId}`);
+      return deleteResult.count;
+    }
+
+    return 0;
+  } catch (error) {
+    console.error('Error cleaning up invalid achievements:', error);
+    return 0;
+  }
 }

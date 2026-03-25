@@ -4,7 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { getUserBadgesWithStatus } from '@/services/badgeEarner';
+import { getUserBadgesWithStatus, cleanupInvalidAchievements } from '@/services/badgeEarner';
 import { getAllBadgesGroupedByCategory } from '@/services/badgeDefinitions';
 import { NextResponse } from 'next/server';
 
@@ -39,6 +39,14 @@ export async function GET(request) {
     }
 
     const patientId = session.userId;
+
+    // Clean up any invalid achievements before returning
+    try {
+      await cleanupInvalidAchievements(patientId);
+    } catch (error) {
+      console.error('Error cleaning up achievements:', error);
+      // Don't fail the request if cleanup fails
+    }
 
     // Get all badges with earned status
     const allBadges = await getUserBadgesWithStatus(patientId);
