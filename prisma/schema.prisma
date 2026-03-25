@@ -96,6 +96,7 @@ model patients {
   user_achievements       user_achievements[]
   devices                 devices[]
   connection_requests     connection_requests[]
+  notifications           notifications[]
 
   @@index([email], map: "idx_patients_email")
   @@index([provider_id], map: "idx_patients_provider_id")
@@ -164,4 +165,24 @@ model user_achievements {
   @@id([patient_id, achievement_id])
   @@index([achievement_id], map: "idx_user_achievements_achievement_id")
   @@index([patient_id], map: "idx_user_achievements_patient_id")
+}
+
+model notifications {
+  id             String   @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  patient_id     String   @db.Uuid
+  title          String   @db.VarChar(200)
+  message        String
+  notification_type String   @db.VarChar(50)
+  priority       String   @default("medium") @db.VarChar(10)
+  is_read        Boolean  @default(false)
+  action_type    String?  @db.VarChar(50)
+  action_data    String?
+  created_at     DateTime @default(now()) @db.Timestamptz(6)
+  dismissed_at   DateTime?
+  patients       patients @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([patient_id], map: "idx_notifications_patient_id")
+  @@index([is_read], map: "idx_notifications_is_read")
+  @@index([notification_type], map: "idx_notifications_type")
+  @@index([created_at], map: "idx_notifications_created_at")
 }

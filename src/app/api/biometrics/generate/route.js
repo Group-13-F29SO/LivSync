@@ -137,6 +137,25 @@ export async function POST(request) {
     const generator = new BiometricDataGenerator(prisma);
     const result = await generator.generate(patientId, date, activeDevice?.device_name || 'manual');
 
+    // Trigger recommendation generation after biometric data is created
+    try {
+      const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/patient/recommendations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patientId })
+      });
+      
+      if (response.ok) {
+        const recData = await response.json();
+        console.log(`Generated ${recData.recommendationsGenerated} recommendations for patient ${patientId}`);
+      } else {
+        console.warn('Failed to generate recommendations:', response.statusText);
+      }
+    } catch (recError) {
+      console.error('Error triggering recommendations:', recError);
+      // Don't fail the sync if recommendations fail, just log it
+    }
+
     // Return success response
     return NextResponse.json(
       {
