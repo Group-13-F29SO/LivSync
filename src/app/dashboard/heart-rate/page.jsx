@@ -8,6 +8,7 @@ import PeriodSelector from '@/components/HeartRate/PeriodSelector';
 import StatsGrid from '@/components/HeartRate/StatsGrid';
 import HeartRateChart from '@/components/HeartRate/HeartRateChart';
 import HeartRateInfo from '@/components/HeartRate/HeartRateInfo';
+import MetricManualEntrySection from '@/components/Dashboard/MetricManualEntrySection';
 
 export default function HeartRateChartPage() {
   const router = useRouter();
@@ -176,6 +177,14 @@ export default function HeartRateChartPage() {
 
         {/* Chart */}
         <HeartRateChart period={period} chartData={chartData} dataLoading={dataLoading} error={error} chartType={chartType} useRangeBar={useRangeBar} />
+
+        {/* Manual Entry Section */}
+        <div className="mb-8">
+          <MetricManualEntrySection 
+            metricType="heart_rate"
+            selectedDate={period === 'today' ? selectedDate : null}
+          />
+        </div>
 
         {/* Additional Info */}
         <HeartRateInfo />

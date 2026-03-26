@@ -21,6 +21,7 @@ export default function ManualEntryList({
   const [isLoading, setIsLoading] = useState(true);
   const { getEntries, deleteEntry, error } = useManualEntry();
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [editingId, setEditingId] = useState(null);
 
   useEffect(() => {
     loadEntries();
@@ -114,15 +115,19 @@ export default function ManualEntryList({
             </div>
             <div className="flex gap-2 ml-4">
               <button
-                onClick={() => onEdit?.(entry)}
-                className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                onClick={() => {
+                  setEditingId(entry.id);
+                  onEdit?.(entry);
+                }}
+                disabled={deleteLoading !== null}
+                className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Edit
               </button>
               <button
                 onClick={() => handleDelete(entry.id)}
                 disabled={deleteLoading === entry.id}
-                className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+                className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {deleteLoading === entry.id ? 'Deleting...' : 'Delete'}
               </button>

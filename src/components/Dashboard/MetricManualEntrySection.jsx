@@ -23,8 +23,9 @@ export default function MetricManualEntrySection({
   const [sleepStart, setSleepStart] = useState('22:00');
   const [sleepEnd, setSleepEnd] = useState('08:00');
   const [successMessage, setSuccessMessage] = useState('');
+  const [editingEntry, setEditingEntry] = useState(null);
 
-  const { submitEntry, loading, error } = useManualEntry();
+  const { submitEntry, updateEntry, loading, error, clearError } = useManualEntry();
 
   function today() {
     const now = new Date();
@@ -36,6 +37,36 @@ export default function MetricManualEntrySection({
       setEntryDate(selectedDate);
     }
   }, [selectedDate]);
+
+  function handleEditEntry(entry) {
+    // Parse the entry data and populate the form
+    const entryDateTime = new Date(entry.timestamp);
+    
+    // Extract local date correctly (don't use toISOString as it converts to UTC)
+    const year = entryDateTime.getFullYear();
+    const month = String(entryDateTime.getMonth() + 1).padStart(2, '0');
+    const day = String(entryDateTime.getDate()).padStart(2, '0');
+    const date = `${year}-${month}-${day}`;
+    
+    // Extract local time
+    const time = `${String(entryDateTime.getHours()).padStart(2, '0')}:${String(entryDateTime.getMinutes()).padStart(2, '0')}`;
+
+    setEntryDate(date);
+    setSelectedTime(time);
+    setValue(entry.value.toString());
+    setEditingEntry(entry);
+    setSuccessMessage('');
+    clearError();
+    setIsExpanded(true);
+  }
+
+  function handleCancelEdit() {
+    setEditingEntry(null);
+    setValue('');
+    setSleepStart('22:00');
+    setSleepEnd('08:00');
+    setSelectedTime('12:00');
+  }
 
   function getTimeOptions() {
     const times = [];
@@ -86,11 +117,20 @@ export default function MetricManualEntrySection({
           endDateTime.setDate(endDateTime.getDate() + 1);
         }
 
-        await submitEntry({
-          metric_type: metricType,
-          sleep_start_time: startDateTime.toISOString(),
-          sleep_end_time: endDateTime.toISOString(),
-        });
+        if (editingEntry) {
+          await updateEntry(editingEntry.id, {
+            sleep_start_time: startDateTime.toISOString(),
+            sleep_end_time: endDateTime.toISOString(),
+          });
+          setSuccessMessage('Sleep entry updated successfully!');
+        } else {
+          await submitEntry({
+            metric_type: metricType,
+            sleep_start_time: startDateTime.toISOString(),
+            sleep_end_time: endDateTime.toISOString(),
+          });
+          setSuccessMessage('Sleep entry recorded successfully!');
+        }
       } else {
         if (!value) {
           alert('Please enter a value');
@@ -99,19 +139,23 @@ export default function MetricManualEntrySection({
 
         const entryDateTime = new Date(`${entryDate}T${selectedTime}`);
 
-        await submitEntry({
-          metric_type: metricType,
-          value: parseFloat(value),
-          timestamp: entryDateTime.toISOString(),
-        });
+        if (editingEntry) {
+          await updateEntry(editingEntry.id, {
+            value: parseFloat(value),
+          });
+          setSuccessMessage(`Updated ${getMetricLabel(metricType)} entry!`);
+        } else {
+          await submitEntry({
+            metric_type: metricType,
+            value: parseFloat(value),
+            timestamp: entryDateTime.toISOString(),
+          });
+          setSuccessMessage(`${getMetricLabel(metricType)} entry recorded successfully!`);
+        }
       }
 
-      setSuccessMessage(`${getMetricLabel(metricType)} entry recorded successfully!`);
-      setValue('');
-      setSleepStart('22:00');
-      setSleepEnd('08:00');
+      handleCancelEdit();
       setIsExpanded(false);
-
       onEntryAdded?.();
 
       setTimeout(() => setSuccessMessage(''), 3000);
@@ -177,8 +221,13 @@ export default function MetricManualEntrySection({
                 onChange={(e) => setEntryDate(e.target.value)}
                 max={today()}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                disabled={loading}
+                disabled={loading || editingEntry}
               />
+              {editingEntry && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Date cannot be changed. Delete and recreate to change the date.
+                </p>
+              )}
             </div>
 
             {/* Sleep-specific fields */}
@@ -248,7 +297,7 @@ export default function MetricManualEntrySection({
                     value={selectedTime}
                     onChange={(e) => setSelectedTime(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={loading}
+                    disabled={loading || editingEntry}
                   >
                     {timeOptions.map((time) => (
                       <option key={time} value={time}>
@@ -257,7 +306,10 @@ export default function MetricManualEntrySection({
                     ))}
                   </select>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Times must align to 5-minute intervals
+                    {editingEntry 
+                      ? 'Time cannot be changed. Delete and recreate to change the time.'
+                      : 'Times must align to 5-minute intervals'
+                    }
                   </p>
                 </div>
 
@@ -283,23 +335,52 @@ export default function MetricManualEntrySection({
             {/* Info Box */}
             <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded">
               <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                <strong>Note:</strong> Manual entries will replace synced data at the same time. You can edit or delete them later.
+                <strong>Note:</strong> {editingEntry 
+                  ? 'You can only edit the reading value. To change the date or time, delete this entry and create a new one.'
+                  : 'Manual entries will replace synced data at the same time. You can edit or delete them later.'
+                }
               </p>
             </div>
 
             {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Recording...' : 'Record Entry'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Saving...' : editingEntry ? 'Update Entry' : 'Record Entry'}
+              </button>
+              {editingEntry && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={loading}
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-50 font-medium rounded-md transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
 
           {/* Manual Entry List */}
           <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-            <ManualEntryList metricType={metricType} date={entryDate} />
+            {editingEntry && (
+              <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <strong>Editing entry:</strong> {new Date(editingEntry.timestamp).toLocaleString()}
+                </p>
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  You can only edit the reading value. Delete and recreate to change date or time.
+                </p>
+              </div>
+            )}
+            <ManualEntryList 
+              metricType={metricType} 
+              date={entryDate}
+              onEdit={handleEditEntry}
+            />
           </div>
         </div>
       )}
