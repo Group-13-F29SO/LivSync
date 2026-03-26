@@ -396,6 +396,16 @@ export default function SettingsPage() {
     setTwoFactorEnabled(!twoFactorEnabled);
   };
 
+  const handleAnonymousAnalyticsToggle = (newValue) => {
+    setSettings(prev => ({
+      ...prev,
+      privacy: {
+        ...prev.privacy,
+        anonymousAnalytics: newValue,
+      },
+    }));
+  };
+
 
 
   // Inline icons for specific use cases
@@ -724,6 +734,7 @@ export default function SettingsPage() {
                   label="Anonymous Analytics"
                   description="Help us improve by sharing anonymous usage data"
                   value={settings.privacy.anonymousAnalytics}
+                  onChange={handleAnonymousAnalyticsToggle}
                 />
 
                 {/* Divider */}
