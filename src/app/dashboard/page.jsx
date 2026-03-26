@@ -22,16 +22,11 @@ export default function DashboardPage() {
 
   const [lastSyncTime, setLastSyncTime] = useState('Just now');
   const [dashboardData, setDashboardData] = useState(null);
+  const [streakData, setStreakData] = useState(null);
   const [badgeQueue, setBadgeQueue] = useState([]);
   const [currentBadge, setCurrentBadge] = useState(null);
   const [currentAlert, setCurrentAlert] = useState(null);
   const [alertQueue, setAlertQueue] = useState([]);
-
-  const streakData = {
-    currentStreak: 12,
-    targetMetric: "10,000 steps",
-    message: "Keep going!"
-  };
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -77,6 +72,76 @@ export default function DashboardPage() {
 
     if (!isLoading && user) {
       fetchDashboardData();
+    }
+  }, [isLoading, user]);
+
+  // Fetch streaks data for all metrics and find the highest streak
+  useEffect(() => {
+    async function fetchStreakData() {
+      try {
+        const metrics = ['steps', 'calories', 'hydration', 'sleep'];
+        let maxStreak = 0;
+        let maxMetric = 'steps';
+        let maxGoalValue = 0;
+        let hasAnyGoals = false;
+
+        for (const metric of metrics) {
+          const res = await fetch(`/api/biometrics/streaks?metric=${metric}`);
+          const data = await res.json();
+
+          // Check if any goals exist
+          if (!data.goalNotFound) {
+            hasAnyGoals = true;
+          }
+
+          if (data.currentStreak > maxStreak) {
+            maxStreak = data.currentStreak;
+            maxMetric = metric;
+            maxGoalValue = data.goalValue || 0;
+          }
+        }
+
+        // Format the goal value with metric unit
+        const getMetricDisplay = (metric, goalValue) => {
+          if (goalValue === 0) return '';
+          const metricUnits = {
+            steps: `${goalValue.toLocaleString()} steps`,
+            calories: `${goalValue.toLocaleString()} kcal`,
+            hydration: `${goalValue} glasses`,
+            sleep: `${goalValue} hours`,
+          };
+          return metricUnits[metric] || '';
+        };
+
+        let targetMetric = '';
+        let message = 'Keep going!';
+
+        if (!hasAnyGoals) {
+          // No goals set at all
+          targetMetric = 'No goals set';
+          message = 'Set a goal to start tracking!';
+        } else if (maxStreak === 0) {
+          // Goals exist but no active streak
+          targetMetric = getMetricDisplay(maxMetric, maxGoalValue);
+          message = 'Start a new streak!';
+        } else {
+          // Active streak with goal
+          targetMetric = getMetricDisplay(maxMetric, maxGoalValue);
+          message = 'Keep going!';
+        }
+
+        setStreakData({
+          currentStreak: maxStreak,
+          targetMetric,
+          message,
+        });
+      } catch (err) {
+        console.error('Failed to load streak data', err);
+      }
+    }
+
+    if (!isLoading && user) {
+      fetchStreakData();
     }
   }, [isLoading, user]);
 
@@ -294,11 +359,11 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 cursor-pointer" onClick={() => router.push('/dashboard/streaks')}>
           <StreakCard
-            currentStreak={streakData.currentStreak}
-            targetMetric={streakData.targetMetric}
-            message={streakData.message}
+            currentStreak={streakData?.currentStreak || 0}
+            targetMetric={streakData?.targetMetric || '10,000 steps'}
+            message={streakData?.message || 'Keep going!'}
           />
         </div>
 
