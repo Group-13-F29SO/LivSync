@@ -40,6 +40,7 @@ export default function SettingsPage() {
   });
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [goalRemindersEnabled, setGoalRemindersEnabled] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -55,8 +56,17 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!isLoading && user && user.id && user.userType === 'patient') {
       fetchPrivacyConsent();
+      loadGoalRemindersPreference();
     }
   }, [user, isLoading]);
+
+  const loadGoalRemindersPreference = () => {
+    // Load from localStorage
+    const savedPreference = localStorage.getItem('goalRemindersEnabled');
+    if (savedPreference !== null) {
+      setGoalRemindersEnabled(JSON.parse(savedPreference));
+    }
+  };
 
   const fetchPrivacyConsent = async () => {
     try {
@@ -131,6 +141,41 @@ export default function SettingsPage() {
         healthAlerts: newValue,
       },
     }));
+  };
+
+  const handleGoalRemindersToggle = async (newValue) => {
+    try {
+      // Update local state
+      setGoalRemindersEnabled(newValue);
+      
+      // Save to localStorage
+      localStorage.setItem('goalRemindersEnabled', JSON.stringify(newValue));
+
+      // Update settings state
+      setSettings(prev => ({
+        ...prev,
+        notifications: {
+          ...prev.notifications,
+          goalReminders: newValue,
+        },
+      }));
+
+      // Call API to persist preference (optional)
+      await fetch('/api/patient/goal-reminders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          enabled: newValue,
+        }),
+      });
+    } catch (error) {
+      console.error('Error updating goal reminders setting:', error);
+      // Revert the toggle if there's an error
+      setGoalRemindersEnabled(!newValue);
+    }
   };
 
   const handleHighContrastToggle = (newValue) => {
@@ -437,8 +482,9 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <ToggleRow
                   label="Goal Reminders"
-                  description="Get reminded about your upcoming goals"
-                  value={settings.notifications.goalReminders}
+                  description="Get reminded when you haven't achieved your daily goals with motivational messages"
+                  value={goalRemindersEnabled}
+                  onChange={handleGoalRemindersToggle}
                 />
                 <ToggleRow
                   label="Health Alerts"
