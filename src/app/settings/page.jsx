@@ -8,6 +8,15 @@ import ToggleRow from '@/components/Settings/ToggleRow';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PrimaryButton, SecondaryButton, DangerButton } from '@/components/Settings/Buttons';
+import {
+  AlertThresholdIcon,
+  PrivacyIcon as PrivacyIconComponent,
+  ProfileIcon,
+  DevicesIconSvg,
+  SecurityIcon,
+  NotificationIcon,
+  AccessibilityIcon,
+} from '@/components/Icons/SettingsIcons';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -283,7 +292,7 @@ export default function SettingsPage() {
 
 
 
-  // Icons
+  // Inline icons for specific use cases
   const UserIcon = () => (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -311,14 +320,7 @@ export default function SettingsPage() {
 
   const ShieldIcon = () => (
     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m7.784-4.817a.75.75 0 00-1.069 0l-15.5 15.5a.75.75 0 1001.069 1.069l15.5-15.5a.75.75 0 000-1.069z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-    </svg>
-  );
-
-  const DevicesIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
     </svg>
   );
 
@@ -380,7 +382,7 @@ export default function SettingsPage() {
           {/* Connected Devices Section */}
           <div className="mb-8">
             <SettingsSection
-              icon={<DevicesIcon />}
+              icon={<DevicesIconSvg />}
               title="Connected Devices"
             >
               <div className="space-y-4">
@@ -504,7 +506,7 @@ export default function SettingsPage() {
           {/* Alert Thresholds Section */}
           <div className="mb-8">
             <SettingsSection
-              icon={<ShieldIcon />}
+              icon={<AlertThresholdIcon />}
               title="Alert Thresholds"
             >
               <div className="space-y-4">
@@ -517,9 +519,7 @@ export default function SettingsPage() {
                 >
                   <div className="flex items-center gap-3">
                     <div className="text-blue-600 dark:text-blue-400">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                      </svg>
+                      <AlertThresholdIcon className="w-6 h-6" />
                     </div>
                     <div className="text-left">
                       <h4 className="font-semibold text-slate-800 dark:text-slate-100">Configure Thresholds</h4>
@@ -560,7 +560,7 @@ export default function SettingsPage() {
           {/* Privacy & Consent Section */}
           <div className="mb-8">
             <SettingsSection
-              icon={<ShieldIcon />}
+              icon={<PrivacyIconComponent />}
               title="Privacy & Consent"
             >
               <div className="space-y-4">
