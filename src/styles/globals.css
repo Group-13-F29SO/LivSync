@@ -42,3 +42,41 @@ code {
 html.dark {
   color-scheme: dark;
 }
+
+/* Accessibility Features */
+
+/* High Contrast Mode - Increases contrast for better visibility */
+html.high-contrast {
+  @apply text-gray-950 bg-white;
+}
+
+html.high-contrast body {
+  @apply text-gray-950 bg-white;
+}
+
+html.dark.high-contrast {
+  @apply text-white bg-gray-950;
+}
+
+html.dark.high-contrast body {
+  @apply text-white bg-gray-950;
+}
+
+html.high-contrast button,
+html.high-contrast a {
+  @apply border-2 border-gray-950;
+}
+
+html.dark.high-contrast button,
+html.dark.high-contrast a {
+  @apply border-2 border-white;
+}
+
+/* Colorblind Mode - Adjusts colors for colorblind visibility */
+html.colorblind-mode {
+  --primary-color: #0173B2;
+  --secondary-color: #DE8F05;
+  --danger-color: #CC78BC;
+  --success-color: #029E73;
+}
+

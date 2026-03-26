@@ -7,11 +7,13 @@ import SettingsSection from '@/components/Settings/SettingsSection';
 import ToggleRow from '@/components/Settings/ToggleRow';
 import AlertThresholdSection from '@/components/Alerts/AlertThresholdSection';
 import { useAuth } from '@/hooks/useAuth';
+import { useAccessibility } from '@/hooks/useAccessibility';
 import { PrimaryButton, SecondaryButton, DangerButton } from '@/components/Settings/Buttons';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const { accessibility, updateAccessibilitySetting } = useAccessibility();
   const [settings, setSettings] = useState({
     notifications: {
       goalReminders: true,
@@ -122,6 +124,14 @@ export default function SettingsPage() {
         healthAlerts: newValue,
       },
     }));
+  };
+
+  const handleHighContrastToggle = (newValue) => {
+    updateAccessibilitySetting('highContrast', newValue);
+  };
+
+  const handleColorBlindToggle = (newValue) => {
+    updateAccessibilitySetting('colorBlind', newValue);
   };
 
 
@@ -366,17 +376,14 @@ export default function SettingsPage() {
                 <ToggleRow
                   label="Color-blind Friendly Mode"
                   description="Use a color palette optimized for color blindness"
-                  value={settings.accessibility.colorBlind}
-                />
-                <ToggleRow
-                  label="Large Text"
-                  description="Increase text size throughout the app"
-                  value={settings.accessibility.largeText}
+                  value={accessibility.colorBlind}
+                  onChange={handleColorBlindToggle}
                 />
                 <ToggleRow
                   label="High Contrast"
                   description="Use high contrast colors for better visibility"
-                  value={settings.accessibility.highContrast}
+                  value={accessibility.highContrast}
+                  onChange={handleHighContrastToggle}
                 />
               </div>
             </SettingsSection>
