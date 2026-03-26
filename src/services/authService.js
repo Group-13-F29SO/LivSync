@@ -12,6 +12,16 @@ export const loginUser = async (credentials) => {
     body: JSON.stringify(credentials),
   });
 
+  // Handle 2FA required response (202 Accepted)
+  if (response.status === 202) {
+    const data = await response.json();
+    return {
+      requiresTwoFactor: true,
+      userId: data.userId,
+      message: data.message,
+    };
+  }
+
   if (!response.ok) {
     const data = await response.json();
     throw new Error(data.error || 'Login failed');

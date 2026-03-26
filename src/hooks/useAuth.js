@@ -15,6 +15,14 @@ export const useAuth = () => {
 
     try {
       const data = await loginUser(credentials);
+      
+      // Check if 2FA is required
+      if (data.requiresTwoFactor) {
+        // Don't set user or redirect - return 2FA requirement to caller
+        setIsLoading(false);
+        return data;
+      }
+      
       setUser(data.user);
       
       // Redirect based on user type
