@@ -104,6 +104,26 @@ export default function SettingsPage() {
     }
   };
 
+  const handleHealthAlertsToggle = (newValue) => {
+    // If toggling OFF, show confirmation
+    if (!newValue) {
+      const confirmed = window.confirm(
+        'Disabling this will stop you from receiving important health alerts about threshold breaches. Do you want to continue?'
+      );
+      if (!confirmed) {
+        return; // User cancelled
+      }
+    }
+    // Update the setting
+    setSettings(prev => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        healthAlerts: newValue,
+      },
+    }));
+  };
+
 
 
   // Icons
@@ -310,8 +330,9 @@ export default function SettingsPage() {
                 />
                 <ToggleRow
                   label="Health Alerts"
-                  description="Receive alerts for important health milestones"
+                  description="Receive alerts when your biomarker readings breach configured thresholds"
                   value={settings.notifications.healthAlerts}
+                  onChange={handleHealthAlertsToggle}
                 />
                 <ToggleRow
                   label="Weekly Summary"
