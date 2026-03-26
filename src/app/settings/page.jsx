@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
 import SettingsSection from '@/components/Settings/SettingsSection';
 import ToggleRow from '@/components/Settings/ToggleRow';
-import AlertThresholdSection from '@/components/Alerts/AlertThresholdSection';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PrimaryButton, SecondaryButton, DangerButton } from '@/components/Settings/Buttons';
@@ -359,10 +358,30 @@ export default function SettingsPage() {
               icon={<ShieldIcon />}
               title="Alert Thresholds"
             >
-              <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">
-                Set custom alert thresholds for your biomarkers. You'll receive notifications when your readings fall outside these ranges.
-              </p>
-              <AlertThresholdSection />
+              <div className="space-y-4">
+                <p className="text-slate-600 dark:text-slate-400">
+                  Set custom alert thresholds for your biomarkers. You'll receive notifications when your readings fall outside these ranges.
+                </p>
+                <button
+                  onClick={() => router.push('/settings/alert-thresholds')}
+                  className="w-full flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-gray-800 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="text-blue-600 dark:text-blue-400">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-semibold text-slate-800 dark:text-slate-100">Configure Thresholds</h4>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Set alert ranges for your biomarkers</p>
+                    </div>
+                  </div>
+                  <div className="text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <ChevronRightIcon />
+                  </div>
+                </button>
+              </div>
             </SettingsSection>
           </div>
 
