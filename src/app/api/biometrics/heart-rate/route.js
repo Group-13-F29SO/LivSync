@@ -110,9 +110,25 @@ case 'all':
       );
     }
 
+    // Deduplicate by timestamp: prioritize manual entries (is_user_entered=true)
+    const dataByTimestamp = new Map();
+    heartRateData.forEach((item) => {
+      const tsKey = item.timestamp.toISOString();
+      const existing = dataByTimestamp.get(tsKey);
+      
+      // If no existing entry or current entry is manual and existing isn't, use current
+      if (!existing || (item.is_user_entered && !existing.is_user_entered)) {
+        dataByTimestamp.set(tsKey, item);
+      }
+    });
+
+    // Convert back to array and sort
+    const deduplicatedData = Array.from(dataByTimestamp.values())
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
     // For "all" period without custom date range, adjust startDate to first data point instead of epoch
-    if (period === 'all' && !startDateParam && heartRateData.length > 0) {
-      const firstDataPoint = new Date(heartRateData[0].timestamp);
+    if (period === 'all' && !startDateParam && deduplicatedData.length > 0) {
+      const firstDataPoint = new Date(deduplicatedData[0].timestamp);
       startDate = new Date(firstDataPoint);
       startDate.setHours(0, 0, 0, 0);
     }
@@ -149,7 +165,7 @@ case 'all':
     
     if (period === 'today') {
       // For single day, use raw data points without aggregation
-      chartData = heartRateData
+      chartData = deduplicatedData
         .map((item) => {
           const timestamp = new Date(item.timestamp);
           const displayTimestamp = timestamp.toLocaleTimeString([], {
@@ -163,14 +179,16 @@ case 'all':
             max: Number(item.value),
             min: Number(item.value),
             hasData: true,
-            rawTime: timestamp
+            rawTime: timestamp,
+            is_user_entered: item.is_user_entered,
+            source: item.is_user_entered ? 'manual' : item.source
           };
         });
     } else {
       // For multi-day periods, use bucketed aggregation
       const buckets = new Map();
 
-      heartRateData.forEach((item) => {
+      deduplicatedData.forEach((item) => {
         const timestamp = new Date(item.timestamp);
         const bucketIndex = Math.floor((timestamp.getTime() - startDate.getTime()) / aggregationIntervalMs);
 
@@ -180,7 +198,8 @@ case 'all':
             count: 0,
             min: Infinity,
             max: -Infinity,
-            timestamp
+            timestamp,
+            has_manual: false
           });
         }
 
@@ -190,6 +209,9 @@ case 'all':
         bucket.count += 1;
         bucket.min = Math.min(bucket.min, value);
         bucket.max = Math.max(bucket.max, value);
+        if (item.is_user_entered) {
+          bucket.has_manual = true;
+        }
         if (timestamp < bucket.timestamp) {
           bucket.timestamp = timestamp;
         }
@@ -233,7 +255,8 @@ case 'all':
             max: bucket.max,
             min: bucket.min,
             hasData: true,
-            rawTime: bucket.timestamp
+            rawTime: bucket.timestamp,
+            has_manual_entry: bucket.has_manual
           };
         });
     }

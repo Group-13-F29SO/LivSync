@@ -42,26 +42,39 @@ export async function GET(req) {
     const selectedDateEnd = new Date(selectedDate);
     selectedDateEnd.setHours(23, 59, 59, 999);
 
-    // last 14 days including selected date
-    const historyStartDate = new Date(selectedDate);
-    historyStartDate.setDate(historyStartDate.getDate() - 13);
-    historyStartDate.setHours(0, 0, 0, 0);
-
-    const historyEndDate = new Date(selectedDateEnd);
-
-const allSleepData = await prisma.biometric_data.findMany({
-  where: {
-    patient_id: patientId,
-    metric_type: 'sleep',
-    timestamp: {
-      gte: historyStartDate,
-      lte: historyEndDate,
-    },
-  },
+    // Fetch all sleep data to determine history window dynamically
+    const allSleepData = await prisma.biometric_data.findMany({
+      where: {
+        patient_id: patientId,
+        metric_type: 'sleep',
+        timestamp: {
+          lte: selectedDateEnd,
+        },
+      },
       orderBy: {
         timestamp: 'asc',
       },
     });
+
+    // Determine the history window based on available data (min 14 days, or all available)
+    let historyStartDate;
+    if (allSleepData.length === 0) {
+      // No data yet, show last 14 days as default window
+      historyStartDate = new Date(selectedDate);
+      historyStartDate.setDate(historyStartDate.getDate() - 13);
+    } else {
+      // Show from earliest data or 14 days, whichever is more recent
+      const earliestDate = new Date(allSleepData[0].timestamp);
+      earliestDate.setHours(0, 0, 0, 0);
+      const fourteenDaysAgo = new Date(selectedDate);
+      fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 13);
+      
+      // Use whichever is earlier (to show more history if available)
+      historyStartDate = earliestDate < fourteenDaysAgo ? earliestDate : fourteenDaysAgo;
+    }
+    historyStartDate.setHours(0, 0, 0, 0);
+
+    const historyEndDate = new Date(selectedDateEnd);
 
     function formatLocalDate(date) {
       const y = date.getFullYear();
@@ -71,16 +84,30 @@ const allSleepData = await prisma.biometric_data.findMany({
     }
 
     const sleepByDate = {};
+    const manualByDate = {};
 
     for (const item of allSleepData) {
       const ts = new Date(item.timestamp);
+      
+      // Only process data within the display window
+      if (ts < historyStartDate || ts > historyEndDate) {
+        continue;
+      }
+
       const dateKey = formatLocalDate(ts);
       const value = Number(item.value);
 
       if (!Number.isFinite(value)) continue;
 
-      // Take the MAX value (final cumulative sleep) for each date, not sum
-      sleepByDate[dateKey] = Math.max(sleepByDate[dateKey] || 0, value);
+      // For manual entries, always prioritize them over synced data
+      if (item.is_user_entered) {
+        sleepByDate[dateKey] = value;
+        manualByDate[dateKey] = true;
+      } else if (!manualByDate[dateKey]) {
+        // For synced data, only update if no manual entry exists
+        // Always take the maximum value since the generator stores cumulative hourly updates
+        sleepByDate[dateKey] = Math.max(sleepByDate[dateKey] || 0, value);
+      }
     }
 
     const chartData = [];
@@ -94,6 +121,7 @@ const allSleepData = await prisma.biometric_data.findMany({
         date: current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         value: Number(totalSleep.toFixed(1)),
         rawDate: new Date(current),
+        is_user_entered: !!manualByDate[dateKey],
       });
 
       current.setDate(current.getDate() + 1);
@@ -102,7 +130,8 @@ const allSleepData = await prisma.biometric_data.findMany({
     const selectedDateKey = formatLocalDate(selectedDate);
     const selectedDateSleep = Number((sleepByDate[selectedDateKey] || 0).toFixed(1));
 
-    const sleepValues = chartData.map(item => item.value);
+    // Only include days that actually have sleep data (exclude zeros)
+    const sleepValues = chartData.map(item => item.value).filter(v => v > 0);
     const recommendedMin = 7;
     const recommendedMax = 9;
 

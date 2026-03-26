@@ -7,6 +7,7 @@ import DashboardCard from '@/components/DashboardCard/DashboardCard';
 import StreakCard from '@/components/Dashboard/StreakCard';
 import SummaryCard from '@/components/Dashboard/SummaryCard';
 import ArticlesCard from '@/components/Dashboard/ArticlesCard';
+import QuickManualEntryCard from '@/components/Dashboard/QuickManualEntryCard';
 import SyncButton from '@/components/SyncButton/SyncButton';
 import BadgeNotification from '@/components/Badges/BadgeNotification';
 import ConnectionRequestsNotification from '@/components/Provider/ConnectionRequestsNotification';
@@ -174,6 +175,8 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
+          
+
           <button
             onClick={() => router.push('/dashboard/steps')}
             className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
@@ -284,6 +287,10 @@ export default function DashboardPage() {
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
             <ArticlesCard />
+          </div>
+
+          <div className="lg:col-span-1">
+            <QuickManualEntryCard />
           </div>
         </div>
 

@@ -8,6 +8,7 @@ import PeriodSelector from '@/components/BloodGlucose/PeriodSelector';
 import StatsGrid from '@/components/BloodGlucose/StatsGrid';
 import BloodGlucoseChart from '@/components/BloodGlucose/BloodGlucoseChart';
 import BloodGlucoseInfo from '@/components/BloodGlucose/BloodGlucoseInfo';
+import MetricManualEntrySection from '@/components/Dashboard/MetricManualEntrySection';
 
 export default function BloodGlucoseChartPage() {
   const router = useRouter();
@@ -133,6 +134,14 @@ export default function BloodGlucoseChartPage() {
             period={period}
             dataLoading={dataLoading}
             error={error}
+          />
+        </div>
+
+        {/* Manual Entry Section */}
+        <div className="mb-8">
+          <MetricManualEntrySection 
+            metricType="blood_glucose"
+            selectedDate={period === 'today' ? selectedDate : null}
           />
         </div>
 
