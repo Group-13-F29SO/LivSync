@@ -90,6 +90,8 @@ model patients {
   profile_picture_url     String?                  @db.VarChar(255)
   provider_id             String?                  @db.Uuid
   provider_consent_status String                   @default("none") @db.VarChar(20)
+  two_factor_enabled      Boolean                  @default(false)
+  two_factor_secret       String?
   created_at              DateTime                 @default(now()) @db.Timestamptz(6)
   updated_at              DateTime                 @default(now()) @db.Timestamptz(6)
   biometric_data          biometric_data[]
