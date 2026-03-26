@@ -32,6 +32,14 @@ export default function SettingsPage() {
   });
   const [isLoadingPrivacy, setIsLoadingPrivacy] = useState(false);
   const [privacyError, setPrivacyError] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(1); // 1: credentials, 2: confirmation
+  const [deleteCredentials, setDeleteCredentials] = useState({
+    username: '',
+    password: '',
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -131,6 +139,101 @@ export default function SettingsPage() {
 
   const handleColorBlindToggle = (newValue) => {
     updateAccessibilitySetting('colorBlind', newValue);
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+    setDeleteStep(1);
+    setDeleteCredentials({ username: '', password: '' });
+    setDeleteError(null);
+  };
+
+  const handleVerifyCredentials = async () => {
+    if (!deleteCredentials.username || !deleteCredentials.password) {
+      setDeleteError('Please enter both username and password');
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+
+      // Call endpoint with verifyOnly flag to just verify credentials
+      const response = await fetch('/api/patient/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          username: deleteCredentials.username,
+          password: deleteCredentials.password,
+          verifyOnly: true,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteError(data.error || 'Invalid credentials. Please try again.');
+        setIsDeleting(false);
+        return;
+      }
+
+      // Credentials verified, show final confirmation
+      setDeleteStep(2);
+      setIsDeleting(false);
+    } catch (error) {
+      console.error('Error verifying credentials:', error);
+      setDeleteError('Failed to verify credentials');
+      setIsDeleting(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+
+      // Actually delete the account
+      const response = await fetch('/api/patient/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          username: deleteCredentials.username,
+          password: deleteCredentials.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteError(data.error || 'Failed to delete account');
+        setIsDeleting(false);
+        return;
+      }
+
+      // Account deleted successfully, redirect to login
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setDeleteError('Failed to delete account');
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (!isDeleting) {
+      setShowDeleteModal(false);
+      setDeleteStep(1);
+      setDeleteCredentials({ username: '', password: '' });
+      setDeleteError(null);
+    }
   };
 
 
@@ -441,7 +544,7 @@ export default function SettingsPage() {
                   <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                     Permanently delete your account and all associated data
                   </p>
-                  <DangerButton>
+                  <DangerButton onClick={handleDeleteClick}>
                     Delete Account
                   </DangerButton>
                 </div>
@@ -450,6 +553,121 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full border border-slate-200 dark:border-gray-800">
+            {/* Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-gray-800">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                {deleteStep === 1 ? 'Verify Your Identity' : 'Confirm Account Deletion'}
+              </h2>
+            </div>
+
+            {/* Modal Body */}
+            <div className="px-6 py-4">
+              {deleteStep === 1 ? (
+                <div className="space-y-4">
+                  <p className="text-slate-600 dark:text-slate-400 text-sm">
+                    Enter your credentials to verify your identity before deleting your account.
+                  </p>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      value={deleteCredentials.username}
+                      onChange={(e) => setDeleteCredentials(prev => ({ ...prev, username: e.target.value }))}
+                      placeholder="Enter your username"
+                      disabled={isDeleting}
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      value={deleteCredentials.password}
+                      onChange={(e) => setDeleteCredentials(prev => ({ ...prev, password: e.target.value }))}
+                      placeholder="Enter your password"
+                      disabled={isDeleting}
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                    />
+                  </div>
+
+                  {deleteError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
+                      {deleteError}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-red-700 dark:text-red-200 font-semibold text-sm mb-2">
+                      ⚠️ Warning: This action is permanent and irreversible
+                    </p>
+                    <p className="text-red-600 dark:text-red-300 text-sm">
+                      This will permanently delete your account and all associated data, including:
+                    </p>
+                    <ul className="text-red-600 dark:text-red-300 text-sm mt-2 ml-4 space-y-1">
+                      <li>• Your profile information</li>
+                      <li>• All biometric data and health records</li>
+                      <li>• All goals and progress tracking</li>
+                      <li>• All badges and achievements</li>
+                      <li>• Connected devices</li>
+                    </ul>
+                  </div>
+
+                  <p className="text-slate-600 dark:text-slate-400 text-sm font-semibold">
+                    Are you absolutely sure you want to continue?
+                  </p>
+
+                  {deleteError && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
+                      {deleteError}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-gray-800 flex gap-3 justify-end">
+              <button
+                onClick={handleCloseDeleteModal}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-slate-100 dark:bg-gray-800 hover:bg-slate-200 dark:hover:bg-gray-700 text-slate-900 dark:text-slate-100 font-medium rounded-lg transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              {deleteStep === 1 ? (
+                <button
+                  onClick={handleVerifyCredentials}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isDeleting ? 'Verifying...' : 'Verify & Continue'}
+                </button>
+              ) : (
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Account'}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
