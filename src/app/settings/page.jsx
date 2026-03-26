@@ -171,51 +171,31 @@ export default function SettingsPage() {
           <div className="mb-8">
             <SettingsSection
               icon={<UserIcon />}
-              title="Profile Management"
+              title="Profile"
             >
-              <div className="space-y-6">
-                {/* First Name and Last Name */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your first name"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+              <div className="space-y-4">
+                <p className="text-slate-600 dark:text-slate-400">
+                  Manage your personal information, including name, email, date of birth, and other profile details.
+                </p>
+                <button
+                  onClick={() => router.push('/settings/profile')}
+                  className="w-full flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-gray-800 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="text-blue-600 dark:text-blue-400">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div className="text-left">
+                      <h4 className="font-semibold text-slate-800 dark:text-slate-100">Edit Profile</h4>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Update your personal information</p>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your last name"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                  <div className="text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    <ChevronRightIcon />
                   </div>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="Enter your email address"
-                    className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Save Button */}
-                <div className="pt-4">
-                  <PrimaryButton>
-                    Save Changes
-                  </PrimaryButton>
-                </div>
+                </button>
               </div>
             </SettingsSection>
           </div>
