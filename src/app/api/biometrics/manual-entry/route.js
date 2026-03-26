@@ -137,7 +137,7 @@ export async function POST(req) {
           success: true,
           message: 'Manual sleep entry recorded successfully',
           data: {
-            id: result.id,
+            id: String(result.id),
             metric_type: result.metric_type,
             value: parseFloat(result.value),
             timestamp: result.timestamp,
@@ -246,7 +246,7 @@ export async function POST(req) {
         success: true,
         message: 'Manual entry recorded successfully',
         data: {
-          id: result.id,
+          id: String(result.id),
           metric_type: result.metric_type,
           value: parseFloat(result.value),
           timestamp: result.timestamp,
@@ -331,7 +331,7 @@ export async function GET(req) {
         success: true,
         count: entries.length,
         data: entries.map(entry => ({
-          id: entry.id,
+          id: String(entry.id),
           metric_type: entry.metric_type,
           value: parseFloat(entry.value),
           timestamp: entry.timestamp,

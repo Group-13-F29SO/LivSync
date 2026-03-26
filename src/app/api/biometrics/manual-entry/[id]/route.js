@@ -63,7 +63,7 @@ export async function DELETE(req, { params }) {
         success: true,
         message: 'Manual entry deleted successfully. Synced data will now be visible.',
         data: {
-          id: entry.id,
+          id: String(entry.id),
           metric_type: entry.metric_type,
           timestamp: entry.timestamp,
         },
@@ -194,7 +194,7 @@ export async function PATCH(req, { params }) {
           success: true,
           message: 'Manual sleep entry updated successfully',
           data: {
-            id: updated.id,
+            id: String(updated.id),
             metric_type: updated.metric_type,
             value: parseFloat(updated.value),
             timestamp: updated.timestamp,
@@ -227,7 +227,7 @@ export async function PATCH(req, { params }) {
         success: true,
         message: 'Manual entry updated successfully',
         data: {
-          id: updated.id,
+          id: String(updated.id),
           metric_type: updated.metric_type,
           value: parseFloat(updated.value),
           timestamp: updated.timestamp,
