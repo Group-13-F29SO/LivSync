@@ -8,6 +8,7 @@ import ToggleRow from '@/components/Settings/ToggleRow';
 import { useAuth } from '@/hooks/useAuth';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import { PrimaryButton, SecondaryButton, DangerButton } from '@/components/Settings/Buttons';
+import TwoFactorModal from '@/components/Settings/TwoFactorModal';
 import {
   AlertThresholdIcon,
   PrivacyIcon as PrivacyIconComponent,
@@ -50,6 +51,18 @@ export default function SettingsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [goalRemindersEnabled, setGoalRemindersEnabled] = useState(true);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(null);
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorMode, setTwoFactorMode] = useState('enable'); // 'enable' or 'disable'
+  const [isLoadingTwoFactor, setIsLoadingTwoFactor] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -66,6 +79,7 @@ export default function SettingsPage() {
     if (!isLoading && user && user.id && user.userType === 'patient') {
       fetchPrivacyConsent();
       loadGoalRemindersPreference();
+      fetchTwoFactorStatus();
     }
   }, [user, isLoading]);
 
@@ -74,6 +88,18 @@ export default function SettingsPage() {
     const savedPreference = localStorage.getItem('goalRemindersEnabled');
     if (savedPreference !== null) {
       setGoalRemindersEnabled(JSON.parse(savedPreference));
+    }
+  };
+
+  const fetchTwoFactorStatus = async () => {
+    try {
+      const response = await fetch(`/api/patient/profile?patientId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTwoFactorEnabled(data.two_factor_enabled || false);
+      }
+    } catch (error) {
+      console.error('Error fetching 2FA status:', error);
     }
   };
 
@@ -290,6 +316,86 @@ export default function SettingsPage() {
     }
   };
 
+  const handleChangePassword = async () => {
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    // Validation
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('Please fill in all password fields');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      return;
+    }
+
+    if (passwordForm.newPassword === passwordForm.currentPassword) {
+      setPasswordError('New password must be different from current password');
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      const response = await fetch('/api/patient/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setPasswordError(data.error || 'Failed to change password');
+        return;
+      }
+
+      setPasswordSuccess('Password changed successfully! You can now log in with your new password.');
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setPasswordSuccess(null);
+      }, 5000);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setPasswordError('An error occurred while changing your password');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleTwoFactorToggle = (enabled) => {
+    if (enabled) {
+      // Enable 2FA
+      setTwoFactorMode('enable');
+    } else {
+      // Disable 2FA
+      setTwoFactorMode('disable');
+    }
+    setShowTwoFactorModal(true);
+  };
+
+  const handleTwoFactorSuccess = () => {
+    setTwoFactorEnabled(!twoFactorEnabled);
+  };
+
 
 
   // Inline icons for specific use cases
@@ -428,7 +534,10 @@ export default function SettingsPage() {
                     <input
                       type="password"
                       placeholder="Enter current password"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={passwordForm.currentPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                      disabled={isChangingPassword}
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     />
                   </div>
 
@@ -439,7 +548,10 @@ export default function SettingsPage() {
                     <input
                       type="password"
                       placeholder="Enter new password"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={passwordForm.newPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+                      disabled={isChangingPassword}
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     />
                   </div>
 
@@ -450,15 +562,32 @@ export default function SettingsPage() {
                     <input
                       type="password"
                       placeholder="Confirm new password"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={passwordForm.confirmPassword}
+                      onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+                      disabled={isChangingPassword}
+                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                     />
                   </div>
                 </div>
 
+                {/* Error Message */}
+                {passwordError && (
+                  <div className="text-red-600 dark:text-red-400 text-sm p-3 bg-red-50 dark:bg-red-950 rounded-lg">
+                    {passwordError}
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {passwordSuccess && (
+                  <div className="text-green-600 dark:text-green-400 text-sm p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+                    {passwordSuccess}
+                  </div>
+                )}
+
                 {/* Change Password Button */}
                 <div className="flex gap-3 pt-4">
-                  <SecondaryButton>
-                    Change Password
+                  <SecondaryButton onClick={handleChangePassword} disabled={isChangingPassword}>
+                    {isChangingPassword ? 'Changing...' : 'Change Password'}
                   </SecondaryButton>
                 </div>
 
@@ -466,11 +595,27 @@ export default function SettingsPage() {
                 <div className="border-t border-slate-200 dark:border-gray-700 my-4"></div>
 
                 {/* Two-Factor Authentication */}
-                <ToggleRow
-                  label="Two-Factor Authentication"
-                  description="Add an extra layer of security to your account"
-                  value={settings.twoFactor}
-                />
+                <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-gray-800 rounded-lg border border-slate-200 dark:border-gray-700">
+                  <div className="flex-1">
+                    <p className="font-medium text-slate-800 dark:text-slate-100">
+                      Two-Factor Authentication
+                    </p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">
+                      {twoFactorEnabled ? 'Enabled - Your account is protected' : 'Add an extra layer of security to your account'}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleTwoFactorToggle(!twoFactorEnabled)}
+                    disabled={isLoadingTwoFactor}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      twoFactorEnabled
+                        ? 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 disabled:opacity-50'
+                        : 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 disabled:opacity-50'
+                    }`}
+                  >
+                    {twoFactorEnabled ? 'Disable' : 'Enable'}
+                  </button>
+                </div>
               </div>
             </SettingsSection>
           </div>
@@ -599,6 +744,15 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
+
+      {/* Two-Factor Modal */}
+      <TwoFactorModal
+        userId={user?.id}
+        isOpen={showTwoFactorModal}
+        onClose={() => setShowTwoFactorModal(false)}
+        onSuccess={handleTwoFactorSuccess}
+        mode={twoFactorMode}
+      />
 
       {/* Delete Account Modal */}
       {showDeleteModal && (
