@@ -71,6 +71,7 @@ const allSleepData = await prisma.biometric_data.findMany({
     }
 
     const sleepByDate = {};
+    const manualByDate = {};
 
     for (const item of allSleepData) {
       const ts = new Date(item.timestamp);
@@ -79,8 +80,25 @@ const allSleepData = await prisma.biometric_data.findMany({
 
       if (!Number.isFinite(value)) continue;
 
-      // Take the MAX value (final cumulative sleep) for each date, not sum
-      sleepByDate[dateKey] = Math.max(sleepByDate[dateKey] || 0, value);
+      // Track whether this date has manual data
+      if (item.is_user_entered) {
+        manualByDate[dateKey] = true;
+      }
+
+      // For each date, check if we have a manual entry
+      // If so, prioritize it; otherwise take max of synced data for that date
+      if (!sleepByDate[dateKey] || item.is_user_entered) {
+        // Only update if: (1) first value for this date, or (2) this is manual and previous wasn't
+        if (!sleepByDate[dateKey] || (item.is_user_entered && !manualByDate[dateKey])) {
+          sleepByDate[dateKey] = Math.max(sleepByDate[dateKey] || 0, value);
+        } else if (item.is_user_entered) {
+          // If we already have a manual entry, update to max (should only be 1)
+          sleepByDate[dateKey] = Math.max(sleepByDate[dateKey] || 0, value);
+        } else if (!manualByDate[dateKey]) {
+          // No manual entry yet, so take max of synced
+          sleepByDate[dateKey] = Math.max(sleepByDate[dateKey] || 0, value);
+        }
+      }
     }
 
     const chartData = [];
@@ -94,6 +112,7 @@ const allSleepData = await prisma.biometric_data.findMany({
         date: current.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         value: Number(totalSleep.toFixed(1)),
         rawDate: new Date(current),
+        is_user_entered: !!manualByDate[dateKey],
       });
 
       current.setDate(current.getDate() + 1);

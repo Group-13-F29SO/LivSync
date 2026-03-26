@@ -98,12 +98,28 @@ export async function GET(req) {
       );
     }
 
+    // Deduplicate by timestamp: prioritize manual entries (is_user_entered=true)
+    const dataByTimestamp = new Map();
+    bloodGlucoseData.forEach((item) => {
+      const tsKey = item.timestamp.toISOString();
+      const existing = dataByTimestamp.get(tsKey);
+      
+      // If no existing entry or current entry is manual and existing isn't, use current
+      if (!existing || (item.is_user_entered && !existing.is_user_entered)) {
+        dataByTimestamp.set(tsKey, item);
+      }
+    });
+
+    // Convert back to array and sort
+    const deduplicatedData = Array.from(dataByTimestamp.values())
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
     // Determine aggregation based on period
     let chartData;
     
     if (period === 'today') {
-      // For single day, display raw data points
-      chartData = bloodGlucoseData
+      // For single day, display raw data points with source indicator
+      chartData = deduplicatedData
         .map((item) => {
           const timestamp = new Date(item.timestamp);
           const displayTimestamp = timestamp.toLocaleTimeString([], {
@@ -114,14 +130,16 @@ export async function GET(req) {
           return {
             timestamp: displayTimestamp,
             value: Number(item.value),
-            rawTime: timestamp
+            rawTime: timestamp,
+            is_user_entered: item.is_user_entered,
+            source: item.is_user_entered ? 'manual' : item.source
           };
         });
     } else {
       // For multi-day periods (week, month), aggregate by day showing average
       const buckets = new Map();
       
-      bloodGlucoseData.forEach((item) => {
+      deduplicatedData.forEach((item) => {
         const timestamp = new Date(item.timestamp);
         // Get the date key using local timezone (YYYY-MM-DD)
         const year = timestamp.getFullYear();
@@ -135,7 +153,8 @@ export async function GET(req) {
             count: 0,
             min: Infinity,
             max: -Infinity,
-            timestamp
+            timestamp,
+            has_manual: false
           });
         }
         
@@ -145,6 +164,9 @@ export async function GET(req) {
         bucket.count += 1;
         bucket.min = Math.min(bucket.min, value);
         bucket.max = Math.max(bucket.max, value);
+        if (item.is_user_entered) {
+          bucket.has_manual = true;
+        }
       });
       
       // Format chart data from buckets
@@ -186,7 +208,8 @@ export async function GET(req) {
               max: bucket.max,
               count: bucket.count,
               rawDate: dateKey,
-              hasData: true
+              hasData: true,
+              has_manual_entry: bucket.has_manual
             };
           } else {
             return {
@@ -196,14 +219,15 @@ export async function GET(req) {
               max: null,
               count: 0,
               rawDate: dateKey,
-              hasData: false
+              hasData: false,
+              has_manual_entry: false
             };
           }
         });
     }
 
     // Calculate statistics
-    const values = bloodGlucoseData.map(item => Number(item.value));
+    const values = deduplicatedData.map(item => Number(item.value));
     const average = (values.reduce((a, b) => a + b, 0) / values.length).toFixed(1);
     const max = Math.max(...values);
     const min = Math.min(...values);
