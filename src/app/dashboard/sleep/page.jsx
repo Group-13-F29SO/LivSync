@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import StatCard from '@/components/Sleep/StatCard';
 import InfoCard from '@/components/Sleep/InfoCard';
 import RadialChartCard from '@/components/Sleep/RadialChartCard';
+import MetricManualEntrySection from '@/components/Dashboard/MetricManualEntrySection';
 
 export default function SleepChartPage() {
   const router = useRouter();
@@ -292,6 +293,8 @@ export default function SleepChartPage() {
             />
           </div>
 
+        
+
           {/* Sleep Tips */}
           <InfoCard
             icon="😴"
@@ -304,6 +307,14 @@ export default function SleepChartPage() {
               { label: '📱 Limit Screen Time', description: 'Avoid screens 1 hour before bedtime' },
               { label: '☕ Avoid Caffeine', description: 'No caffeine 6 hours before sleep' }
             ]}
+          />
+        </div>
+
+        {/* Manual Entry Section */}
+        <div className="mb-8">
+          <MetricManualEntrySection 
+            metricType="sleep"
+            selectedDate={selectedDate}
           />
         </div>
 
