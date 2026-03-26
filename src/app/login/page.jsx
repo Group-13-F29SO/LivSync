@@ -8,11 +8,22 @@ import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginPage() {
   const [userType, setUserType] = useState(null);
+  const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [tempCredentials, setTempCredentials] = useState(null);
   const { login, isLoading, error, setError } = useAuth();
 
   const handleLogin = async (formData) => {
     try {
-      await login({ ...formData, userType: userType });
+      const result = await login({ ...formData, userType: userType });
+      
+      // Check if 2FA is required
+      if (result && result.requiresTwoFactor) {
+        setRequiresTwoFactor(true);
+        setUserId(result.userId);
+        // Store credentials for the 2FA verification attempt
+        setTempCredentials({ ...formData, userType: userType });
+      }
     } catch (err) {
       console.error('Login error:', err);
     }
@@ -21,6 +32,9 @@ export default function LoginPage() {
   const handleChangeUserType = (type) => {
     setUserType(type);
     setError('');
+    setRequiresTwoFactor(false);
+    setUserId(null);
+    setTempCredentials(null);
   };
 
   return (
@@ -38,6 +52,7 @@ export default function LoginPage() {
                 onSubmit={handleLogin} 
                 isLoading={isLoading} 
                 error={error}
+                requiresTwoFactor={requiresTwoFactor}
               />
             )}
 
@@ -54,6 +69,9 @@ export default function LoginPage() {
               onClick={() => {
                 setUserType(null);
                 setError('');
+                setRequiresTwoFactor(false);
+                setUserId(null);
+                setTempCredentials(null);
               }}
               className="mt-4 w-full text-center text-gray-100 dark:text-gray-300 text-sm hover:underline"
             >

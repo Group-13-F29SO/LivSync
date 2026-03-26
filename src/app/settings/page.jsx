@@ -3,15 +3,22 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar/Navbar';
-import SettingsSection from '@/components/Settings/SettingsSection';
-import ToggleRow from '@/components/Settings/ToggleRow';
-import AlertThresholdSection from '@/components/Alerts/AlertThresholdSection';
 import { useAuth } from '@/hooks/useAuth';
-import { PrimaryButton, SecondaryButton, DangerButton } from '@/components/Settings/Buttons';
+import { useAccessibility } from '@/hooks/useAccessibility';
+import TwoFactorModal from '@/components/Settings/TwoFactorModal';
+import DeleteAccountModal from '@/components/Settings/DeleteAccountModal';
+import ProfileSection from '@/components/Settings/Sections/ProfileSection';
+import DevicesSection from '@/components/Settings/Sections/DevicesSection';
+import AccountSecuritySection from '@/components/Settings/Sections/AccountSecuritySection';
+import NotificationsSection from '@/components/Settings/Sections/NotificationsSection';
+import AlertThresholdsSection from '@/components/Settings/Sections/AlertThresholdsSection';
+import AccessibilitySection from '@/components/Settings/Sections/AccessibilitySection';
+import PrivacyConsentSection from '@/components/Settings/Sections/PrivacyConsentSection';
 
 export default function SettingsPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
+  const { accessibility, updateAccessibilitySetting } = useAccessibility();
   const [settings, setSettings] = useState({
     notifications: {
       goalReminders: true,
@@ -31,6 +38,27 @@ export default function SettingsPage() {
   });
   const [isLoadingPrivacy, setIsLoadingPrivacy] = useState(false);
   const [privacyError, setPrivacyError] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteStep, setDeleteStep] = useState(1); // 1: credentials, 2: confirmation
+  const [deleteCredentials, setDeleteCredentials] = useState({
+    username: '',
+    password: '',
+  });
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+  const [goalRemindersEnabled, setGoalRemindersEnabled] = useState(true);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordError, setPasswordError] = useState(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(null);
+  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [twoFactorMode, setTwoFactorMode] = useState('enable'); // 'enable' or 'disable'
+  const [isLoadingTwoFactor, setIsLoadingTwoFactor] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -46,8 +74,30 @@ export default function SettingsPage() {
   useEffect(() => {
     if (!isLoading && user && user.id && user.userType === 'patient') {
       fetchPrivacyConsent();
+      loadGoalRemindersPreference();
+      fetchTwoFactorStatus();
     }
   }, [user, isLoading]);
+
+  const loadGoalRemindersPreference = () => {
+    // Load from localStorage
+    const savedPreference = localStorage.getItem('goalRemindersEnabled');
+    if (savedPreference !== null) {
+      setGoalRemindersEnabled(JSON.parse(savedPreference));
+    }
+  };
+
+  const fetchTwoFactorStatus = async () => {
+    try {
+      const response = await fetch(`/api/patient/profile?patientId=${user.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTwoFactorEnabled(data.two_factor_enabled || false);
+      }
+    } catch (error) {
+      console.error('Error fetching 2FA status:', error);
+    }
+  };
 
   const fetchPrivacyConsent = async () => {
     try {
@@ -104,52 +154,257 @@ export default function SettingsPage() {
     }
   };
 
+  const handleHealthAlertsToggle = (newValue) => {
+    // If toggling OFF, show confirmation
+    if (!newValue) {
+      const confirmed = window.confirm(
+        'Disabling this will stop you from receiving important health alerts about threshold breaches. Do you want to continue?'
+      );
+      if (!confirmed) {
+        return; // User cancelled
+      }
+    }
+    // Update the setting
+    setSettings(prev => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        healthAlerts: newValue,
+      },
+    }));
+  };
 
+  const handleGoalRemindersToggle = async (newValue) => {
+    try {
+      // Update local state
+      setGoalRemindersEnabled(newValue);
+      
+      // Save to localStorage
+      localStorage.setItem('goalRemindersEnabled', JSON.stringify(newValue));
 
-  // Icons
-  const UserIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  );
+      // Update settings state
+      setSettings(prev => ({
+        ...prev,
+        notifications: {
+          ...prev.notifications,
+          goalReminders: newValue,
+        },
+      }));
 
-  const LockIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-    </svg>
-  );
+      // Call API to persist preference (optional)
+      await fetch('/api/patient/goal-reminders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          enabled: newValue,
+        }),
+      });
+    } catch (error) {
+      console.error('Error updating goal reminders setting:', error);
+      // Revert the toggle if there's an error
+      setGoalRemindersEnabled(!newValue);
+    }
+  };
 
-  const BellIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-    </svg>
-  );
+  const handleHighContrastToggle = (newValue) => {
+    updateAccessibilitySetting('highContrast', newValue);
+  };
 
-  const EyeIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  );
+  const handleColorBlindToggle = (newValue) => {
+    updateAccessibilitySetting('colorBlind', newValue);
+  };
 
-  const ShieldIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m7.784-4.817a.75.75 0 00-1.069 0l-15.5 15.5a.75.75 0 1001.069 1.069l15.5-15.5a.75.75 0 000-1.069z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-    </svg>
-  );
+  const handleDeleteClick = () => {
+    setShowDeleteModal(true);
+    setDeleteStep(1);
+    setDeleteCredentials({ username: '', password: '' });
+    setDeleteError(null);
+  };
 
-  const DevicesIcon = () => (
-    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-    </svg>
-  );
+  const handleVerifyCredentials = async () => {
+    if (!deleteCredentials.username || !deleteCredentials.password) {
+      setDeleteError('Please enter both username and password');
+      return;
+    }
 
-  const ChevronRightIcon = () => (
-    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-    </svg>
-  );
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+
+      // Call endpoint with verifyOnly flag to just verify credentials
+      const response = await fetch('/api/patient/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          username: deleteCredentials.username,
+          password: deleteCredentials.password,
+          verifyOnly: true,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteError(data.error || 'Invalid credentials. Please try again.');
+        setIsDeleting(false);
+        return;
+      }
+
+      // Credentials verified, show final confirmation
+      setDeleteStep(2);
+      setIsDeleting(false);
+    } catch (error) {
+      console.error('Error verifying credentials:', error);
+      setDeleteError('Failed to verify credentials');
+      setIsDeleting(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+
+      // Actually delete the account
+      const response = await fetch('/api/patient/delete-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          username: deleteCredentials.username,
+          password: deleteCredentials.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteError(data.error || 'Failed to delete account');
+        setIsDeleting(false);
+        return;
+      }
+
+      // Account deleted successfully, redirect to login
+      setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      setDeleteError('Failed to delete account');
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (!isDeleting) {
+      setShowDeleteModal(false);
+      setDeleteStep(1);
+      setDeleteCredentials({ username: '', password: '' });
+      setDeleteError(null);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError(null);
+    setPasswordSuccess(null);
+
+    // Validation
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('Please fill in all password fields');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      return;
+    }
+
+    if (passwordForm.newPassword === passwordForm.currentPassword) {
+      setPasswordError('New password must be different from current password');
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      const response = await fetch('/api/patient/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          currentPassword: passwordForm.currentPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setPasswordError(data.error || 'Failed to change password');
+        return;
+      }
+
+      setPasswordSuccess('Password changed successfully! You can now log in with your new password.');
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+
+      // Clear success message after 5 seconds
+      setTimeout(() => {
+        setPasswordSuccess(null);
+      }, 5000);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      setPasswordError('An error occurred while changing your password');
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handleTwoFactorToggle = (enabled) => {
+    if (enabled) {
+      // Enable 2FA
+      setTwoFactorMode('enable');
+    } else {
+      // Disable 2FA
+      setTwoFactorMode('disable');
+    }
+    setShowTwoFactorModal(true);
+  };
+
+  const handleTwoFactorSuccess = () => {
+    setTwoFactorEnabled(!twoFactorEnabled);
+  };
+
+  const handleAnonymousAnalyticsToggle = (newValue) => {
+    setSettings(prev => ({
+      ...prev,
+      privacy: {
+        ...prev.privacy,
+        anonymousAnalytics: newValue,
+      },
+    }));
+  };
+
+  const handlePasswordFormChange = (newForm) => {
+    setPasswordForm(newForm);
+  };
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
@@ -167,262 +422,66 @@ export default function SettingsPage() {
             <p className="text-slate-500 dark:text-slate-400">Manage your account and app preferences</p>
           </div>
 
-          {/* Profile Management Section */}
-          <div className="mb-8">
-            <SettingsSection
-              icon={<UserIcon />}
-              title="Profile Management"
-            >
-              <div className="space-y-6">
-                {/* First Name and Last Name */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your first name"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your last name"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="Enter your email address"
-                    className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-
-                {/* Save Button */}
-                <div className="pt-4">
-                  <PrimaryButton>
-                    Save Changes
-                  </PrimaryButton>
-                </div>
-              </div>
-            </SettingsSection>
-          </div>
-
-          {/* Connected Devices Section */}
-          <div className="mb-8">
-            <SettingsSection
-              icon={<DevicesIcon />}
-              title="Connected Devices"
-            >
-              <div className="space-y-4">
-                <p className="text-slate-600 dark:text-slate-400">
-                  Manage your wearable devices and health tracking equipment. Connect watches, fitness trackers, and other devices to sync your health data.
-                </p>
-                <button
-                  onClick={() => router.push('/settings/devices')}
-                  className="w-full flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-gray-800 hover:bg-slate-100 dark:hover:bg-gray-700 rounded-lg border border-slate-200 dark:border-gray-700 transition-colors group"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="text-blue-600 dark:text-blue-400">
-                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div className="text-left">
-                      <h4 className="font-semibold text-slate-800 dark:text-slate-100">Manage Devices</h4>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">Add or remove connected devices</p>
-                    </div>
-                  </div>
-                  <div className="text-slate-400 dark:text-slate-500 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    <ChevronRightIcon />
-                  </div>
-                </button>
-              </div>
-            </SettingsSection>
-          </div>
-
-          {/* Account & Security Section */}
-          <div className="mb-8">
-            <SettingsSection
-              icon={<LockIcon />}
-              title="Account & Security"
-            >
-              <div className="space-y-6">
-                {/* Password Fields */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      Current Password
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="Enter current password"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="Enter new password"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      placeholder="Confirm new password"
-                      className="w-full px-4 py-2 bg-slate-100 dark:bg-gray-800 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                </div>
-
-                {/* Change Password Button */}
-                <div className="flex gap-3 pt-4">
-                  <SecondaryButton>
-                    Change Password
-                  </SecondaryButton>
-                </div>
-
-                {/* Divider */}
-                <div className="border-t border-slate-200 dark:border-gray-700 my-4"></div>
-
-                {/* Two-Factor Authentication */}
-                <ToggleRow
-                  label="Two-Factor Authentication"
-                  description="Add an extra layer of security to your account"
-                  value={settings.twoFactor}
-                />
-              </div>
-            </SettingsSection>
-          </div>
-
-          {/* Notifications Section */}
-          <div className="mb-8">
-            <SettingsSection
-              icon={<BellIcon />}
-              title="Notifications"
-            >
-              <div className="space-y-2">
-                <ToggleRow
-                  label="Goal Reminders"
-                  description="Get reminded about your upcoming goals"
-                  value={settings.notifications.goalReminders}
-                />
-                <ToggleRow
-                  label="Health Alerts"
-                  description="Receive alerts for important health milestones"
-                  value={settings.notifications.healthAlerts}
-                />
-                <ToggleRow
-                  label="Weekly Summary"
-                  description="Get a summary of your weekly progress"
-                  value={settings.notifications.weeklySummary}
-                />
-              </div>
-            </SettingsSection>
-          </div>
-
-          {/* Alert Thresholds Section */}
-          <div className="mb-8">
-            <SettingsSection
-              icon={<ShieldIcon />}
-              title="Alert Thresholds"
-            >
-              <p className="text-slate-600 dark:text-slate-400 mb-6 text-sm">
-                Set custom alert thresholds for your biomarkers. You'll receive notifications when your readings fall outside these ranges.
-              </p>
-              <AlertThresholdSection />
-            </SettingsSection>
-          </div>
-
-          {/* Accessibility Section */}
-          <div className="mb-8">
-            <SettingsSection
-              icon={<EyeIcon />}
-              title="Accessibility"
-            >
-              <div className="space-y-2">
-                <ToggleRow
-                  label="Color-blind Friendly Mode"
-                  description="Use a color palette optimized for color blindness"
-                  value={settings.accessibility.colorBlind}
-                />
-                <ToggleRow
-                  label="Large Text"
-                  description="Increase text size throughout the app"
-                  value={settings.accessibility.largeText}
-                />
-                <ToggleRow
-                  label="High Contrast"
-                  description="Use high contrast colors for better visibility"
-                  value={settings.accessibility.highContrast}
-                />
-              </div>
-            </SettingsSection>
-          </div>
-
-          {/* Privacy & Consent Section */}
-          <div className="mb-8">
-            <SettingsSection
-              icon={<ShieldIcon />}
-              title="Privacy & Consent"
-            >
-              <div className="space-y-4">
-                <ToggleRow
-                  label="Share Data with Healthcare Providers"
-                  description={settings.privacy.shareData ? "You can connect with healthcare providers" : "You cannot connect with healthcare providers"}
-                  value={settings.privacy.shareData}
-                  onChange={handleShareDataToggle}
-                />
-                {privacyError && (
-                  <div className="text-red-600 dark:text-red-400 text-sm">
-                    {privacyError}
-                  </div>
-                )}
-                <ToggleRow
-                  label="Anonymous Analytics"
-                  description="Help us improve by sharing anonymous usage data"
-                  value={settings.privacy.anonymousAnalytics}
-                />
-
-                {/* Divider */}
-                <div className="border-t border-slate-200 dark:border-gray-700 my-6"></div>
-
-                {/* Delete Account */}
-                <div>
-                  <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Danger Zone</h4>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                    Permanently delete your account and all associated data
-                  </p>
-                  <DangerButton>
-                    Delete Account
-                  </DangerButton>
-                </div>
-              </div>
-            </SettingsSection>
-          </div>
+          {/* Sections */}
+          <ProfileSection />
+          <DevicesSection />
+          <AccountSecuritySection
+            passwordForm={passwordForm}
+            onPasswordFormChange={handlePasswordFormChange}
+            onChangePassword={handleChangePassword}
+            isChangingPassword={isChangingPassword}
+            passwordError={passwordError}
+            passwordSuccess={passwordSuccess}
+            twoFactorEnabled={twoFactorEnabled}
+            isLoadingTwoFactor={isLoadingTwoFactor}
+            onToggleTwoFactor={handleTwoFactorToggle}
+          />
+          <NotificationsSection
+            goalRemindersEnabled={goalRemindersEnabled}
+            onGoalRemindersToggle={handleGoalRemindersToggle}
+            healthAlertsEnabled={settings.notifications.healthAlerts}
+            onHealthAlertsToggle={handleHealthAlertsToggle}
+            weeklySummaryEnabled={settings.notifications.weeklySummary}
+          />
+          <AlertThresholdsSection />
+          <AccessibilitySection
+            colorBlindEnabled={accessibility.colorBlind}
+            onColorBlindToggle={handleColorBlindToggle}
+            highContrastEnabled={accessibility.highContrast}
+            onHighContrastToggle={handleHighContrastToggle}
+          />
+          <PrivacyConsentSection
+            shareDataEnabled={settings.privacy.shareData}
+            onShareDataToggle={handleShareDataToggle}
+            anonymousAnalyticsEnabled={settings.privacy.anonymousAnalytics}
+            onAnonymousAnalyticsToggle={handleAnonymousAnalyticsToggle}
+            privacyError={privacyError}
+            onDeleteClick={handleDeleteClick}
+          />
         </div>
       </main>
+
+      {/* Two-Factor Modal */}
+      <TwoFactorModal
+        userId={user?.id}
+        isOpen={showTwoFactorModal}
+        onClose={() => setShowTwoFactorModal(false)}
+        onSuccess={handleTwoFactorSuccess}
+        mode={twoFactorMode}
+      />
+
+      {/* Delete Account Modal */}
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        deleteStep={deleteStep}
+        deleteCredentials={deleteCredentials}
+        onCredentialsChange={setDeleteCredentials}
+        isDeleting={isDeleting}
+        deleteError={deleteError}
+        onVerifyCredentials={handleVerifyCredentials}
+        onConfirmDelete={handleConfirmDelete}
+        onClose={handleCloseDeleteModal}
+      />
     </div>
   );
 }
