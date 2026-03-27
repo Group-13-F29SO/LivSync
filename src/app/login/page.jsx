@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import LoginForm from '@/components/LoginForm/LoginForm';
 import ProviderLoginForm from '@/components/LoginForm/ProviderLoginForm';
 import UserTypeSelector from '@/components/UserTypeSelector/UserTypeSelector';
@@ -44,6 +45,16 @@ export default function LoginPage() {
         {!userType ? (
           <>
             <UserTypeSelector userType={userType} onUserTypeChange={handleChangeUserType} />
+            
+            {/* Sign up link */}
+            <div className="mt-6 text-center">
+              <p className="text-gray-200 dark:text-gray-400 text-sm">
+                New to the app?{' '}
+                <Link href="/signup" className="text-yellow-300 hover:text-yellow-200 font-semibold underline">
+                  Sign up here
+                </Link>
+              </p>
+            </div>
           </>
         ) : (
           <>

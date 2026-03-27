@@ -15,6 +15,7 @@ export async function POST(request) {
       biologicalSex,
       height,
       weight,
+      connectedDevice,
     } = body;
 
     // Validation
@@ -68,6 +69,26 @@ export async function POST(request) {
         patient_profiles: true,
       },
     });
+
+    // Add connected device if provided
+    if (connectedDevice && connectedDevice.name) {
+      try {
+        await prisma.devices.create({
+          data: {
+            patient_id: newUser.id,
+            device_name: connectedDevice.name || 'Connected Device',
+            device_type: connectedDevice.name,
+            device_model: null,
+            battery_level: 100,
+            is_active: true,
+            paired_at: new Date(),
+          },
+        });
+      } catch (deviceError) {
+        console.error('Error adding device during signup:', deviceError);
+        // Don't fail signup if device creation fails
+      }
+    }
 
     return NextResponse.json(
       {
