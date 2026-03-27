@@ -121,48 +121,50 @@ export async function GET(request) {
     // Fetch aggregated data for each week with data
     const weeklyData = await Promise.all(
       weeks.map(async (week) => {
-        const [stepsAgg, caloriesAgg, sleepAgg, hydrationAgg, heartRateAgg, bloodGlucoseAgg, workoutCount] =
+        // Fetch raw data for proper daily aggregation
+        const [stepsData, caloriesData, sleepData, hydrationData, heartRateData, bloodGlucoseData, workoutCount] =
           await Promise.all([
-            prisma.biometric_data.aggregate({
+            // Steps - need to get daily total, then sum and average
+            prisma.biometric_data.findMany({
               where: {
                 patient_id: patientId,
                 metric_type: 'steps',
                 timestamp: { gte: week.start, lte: week.end },
               },
-              _sum: { value: true },
-              _avg: { value: true },
+              select: { value: true, timestamp: true },
             }),
 
-            prisma.biometric_data.aggregate({
+            // Calories - need to get daily total, then sum and average
+            prisma.biometric_data.findMany({
               where: {
                 patient_id: patientId,
                 metric_type: 'calories',
                 timestamp: { gte: week.start, lte: week.end },
               },
-              _sum: { value: true },
-              _avg: { value: true },
+              select: { value: true, timestamp: true },
             }),
 
-            prisma.biometric_data.aggregate({
+            // Sleep - need to get max per day, then sum and average
+            prisma.biometric_data.findMany({
               where: {
                 patient_id: patientId,
                 metric_type: 'sleep',
                 timestamp: { gte: week.start, lte: week.end },
               },
-              _sum: { value: true },
-              _avg: { value: true },
+              select: { value: true, timestamp: true },
             }),
 
-            prisma.biometric_data.aggregate({
+            // Hydration - need to get max per day, then sum and average
+            prisma.biometric_data.findMany({
               where: {
                 patient_id: patientId,
                 metric_type: 'hydration',
                 timestamp: { gte: week.start, lte: week.end },
               },
-              _sum: { value: true },
-              _avg: { value: true },
+              select: { value: true, timestamp: true },
             }),
 
+            // Heart Rate - average is fine
             prisma.biometric_data.aggregate({
               where: {
                 patient_id: patientId,
@@ -172,6 +174,7 @@ export async function GET(request) {
               _avg: { value: true },
             }),
 
+            // Blood Glucose - average is fine
             prisma.biometric_data.aggregate({
               where: {
                 patient_id: patientId,
@@ -190,29 +193,76 @@ export async function GET(request) {
             }),
           ]);
 
-        const avgSleep = sleepAgg._avg.value ? Number(sleepAgg._avg.value.toFixed(1)) : 0;
-        const avgHeartRate = heartRateAgg._avg.value ? Math.round(Number(heartRateAgg._avg.value)) : 0;
-        const avgBloodGlucose = bloodGlucoseAgg._avg.value ? Math.round(Number(bloodGlucoseAgg._avg.value)) : 0;
+        // Helper function to get date key from timestamp
+        const getDateKey = (timestamp) => {
+          const d = new Date(timestamp);
+          return d.toISOString().split('T')[0];
+        };
+
+        // Process steps: get daily total, then average
+        const stepsDaily = {};
+        stepsData.forEach((record) => {
+          const dateKey = getDateKey(record.timestamp);
+          stepsDaily[dateKey] = (stepsDaily[dateKey] || 0) + Number(record.value);
+        });
+        const stepsDailyValues = Object.values(stepsDaily);
+        const stepsTotal = stepsDailyValues.reduce((a, b) => a + b, 0);
+        const stepsAverage = stepsDailyValues.length > 0 ? Math.round(stepsTotal / stepsDailyValues.length) : 0;
+
+        // Process calories: get daily total, then average
+        const caloriesDaily = {};
+        caloriesData.forEach((record) => {
+          const dateKey = getDateKey(record.timestamp);
+          caloriesDaily[dateKey] = (caloriesDaily[dateKey] || 0) + Number(record.value);
+        });
+        const caloriesDailyValues = Object.values(caloriesDaily);
+        const caloriesTotal = caloriesDailyValues.reduce((a, b) => a + b, 0);
+        const caloriesAverage = caloriesDailyValues.length > 0 ? Math.round(caloriesTotal / caloriesDailyValues.length) : 0;
+
+        // Process sleep: get max per day, then sum and average
+        const sleepDaily = {};
+        sleepData.forEach((record) => {
+          const dateKey = getDateKey(record.timestamp);
+          const value = Number(record.value);
+          sleepDaily[dateKey] = Math.max(sleepDaily[dateKey] || 0, value);
+        });
+        const sleepDailyValues = Object.values(sleepDaily);
+        const sleepTotal = sleepDailyValues.reduce((a, b) => a + b, 0);
+        const sleepAverage = sleepDailyValues.length > 0 ? sleepTotal / sleepDailyValues.length : 0;
+
+        // Process hydration: get max per day, then sum and average
+        const hydrationDaily = {};
+        hydrationData.forEach((record) => {
+          const dateKey = getDateKey(record.timestamp);
+          const value = Number(record.value);
+          hydrationDaily[dateKey] = Math.max(hydrationDaily[dateKey] || 0, value);
+        });
+        const hydrationDailyValues = Object.values(hydrationDaily);
+        const hydrationTotal = hydrationDailyValues.reduce((a, b) => a + b, 0);
+        const hydrationAverage = hydrationDailyValues.length > 0 ? Math.round(hydrationTotal / hydrationDailyValues.length) : 0;
+
+        const avgHeartRate = heartRateData._avg.value ? Math.round(Number(heartRateData._avg.value)) : 0;
+        const avgBloodGlucose = bloodGlucoseData._avg.value ? Math.round(Number(bloodGlucoseData._avg.value)) : 0;
 
         return {
           weekStart: week.start.toISOString().split('T')[0],
           weekEnd: week.end.toISOString().split('T')[0],
           steps: {
-            total: Math.round(Number(stepsAgg._sum.value || 0)),
-            average: stepsAgg._avg.value ? Math.round(Number(stepsAgg._avg.value)) : 0,
+            total: Math.round(stepsTotal),
+            average: stepsAverage,
           },
           calories: {
-            total: Math.round(Number(caloriesAgg._sum.value || 0)),
-            average: caloriesAgg._avg.value ? Math.round(Number(caloriesAgg._avg.value)) : 0,
+            total: Math.round(caloriesTotal),
+            average: caloriesAverage,
           },
           sleep: {
-            totalHours: sleepAgg._sum.value ? Number(sleepAgg._sum.value.toFixed(1)) : 0,
-            averageHours: avgSleep,
-            quality: getSleepQuality(avgSleep),
+            totalHours: Number(sleepTotal.toFixed(1)),
+            averageHours: Number(sleepAverage.toFixed(1)),
+            quality: getSleepQuality(Number(sleepAverage.toFixed(1))),
           },
           hydration: {
-            total: hydrationAgg._sum.value ? Math.round(Number(hydrationAgg._sum.value)) : 0,
-            average: hydrationAgg._avg.value ? Math.round(Number(hydrationAgg._avg.value)) : 0,
+            total: Math.round(hydrationTotal),
+            average: hydrationAverage,
           },
           heartRate: {
             average: avgHeartRate,

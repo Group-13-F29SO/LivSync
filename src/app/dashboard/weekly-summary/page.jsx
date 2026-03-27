@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Loader } from 'lucide-react';
+import { ArrowLeft, Loader, Download } from 'lucide-react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -12,6 +14,8 @@ export default function WeeklySummaryPage() {
   const [weeklyData, setWeeklyData] = useState([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const contentRef = useRef(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -68,28 +72,121 @@ export default function WeeklySummaryPage() {
     return Math.ceil((pastDaysOfYear + firstDay.getDay() + 1) / 7);
   };
 
+  const exportToPDF = async () => {
+    if (!contentRef.current) return;
+
+    try {
+      setIsExporting(true);
+
+      // Capture the content as an image
+      const canvas = await html2canvas(contentRef.current, {
+        scale: 2,
+        logging: false,
+        useCORS: true,
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const availableWidth = pageWidth - 2 * margin;
+      const availableHeight = pageHeight - 2 * margin;
+
+      // Calculate dimensions to fit content proportionally
+      const imgWidth = availableWidth;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let yPosition = margin;
+
+      // Add header
+      pdf.setFontSize(18);
+      pdf.text('Weekly Summary Report', margin, yPosition);
+      yPosition += 15;
+
+      pdf.setFontSize(10);
+      pdf.text(`Generated on ${new Date().toLocaleDateString()}`, margin, yPosition);
+      yPosition += 10;
+
+      // Add content image(s)
+      let remainingHeight = imgHeight;
+      let imgYOffset = 0;
+
+      while (remainingHeight > 0) {
+        const heightToPrint = Math.min(remainingHeight, availableHeight - yPosition + margin);
+        const sourceHeight = (heightToPrint * canvas.height) / imgHeight;
+
+        pdf.addImage(
+          imgData,
+          'PNG',
+          margin,
+          yPosition,
+          imgWidth,
+          heightToPrint,
+          undefined,
+          'FAST'
+        );
+
+        remainingHeight -= heightToPrint;
+        imgYOffset += sourceHeight;
+
+        if (remainingHeight > 0) {
+          pdf.addPage();
+          yPosition = margin;
+        }
+      }
+
+      // Download the PDF
+      pdf.save(`weekly-summary-${new Date().toISOString().split('T')[0]}.pdf`);
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+      alert('Failed to export PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
       <Navbar />
 
       <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            title="Go back"
-          >
-            <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">
-              Weekly Summary
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              View your weekly metrics and trends
-            </p>
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              title="Go back"
+            >
+              <ArrowLeft className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+            </button>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">
+                Weekly Summary
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                View your weekly metrics and trends
+              </p>
+            </div>
           </div>
+          
+          {/* Export Button */}
+          {weeklyData.length > 0 && (
+            <button
+              onClick={exportToPDF}
+              disabled={isExporting}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg transition-colors font-semibold"
+            >
+              <Download className="w-5 h-5" />
+              {isExporting ? 'Exporting...' : 'Export PDF'}
+            </button>
+          )}
         </div>
 
         {/* Error Message */}
@@ -108,7 +205,7 @@ export default function WeeklySummaryPage() {
             </div>
           </div>
         ) : weeklyData.length > 0 ? (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div ref={contentRef} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {weeklyData.map((week, index) => (
               <div
                 key={index}
