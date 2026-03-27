@@ -13,6 +13,7 @@ export default function DraggableWidget({
   onDragOver,
   onDrop,
   draggingId,
+  dragOverId,
 }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
@@ -42,6 +43,9 @@ export default function DraggableWidget({
     return null;
   }
 
+  const isBeingDragged = draggingId === widgetId;
+  const isDragTarget = dragOverId === widgetId && draggingId !== widgetId;
+
   return (
     <div
       draggable={isEditMode}
@@ -50,7 +54,8 @@ export default function DraggableWidget({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       className={`relative transition-all ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}
-        ${isDragOver && isEditMode ? 'ring-2 ring-blue-500 ring-opacity-50 scale-105' : ''}
+        ${isBeingDragged ? 'opacity-50' : ''}
+        ${isDragTarget ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}
         ${!isVisible && isEditMode ? 'opacity-50' : ''}
       `}
     >

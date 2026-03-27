@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [alertQueue, setAlertQueue] = useState([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [draggingId, setDraggingId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -61,6 +62,15 @@ export default function DashboardPage() {
 
   const handleDragOver = (widgetId) => {
     if (!draggingId || draggingId === widgetId) return;
+    setDragOverId(widgetId);
+  };
+
+  const handleDrop = (widgetId) => {
+    if (!draggingId || draggingId === widgetId) {
+      setDraggingId(null);
+      setDragOverId(null);
+      return;
+    }
 
     const visibleWidgets = getVisibleWidgets();
     const sourceIndex = visibleWidgets.findIndex((w) => w.id === draggingId);
@@ -68,12 +78,10 @@ export default function DashboardPage() {
 
     if (sourceIndex !== -1 && destIndex !== -1) {
       reorderWidgets(sourceIndex, destIndex);
-      setDraggingId(widgetId);
     }
-  };
 
-  const handleDrop = () => {
     setDraggingId(null);
+    setDragOverId(null);
   };
 
   // Handle badge queue - show next badge after current one closes
@@ -294,8 +302,8 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex gap-2 items-center flex-col">
-            <div className="flex gap-2 items-center">
+          <div className="flex gap-2 items-center flex-col justify-end h-24">
+            <div className="flex gap-2 items-center ml-auto">
               <ConnectionRequestsNotification patientId={user?.id} />
               <button
                 onClick={handleLogout}
@@ -333,6 +341,7 @@ export default function DashboardPage() {
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     draggingId={draggingId}
+                    dragOverId={dragOverId}
                   >
                     <div className="h-full flex flex-col">
                       <button
@@ -364,6 +373,7 @@ export default function DashboardPage() {
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     draggingId={draggingId}
+                    dragOverId={dragOverId}
                   >
                     <div className="h-full flex flex-col">
                       <button
@@ -396,6 +406,7 @@ export default function DashboardPage() {
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     draggingId={draggingId}
+                    dragOverId={dragOverId}
                   >
                     <div className="h-full flex flex-col">
                       <button
@@ -427,6 +438,7 @@ export default function DashboardPage() {
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     draggingId={draggingId}
+                    dragOverId={dragOverId}
                   >
                     <div className="h-full flex flex-col">
                       <button
@@ -458,6 +470,7 @@ export default function DashboardPage() {
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     draggingId={draggingId}
+                    dragOverId={dragOverId}
                   >
                     <div className="h-full flex flex-col">
                       <button
@@ -490,6 +503,7 @@ export default function DashboardPage() {
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
                     draggingId={draggingId}
+                    dragOverId={dragOverId}
                   >
                     <div className="h-full flex flex-col">
                       <button
@@ -533,6 +547,7 @@ export default function DashboardPage() {
                       onDragOver={handleDragOver}
                       onDrop={handleDrop}
                       draggingId={draggingId}
+                      dragOverId={dragOverId}
                     >
                       <ArticlesCard />
                     </DraggableWidget>
@@ -550,6 +565,7 @@ export default function DashboardPage() {
                       onDragOver={handleDragOver}
                       onDrop={handleDrop}
                       draggingId={draggingId}
+                      dragOverId={dragOverId}
                     >
                       <QuickManualEntryCard />
                     </DraggableWidget>
@@ -576,6 +592,7 @@ export default function DashboardPage() {
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   draggingId={draggingId}
+                  dragOverId={dragOverId}
                 >
                   <StreakCard
                     currentStreak={streakData?.currentStreak || 0}
@@ -599,6 +616,7 @@ export default function DashboardPage() {
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   draggingId={draggingId}
+                  dragOverId={dragOverId}
                 >
                   <SummaryCard summaryData={dashboardData} />
                 </DraggableWidget>
@@ -618,6 +636,7 @@ export default function DashboardPage() {
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                   draggingId={draggingId}
+                  dragOverId={dragOverId}
                 >
                   <CriticalEventsWidget />
                 </DraggableWidget>
