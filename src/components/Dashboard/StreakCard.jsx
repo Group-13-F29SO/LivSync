@@ -35,27 +35,10 @@ const StreakCard = ({ currentStreak, targetMetric, message }) => {
           <span className="text-2xl font-medium text-gray-900 dark:text-gray-100">days</span>
         </div>
 
-        {/* Progress Graphic */}
-        <div className="flex flex-col items-end">
-          <svg className="w-24 h-16" viewBox="0 0 100 60" fill="none">
-            <path
-              d="M 5 55 Q 20 45 35 40 T 65 25 T 95 10"
-              stroke="url(#blueGradient)"
-              strokeWidth="3"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <defs>
-              <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#60a5fa" />
-                <stop offset="100%" stopColor="#818cf8" />
-              </linearGradient>
-            </defs>
-            {/* Arrow */}
-            <path
-              d="M 95 10 L 90 8 L 92 13 Z"
-              fill="#818cf8"
-            />
+        {/* Streak Icon - Flame */}
+        <div className="flex flex-col items-center justify-center">
+          <svg className="w-20 h-20 text-orange-500 drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z" />
           </svg>
         </div>
       </div>

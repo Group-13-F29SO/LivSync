@@ -2,10 +2,10 @@ import React from 'react';
 
 const SummaryCard = ({ summaryData }) => {
   const metrics = [
-    { label: 'Steps Taken', value: summaryData?.steps?.toLocaleString() || '0' || '0', key: 'steps' },
-    { label: 'Calories Burned', value: summaryData?.calories?.toLocaleString() || '0', key: 'calories' },
-    { label: 'Sleep Duration', value: summaryData?.sleep || '0h', key: 'sleep' },
-    { label: 'Hydration Goal', value: summaryData?.hydration || '0/8', key: 'hydration' },
+    { label: 'Steps Taken', value: summaryData?.steps?.toLocaleString() || '0', unit: '', key: 'steps' },
+    { label: 'Calories Burned', value: summaryData?.calories?.toLocaleString() || '0', unit: 'kcal', key: 'calories' },
+    { label: 'Sleep Duration', value: summaryData?.sleep || '0', unit: 'hrs', key: 'sleep' },
+    { label: 'Hydration', value: summaryData?.hydration || '0', unit: 'cups', key: 'hydration' },
   ];
 
   return (
@@ -17,9 +17,16 @@ const SummaryCard = ({ summaryData }) => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
         {metrics.map((metric) => (
           <div key={metric.key} className="text-center">
-            <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-              {metric.value}
-            </p>
+            <div className="flex items-center justify-center gap-1 mb-2">
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                {metric.value}
+              </p>
+              {metric.unit && (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {metric.unit}
+                </p>
+              )}
+            </div>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {metric.label}
             </p>

@@ -10,6 +10,14 @@ import HeartRateChart from '@/components/HeartRate/HeartRateChart';
 import HeartRateInfo from '@/components/HeartRate/HeartRateInfo';
 import MetricManualEntrySection from '@/components/Dashboard/MetricManualEntrySection';
 
+function getLocalDateString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function HeartRateChartPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
@@ -20,9 +28,9 @@ export default function HeartRateChartPage() {
   const [period, setPeriod] = useState('today');
   const [chartType, setChartType] = useState('area');
   const [useRangeBar, setUseRangeBar] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [startDateRange, setStartDateRange] = useState('');
-  const [endDateRange, setEndDateRange] = useState(new Date().toISOString().split('T')[0]);
+  const [endDateRange, setEndDateRange] = useState(getLocalDateString());
 
   useEffect(() => {
     if (!isLoading && !user) {
