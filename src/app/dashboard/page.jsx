@@ -57,90 +57,91 @@ export default function DashboardPage() {
     }
   }, [currentAlert, alertQueue]);
 
-  useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        const res = await fetch('/api/biometrics/dashboard-summary');
-        const json = await res.json();
+  // Fetch dashboard data
+  const fetchDashboardData = async () => {
+    try {
+      const res = await fetch('/api/biometrics/dashboard-summary');
+      const json = await res.json();
 
-        if (json.success) {
-          setDashboardData(json.data);
-        }
-      } catch (err) {
-        console.error('Failed to load dashboard data', err);
+      if (json.success) {
+        setDashboardData(json.data);
       }
+    } catch (err) {
+      console.error('Failed to load dashboard data', err);
     }
+  };
 
+  // Fetch streaks data for all metrics and find the highest streak
+  const fetchStreakData = async () => {
+    try {
+      const metrics = ['steps', 'calories', 'hydration', 'sleep'];
+      let maxStreak = 0;
+      let maxMetric = 'steps';
+      let maxGoalValue = 0;
+      let hasAnyGoals = false;
+
+      for (const metric of metrics) {
+        const res = await fetch(`/api/biometrics/streaks?metric=${metric}`);
+        const data = await res.json();
+
+        // Check if any goals exist
+        if (!data.goalNotFound) {
+          hasAnyGoals = true;
+        }
+
+        if (data.currentStreak > maxStreak) {
+          maxStreak = data.currentStreak;
+          maxMetric = metric;
+          maxGoalValue = data.goalValue || 0;
+        }
+      }
+
+      // Format the goal value with metric unit
+      const getMetricDisplay = (metric, goalValue) => {
+        if (goalValue === 0) return '';
+        const metricUnits = {
+          steps: `${goalValue.toLocaleString()} steps`,
+          calories: `${goalValue.toLocaleString()} kcal`,
+          hydration: `${goalValue} glasses`,
+          sleep: `${goalValue} hours`,
+        };
+        return metricUnits[metric] || '';
+      };
+
+      let targetMetric = '';
+      let message = 'Keep going!';
+
+      if (!hasAnyGoals) {
+        // No goals set at all
+        targetMetric = 'No goals set';
+        message = 'Set a goal to start tracking!';
+      } else if (maxStreak === 0) {
+        // Goals exist but no active streak
+        targetMetric = getMetricDisplay(maxMetric, maxGoalValue);
+        message = 'Start a new streak!';
+      } else {
+        // Active streak with goal
+        targetMetric = getMetricDisplay(maxMetric, maxGoalValue);
+        message = 'Keep going!';
+      }
+
+      setStreakData({
+        currentStreak: maxStreak,
+        targetMetric,
+        message,
+      });
+    } catch (err) {
+      console.error('Failed to load streak data', err);
+    }
+  };
+
+  useEffect(() => {
     if (!isLoading && user) {
       fetchDashboardData();
     }
   }, [isLoading, user]);
 
-  // Fetch streaks data for all metrics and find the highest streak
   useEffect(() => {
-    async function fetchStreakData() {
-      try {
-        const metrics = ['steps', 'calories', 'hydration', 'sleep'];
-        let maxStreak = 0;
-        let maxMetric = 'steps';
-        let maxGoalValue = 0;
-        let hasAnyGoals = false;
-
-        for (const metric of metrics) {
-          const res = await fetch(`/api/biometrics/streaks?metric=${metric}`);
-          const data = await res.json();
-
-          // Check if any goals exist
-          if (!data.goalNotFound) {
-            hasAnyGoals = true;
-          }
-
-          if (data.currentStreak > maxStreak) {
-            maxStreak = data.currentStreak;
-            maxMetric = metric;
-            maxGoalValue = data.goalValue || 0;
-          }
-        }
-
-        // Format the goal value with metric unit
-        const getMetricDisplay = (metric, goalValue) => {
-          if (goalValue === 0) return '';
-          const metricUnits = {
-            steps: `${goalValue.toLocaleString()} steps`,
-            calories: `${goalValue.toLocaleString()} kcal`,
-            hydration: `${goalValue} glasses`,
-            sleep: `${goalValue} hours`,
-          };
-          return metricUnits[metric] || '';
-        };
-
-        let targetMetric = '';
-        let message = 'Keep going!';
-
-        if (!hasAnyGoals) {
-          // No goals set at all
-          targetMetric = 'No goals set';
-          message = 'Set a goal to start tracking!';
-        } else if (maxStreak === 0) {
-          // Goals exist but no active streak
-          targetMetric = getMetricDisplay(maxMetric, maxGoalValue);
-          message = 'Start a new streak!';
-        } else {
-          // Active streak with goal
-          targetMetric = getMetricDisplay(maxMetric, maxGoalValue);
-          message = 'Keep going!';
-        }
-
-        setStreakData({
-          currentStreak: maxStreak,
-          targetMetric,
-          message,
-        });
-      } catch (err) {
-        console.error('Failed to load streak data', err);
-      }
-    }
-
     if (!isLoading && user) {
       fetchStreakData();
     }
@@ -152,6 +153,10 @@ export default function DashboardPage() {
 
   const handleSyncComplete = (syncResult) => {
     setLastSyncTime('Just now');
+
+    // Refresh dashboard data and streaks after sync completes
+    fetchDashboardData();
+    fetchStreakData();
 
     // Handle newly earned badges
     if (syncResult?.newBadges && syncResult.newBadges.length > 0) {
@@ -251,6 +256,8 @@ export default function DashboardPage() {
               title="Steps"
               value={dashboardData ? dashboardData.steps : "..."}
               unit="steps"
+              iconBgColor="bg-blue-50"
+              iconColor="text-blue-600"
               icon={<Footprints className="w-6 h-6 text-blue-600" />}
             />
           </button>
@@ -263,8 +270,10 @@ export default function DashboardPage() {
               title="Heart Rate"
               value={dashboardData ? dashboardData.heart_rate : "..."}
               unit="bpm"
-              subtitle="Resting: 65 bpm"
-              icon={<Heart className="w-6 h-6 text-blue-600" />}
+              subtitle={dashboardData ? `Resting: ${dashboardData.resting_heart_rate} bpm` : "..."}
+              iconBgColor="bg-red-50"
+              iconColor="text-red-600"
+              icon={<Heart className="w-6 h-6 text-red-600" />}
             />
           </button>
 
@@ -276,7 +285,9 @@ export default function DashboardPage() {
               title="Calories Burned"
               value={dashboardData ? dashboardData.calories : "..."}
               unit="kcal"
-              icon={<Flame className="w-6 h-6 text-blue-600" />}
+              iconBgColor="bg-orange-50"
+              iconColor="text-orange-600"
+              icon={<Flame className="w-6 h-6 text-orange-600" />}
             />
           </button>
 
@@ -288,7 +299,9 @@ export default function DashboardPage() {
               title="Hydration"
               value={dashboardData ? dashboardData.hydration : "..."}
               unit="glasses"
-              icon={<Droplets className="w-6 h-6 text-blue-600" />}
+              iconBgColor="bg-cyan-50"
+              iconColor="text-cyan-600"
+              icon={<Droplets className="w-6 h-6 text-cyan-600" />}
             />
           </button>
 
@@ -300,8 +313,10 @@ export default function DashboardPage() {
               title="Sleep"
               value={dashboardData ? dashboardData.sleep : "..."}
               unit="hours"
-              subtitle="Quality: Good"
-              icon={<Moon className="w-6 h-6 text-blue-600" />}
+              subtitle={dashboardData ? `Quality: ${dashboardData.sleep_quality}` : "..."}
+              iconBgColor="bg-purple-50"
+              iconColor="text-purple-600"
+              icon={<Moon className="w-6 h-6 text-purple-600" />}
             />
           </button>
 
@@ -313,10 +328,10 @@ export default function DashboardPage() {
               title="Blood Glucose"
               value={dashboardData ? dashboardData.blood_glucose : "..."}
               unit="mg/dL"
-              subtitle="Status: Normal"
-              iconBgColor="bg-indigo-50"
-              iconColor="text-indigo-600"
-              icon={<Activity className="w-6 h-6 text-indigo-600" />}
+              subtitle={dashboardData ? `Status: ${dashboardData.blood_glucose_status}` : "..."}
+              iconBgColor="bg-green-50"
+              iconColor="text-green-600"
+              icon={<Activity className="w-6 h-6 text-green-600" />}
             />
           </button>
         </div>

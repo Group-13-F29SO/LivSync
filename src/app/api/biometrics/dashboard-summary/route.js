@@ -37,6 +37,21 @@ function startOfWeek() {
   return start;
 }
 
+function getSleepQuality(hours) {
+  if (hours < 4) return 'Poor';
+  if (hours < 6) return 'Fair';
+  if (hours < 7) return 'Good';
+  if (hours <= 9) return 'Excellent';
+  return 'Excessive';
+}
+
+function getBloodGlucoseStatus(value) {
+  if (value < 70) return 'Low';
+  if (value <= 140) return 'Normal';
+  if (value <= 180) return 'Elevated';
+  return 'High';
+}
+
 export async function GET() {
   try {
     const session = getSession();
@@ -56,8 +71,7 @@ export async function GET() {
     const [
       stepsAgg,
       caloriesAgg,
-      latestHeartRate,
-      latestSleep,
+      latestHeartRate,      restingHeartRate,      latestSleep,
       latestBloodGlucose,
       workoutsThisWeek,
       hydrationResponse,
@@ -84,8 +98,18 @@ export async function GET() {
         where: {
           patient_id: patientId,
           metric_type: 'heart_rate',
+          timestamp: { gte: today, lt: tomorrow },
         },
         orderBy: { timestamp: 'desc' },
+      }),
+
+      prisma.biometric_data.aggregate({
+        where: {
+          patient_id: patientId,
+          metric_type: 'heart_rate',
+          timestamp: { gte: today, lt: tomorrow },
+        },
+        _min: { value: true },
       }),
 
       prisma.biometric_data.aggregate({
@@ -101,6 +125,7 @@ export async function GET() {
         where: {
           patient_id: patientId,
           metric_type: 'blood_glucose',
+          timestamp: { gte: today, lt: tomorrow },
         },
         orderBy: { timestamp: 'desc' },
       }),
@@ -139,6 +164,9 @@ export async function GET() {
       })(),
     ]);
 
+    const sleepHours = latestSleep._max.value ? Number(latestSleep._max.value.toFixed(1)) : 0;
+    const bloodGlucoseValue = latestBloodGlucose ? Number(latestBloodGlucose.value) : 0;
+
     return NextResponse.json({
       success: true,
       data: {
@@ -146,8 +174,11 @@ export async function GET() {
         calories: Math.round(Number(caloriesAgg._sum.value || 0)),
         hydration: hydrationResponse.stats ? Math.round(hydrationResponse.stats.latest) : 0,
         heart_rate: latestHeartRate ? Number(latestHeartRate.value) : 0,
-        sleep: latestSleep._max.value ? Number(latestSleep._max.value.toFixed(1)) : 0,
-        blood_glucose: latestBloodGlucose ? Number(latestBloodGlucose.value) : 0,
+        resting_heart_rate: restingHeartRate._min.value ? Number(restingHeartRate._min.value) : 0,
+        sleep: sleepHours,
+        sleep_quality: getSleepQuality(sleepHours),
+        blood_glucose: bloodGlucoseValue,
+        blood_glucose_status: getBloodGlucoseStatus(bloodGlucoseValue),
         workouts: workoutsThisWeek,
       },
     });
