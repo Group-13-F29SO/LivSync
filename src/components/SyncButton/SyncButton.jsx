@@ -1,12 +1,13 @@
 /**
- * Sync Button Component
+ * Sync Icon Component
  * Triggers biometric data generation and handles loading/success/error states
- * Disabled if user has no connected devices
+ * Rendered as an icon button next to the Last Synced label
  */
 
 'use client';
 
 import { useState, useEffect } from 'react';
+import { RotateCcw } from 'lucide-react';
 import axios from 'axios';
 
 export default function SyncButton({ onSyncComplete }) {
@@ -130,46 +131,13 @@ export default function SyncButton({ onSyncComplete }) {
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <button
-        onClick={handleSync}
-        disabled={isLoading || !hasActiveDevices || isCheckingDevices}
-        className={`px-4 py-2 font-medium rounded-lg transition-colors ${
-          isLoading || isCheckingDevices
-            ? 'bg-gray-400 text-white cursor-not-allowed'
-            : !hasActiveDevices
-            ? 'bg-gray-400 text-white cursor-not-allowed'
-            : 'bg-green-500 hover:bg-green-600 text-white'
-        }`}
-        title={!hasActiveDevices ? 'Please connect a device to sync data' : ''}
-      >
-        {isLoading || isCheckingDevices ? (
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            {isCheckingDevices ? 'Checking...' : 'Syncing...'}
-          </div>
-        ) : (
-          'Sync Now'
-        )}
-      </button>
-
-      {error && (
-        <div className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-2 rounded">
-          {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="text-sm text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 p-2 rounded">
-          ✓ Data synced successfully!
-        </div>
-      )}
-
-      {!hasActiveDevices && !error && (
-        <div className="text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
-          ℹ Connect a device to sync health data
-        </div>
-      )}
-    </div>
+    <button
+      onClick={handleSync}
+      disabled={isLoading || !hasActiveDevices || isCheckingDevices}
+      className="p-1.5 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50"
+      title={!hasActiveDevices ? 'Please connect a device to sync data' : 'Sync now'}
+    >
+      <RotateCcw className={`w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 ${isLoading || isCheckingDevices ? 'animate-spin' : ''}`} />
+    </button>
   );
 }
