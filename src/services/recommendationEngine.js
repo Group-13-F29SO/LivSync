@@ -287,12 +287,16 @@ async function checkHydrationEnergyCorrelation(patientId) {
 
   if (hydroData.length < 7 || calorieData.length === 0) return null;
 
-  const avgHydration = getAverageValue(hydroData);
+  // Get today's hydration data specifically
+  const todayStart = getTodayStart();
+  const todayEnd = getTodayEnd();
+  const todayHydroData = await getBiometricData(patientId, 'hydration', todayStart, todayEnd);
+  const todayHydration = getSumValue(todayHydroData);
   
-  if (avgHydration < 6) {
+  if (todayHydration < 6) {
     return {
       title: 'Boost Your Energy with Hydration',
-      message: `Your hydration levels are low (${avgHydration.toFixed(1)} glasses/day). Studies show proper hydration can increase energy and mental clarity. Try to reach 8 glasses daily!`,
+      message: `Your hydration levels are low (${todayHydration.toFixed(1)} glasses today). Studies show proper hydration can increase energy and mental clarity. Try to reach 8 glasses daily!`,
       type: 'insight',
       priority: 'medium',
       actionType: 'log_hydration',
