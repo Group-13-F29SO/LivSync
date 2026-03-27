@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react';
 
 /**
  * Format date to relative time string (e.g., "2 hours ago")
@@ -26,125 +27,68 @@ function formatTimeAgo(date) {
 }
 
 export default function DashboardArticlesCard() {
-  const [article, setArticle] = useState(null);
+  const [articles, setArticles] = useState([null, null, null]); // [random, goal-based, contextual]
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  const [recommendationType, setRecommendationType] = useState('contextual'); // 'contextual' or 'goal-based' or 'random'
-  const [badge, setBadge] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchArticle();
-  }, [recommendationType]);
+    fetchArticles();
+  }, []);
 
-  const fetchArticle = async () => {
+  const fetchArticles = async () => {
     try {
       setIsLoading(true);
       setError('');
-      setBadge('');
 
-      let url = '/api/articles/random';
-      let badgeText = 'Random';
-      let shouldTryRandom = false;
+      const [randomRes, goalRes, contextualRes] = await Promise.all([
+        fetch('/api/articles/random', { credentials: 'include' }),
+        fetch('/api/articles/recommendations?recommended=true&limit=1', { credentials: 'include' }),
+        fetch('/api/articles/recommendations?contextual=true&limit=1', { credentials: 'include' }),
+      ]);
 
-      if (recommendationType === 'contextual') {
-        url = '/api/articles/recommendations?contextual=true&limit=1';
-        badgeText = '📊 Contextual';
-        shouldTryRandom = true;
-      } else if (recommendationType === 'goal-based') {
-        url = '/api/articles/recommendations?recommended=true&limit=1';
-        badgeText = '🎯 For Your Goals';
-        shouldTryRandom = true;
-      }
+      const [randomData, goalData, contextualData] = await Promise.all([
+        randomRes.json(),
+        goalRes.json(),
+        contextualRes.json(),
+      ]);
 
-      const response = await fetch(url, {
-        credentials: 'include',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch article (${response.status})`);
-      }
-
-      const data = await response.json();
-      
-      if (data.success === false) {
-        throw new Error(data.message || 'Failed to fetch article');
-      }
-
-      // Handle both array and single object responses
-      let article = null;
-      if (Array.isArray(data.data) && data.data.length > 0) {
-        article = data.data[0];
-      } else if (!Array.isArray(data.data) && data.data) {
-        article = data.data;
-      }
-
-      if (article) {
-        setArticle(article);
-        setBadge(badgeText);
-      } else if (shouldTryRandom) {
-        // Try random article as fallback
-        const randomResponse = await fetch('/api/articles/random', {
-          credentials: 'include',
-        });
-
-        if (randomResponse.ok) {
-          const randomData = await randomResponse.json();
-          if (randomData.data) {
-            setArticle(randomData.data);
-            setBadge('🔀 Random');
-            return;
-          }
-        }
-
-        setArticle(null);
-        setError('No articles available');
-      } else {
-        setArticle(null);
-        setError('No articles available');
-      }
+      setArticles([
+        randomData.data || null,
+        (goalData.data && goalData.data.length > 0) ? goalData.data[0] : null,
+        (contextualData.data && contextualData.data.length > 0) ? contextualData.data[0] : null,
+      ]);
     } catch (err) {
-      setError(err.message);
-      console.error('Error fetching article:', err);
-      
-      // Try fallback to random article on error
-      if (recommendationType !== 'random') {
-        try {
-          const randomResponse = await fetch('/api/articles/random', {
-            credentials: 'include',
-          });
-
-          if (randomResponse.ok) {
-            const randomData = await randomResponse.json();
-            if (randomData.data) {
-              setArticle(randomData.data);
-              setBadge('🔀 Fallback');
-              setError('');
-              return;
-            }
-          }
-        } catch (fallbackErr) {
-          console.error('Fallback random article failed:', fallbackErr);
-        }
-      }
-
-      setArticle(null);
+      setError('Failed to load articles');
+      console.error('Error fetching articles:', err);
+      setArticles([null, null, null]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const refreshArticle = () => {
-    fetchArticle();
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchArticles();
+    setIsRefreshing(false);
   };
 
-  const cycleRecommendationType = () => {
-    const types = ['contextual', 'goal-based', 'random'];
-    const currentIndex = types.indexOf(recommendationType);
-    const nextIndex = (currentIndex + 1) % types.length;
-    setRecommendationType(types[nextIndex]);
+  const handlePrevious = () => {
+    setCurrentIndex((prev) => (prev - 1 + 3) % 3);
   };
 
-  const timeAgo = article ? formatTimeAgo(article.created_at) : '';
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % 3);
+  };
+
+  const currentArticle = articles[currentIndex];
+  const timeAgo = currentArticle ? formatTimeAgo(currentArticle.created_at) : '';
+
+  const getArticleLabel = (index) => {
+    const labels = ['Random', 'For Your Goals', 'Based on Your Data'];
+    return labels[index];
+  };
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-900 p-6 rounded-lg shadow dark:shadow-lg transform transition-all duration-500 hover:-translate-y-1 hover:scale-105 hover:shadow-xl dark:hover:shadow-xl hover:z-10">
@@ -152,89 +96,114 @@ export default function DashboardArticlesCard() {
         <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
           Health Articles
         </h3>
-        {article && (
-          <div className="flex gap-1">
-            <button
-              onClick={cycleRecommendationType}
-              className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
-              title="Cycle through recommendation types"
-            >
-              {recommendationType === 'contextual' && '📊'}
-              {recommendationType === 'goal-based' && '🎯'}
-              {recommendationType === 'random' && '🔀'}
-            </button>
-            <button
-              onClick={refreshArticle}
-              className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-              title="Get another article"
-            >
-              🔄
-            </button>
-          </div>
-        )}
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className={`p-1.5 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors disabled:opacity-50 ${
+            isRefreshing ? 'animate-spin' : ''
+          }`}
+          title="Refresh articles"
+        >
+          <RotateCcw className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400" />
+        </button>
       </div>
 
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-500 dark:text-gray-400 text-sm">Loading article...</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Loading articles...</p>
         </div>
-      ) : article ? (
+      ) : (
         <>
-          <div className="mb-3 flex items-center gap-2">
-            <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
-              {article.category || 'General'}
-            </span>
-            {badge && (
-              <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
-                {badge}
-              </span>
-            )}
-          </div>
+          {currentArticle ? (
+            <>
+              <div className="mb-3 flex items-center gap-2">
+                <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
+                  {currentArticle.category || 'General'}
+                </span>
+                <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+                  {getArticleLabel(currentIndex)}
+                </span>
+              </div>
 
-          <h4 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">
-            {article.title}
-          </h4>
+              <h4 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">
+                {currentArticle.title}
+              </h4>
 
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
-            {article.content.replace(/<[^>]*>/g, '')}
-          </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
+                {currentArticle.content.replace(/<[^>]*>/g, '')}
+              </p>
 
-          {/* Helpful feedback display */}
-          {(article.helpful_count || article.unhelpful_count) ? (
-            <div className="mb-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span>👍 {article.helpful_count || 0}</span>
-              <span>👎 {article.unhelpful_count || 0}</span>
+              {/* Helpful feedback display */}
+              {(currentArticle.helpful_count || currentArticle.unhelpful_count) ? (
+                <div className="mb-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <span>👍 {currentArticle.helpful_count || 0}</span>
+                  <span>👎 {currentArticle.unhelpful_count || 0}</span>
+                </div>
+              ) : null}
+
+              <div className="mt-auto pt-3 border-t border-gray-200 dark:border-gray-700 mb-4">
+                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
+                  <span>By {currentArticle.author}</span>
+                  <span>{timeAgo}</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Link
+                  href={`/articles/${currentArticle.id}`}
+                  className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded transition-colors text-center"
+                >
+                  Read More
+                </Link>
+                <Link
+                  href="/articles"
+                  className="flex-1 px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 text-sm font-semibold rounded transition-colors text-center"
+                >
+                  View All
+                </Link>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center py-6">
+              <p className="text-gray-500 dark:text-gray-400 text-sm text-center mb-4">
+                {error ? `Error: ${error}` : 'No article available'}
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">Use arrows to browse other articles</p>
             </div>
-          ) : null}
+          )}
 
-          <div className="mt-auto pt-3 border-t border-gray-200 dark:border-gray-700 mb-4">
-            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
-              <span>By {article.author}</span>
-              <span>{timeAgo}</span>
+          {/* Navigation always visible */}
+          <div className="flex gap-2 items-center my-4">
+            <button
+              onClick={handlePrevious}
+              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              title="Previous article"
+            >
+              <ChevronLeft className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
+
+            <div className="flex-1 flex gap-1 justify-center">
+              {[0, 1, 2].map((idx) => (
+                <div
+                  key={idx}
+                  className={`h-1 flex-1 rounded-full transition-colors ${
+                    idx === currentIndex
+                      ? 'bg-blue-600 dark:bg-blue-400'
+                      : 'bg-gray-300 dark:bg-gray-600'
+                  }`}
+                />
+              ))}
             </div>
-          </div>
 
-          <div className="flex gap-2">
-            <Link
-              href={`/articles/${article.id}`}
-              className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded transition-colors text-center"
+            <button
+              onClick={handleNext}
+              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
+              title="Next article"
             >
-              Read More
-            </Link>
-            <Link
-              href="/articles"
-              className="flex-1 px-3 py-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-900 dark:text-gray-100 text-sm font-semibold rounded transition-colors text-center"
-            >
-              View All
-            </Link>
+              <ChevronRight className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </button>
           </div>
         </>
-      ) : (
-        <div className="flex-1 flex flex-col items-center justify-center py-6">
-          <p className="text-gray-500 dark:text-gray-400 text-sm text-center">
-            {error ? `Error: ${error}` : 'No articles available yet'}
-          </p>
-        </div>
       )}
     </div>
   );
