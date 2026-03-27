@@ -91,7 +91,7 @@ export default function RadialChartCard({
             dominantBaseline="middle"
             className="text-lg fill-gray-600 dark:fill-gray-400"
           >
-            of {stats.goal}h goal
+            of {stats.goal ? `${stats.goal}h goal` : '8h (ideal)'}
           </text>
         </RadialBarChart>
       </ResponsiveContainer>
