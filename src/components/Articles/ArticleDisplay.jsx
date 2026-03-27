@@ -1,5 +1,7 @@
 'use client';
 
+import ArticleFeedback from './ArticleFeedback';
+
 export default function ArticleDisplay({ article }) {
   if (!article) {
     return (
@@ -40,6 +42,13 @@ export default function ArticleDisplay({ article }) {
           dangerouslySetInnerHTML={{ __html: article.content }}
         />
       </div>
+
+      {/* Article Feedback Component */}
+      <ArticleFeedback
+        articleId={article.id}
+        helpfulCount={article.helpful_count || 0}
+        unhelpfulCount={article.unhelpful_count || 0}
+      />
     </article>
   );
 }

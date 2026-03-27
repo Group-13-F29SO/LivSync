@@ -25,16 +25,35 @@ model admins {
 }
 
 model articles {
-  id         Int      @id @default(autoincrement())
-  title      String   @db.VarChar(255)
-  content    String
-  author     String?  @db.VarChar(100)
-  category   String?  @db.VarChar(50)
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  id                Int                 @id @default(autoincrement())
+  title             String              @db.VarChar(255)
+  content           String
+  author            String?             @db.VarChar(100)
+  category          String?             @db.VarChar(50)
+  helpful_count     Int                 @default(0)
+  unhelpful_count   Int                 @default(0)
+  created_at        DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime            @default(now()) @db.Timestamptz(6)
+  article_feedback  article_feedback[]
 
   @@index([category], map: "idx_articles_category")
   @@index([created_at], map: "idx_articles_created_at")
+  @@index([helpful_count], map: "idx_articles_helpful_count")
+}
+
+model article_feedback {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  article_id  Int
+  patient_id  String    @db.Uuid
+  feedback    String    @db.VarChar(20)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+  articles    articles  @relation(fields: [article_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  patients    patients  @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([article_id, patient_id], map: "unique_article_patient_feedback")
+  @@index([article_id], map: "idx_article_feedback_article_id")
+  @@index([patient_id], map: "idx_article_feedback_patient_id")
+  @@index([created_at], map: "idx_article_feedback_created_at")
 }
 
 model biometric_data {
@@ -105,6 +124,7 @@ model patients {
   notifications           notifications[]
   alert_thresholds        alert_thresholds[]
   critical_events         critical_events[]
+  article_feedback        article_feedback[]
 
   @@index([email], map: "idx_patients_email")
   @@index([provider_id], map: "idx_patients_provider_id")

@@ -29,33 +29,104 @@ export default function DashboardArticlesCard() {
   const [article, setArticle] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [recommendationType, setRecommendationType] = useState('contextual'); // 'contextual' or 'goal-based' or 'random'
+  const [badge, setBadge] = useState('');
 
   useEffect(() => {
-    fetchRandomArticle();
-  }, []);
+    fetchArticle();
+  }, [recommendationType]);
 
-  const fetchRandomArticle = async () => {
+  const fetchArticle = async () => {
     try {
       setIsLoading(true);
       setError('');
+      setBadge('');
 
-      const response = await fetch('/api/articles/random', {
+      let url = '/api/articles/random';
+      let badgeText = 'Random';
+      let shouldTryRandom = false;
+
+      if (recommendationType === 'contextual') {
+        url = '/api/articles/recommendations?contextual=true&limit=1';
+        badgeText = '📊 Contextual';
+        shouldTryRandom = true;
+      } else if (recommendationType === 'goal-based') {
+        url = '/api/articles/recommendations?recommended=true&limit=1';
+        badgeText = '🎯 For Your Goals';
+        shouldTryRandom = true;
+      }
+
+      const response = await fetch(url, {
         credentials: 'include',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch article');
+        throw new Error(`Failed to fetch article (${response.status})`);
       }
 
       const data = await response.json();
-      if (data.data) {
-        setArticle(data.data);
+      
+      if (data.success === false) {
+        throw new Error(data.message || 'Failed to fetch article');
+      }
+
+      // Handle both array and single object responses
+      let article = null;
+      if (Array.isArray(data.data) && data.data.length > 0) {
+        article = data.data[0];
+      } else if (!Array.isArray(data.data) && data.data) {
+        article = data.data;
+      }
+
+      if (article) {
+        setArticle(article);
+        setBadge(badgeText);
+      } else if (shouldTryRandom) {
+        // Try random article as fallback
+        const randomResponse = await fetch('/api/articles/random', {
+          credentials: 'include',
+        });
+
+        if (randomResponse.ok) {
+          const randomData = await randomResponse.json();
+          if (randomData.data) {
+            setArticle(randomData.data);
+            setBadge('🔀 Random');
+            return;
+          }
+        }
+
+        setArticle(null);
+        setError('No articles available');
       } else {
         setArticle(null);
+        setError('No articles available');
       }
     } catch (err) {
       setError(err.message);
       console.error('Error fetching article:', err);
+      
+      // Try fallback to random article on error
+      if (recommendationType !== 'random') {
+        try {
+          const randomResponse = await fetch('/api/articles/random', {
+            credentials: 'include',
+          });
+
+          if (randomResponse.ok) {
+            const randomData = await randomResponse.json();
+            if (randomData.data) {
+              setArticle(randomData.data);
+              setBadge('🔀 Fallback');
+              setError('');
+              return;
+            }
+          }
+        } catch (fallbackErr) {
+          console.error('Fallback random article failed:', fallbackErr);
+        }
+      }
+
       setArticle(null);
     } finally {
       setIsLoading(false);
@@ -63,7 +134,14 @@ export default function DashboardArticlesCard() {
   };
 
   const refreshArticle = () => {
-    fetchRandomArticle();
+    fetchArticle();
+  };
+
+  const cycleRecommendationType = () => {
+    const types = ['contextual', 'goal-based', 'random'];
+    const currentIndex = types.indexOf(recommendationType);
+    const nextIndex = (currentIndex + 1) % types.length;
+    setRecommendationType(types[nextIndex]);
   };
 
   const timeAgo = article ? formatTimeAgo(article.created_at) : '';
@@ -75,13 +153,24 @@ export default function DashboardArticlesCard() {
           Health Articles
         </h3>
         {article && (
-          <button
-            onClick={refreshArticle}
-            className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-            title="Get another random article"
-          >
-            🔄 Refresh
-          </button>
+          <div className="flex gap-1">
+            <button
+              onClick={cycleRecommendationType}
+              className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 rounded hover:bg-purple-200 dark:hover:bg-purple-800 transition-colors"
+              title="Cycle through recommendation types"
+            >
+              {recommendationType === 'contextual' && '📊'}
+              {recommendationType === 'goal-based' && '🎯'}
+              {recommendationType === 'random' && '🔀'}
+            </button>
+            <button
+              onClick={refreshArticle}
+              className="text-xs px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+              title="Get another article"
+            >
+              🔄
+            </button>
+          </div>
         )}
       </div>
 
@@ -91,10 +180,15 @@ export default function DashboardArticlesCard() {
         </div>
       ) : article ? (
         <>
-          <div className="mb-3">
+          <div className="mb-3 flex items-center gap-2">
             <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200">
               {article.category || 'General'}
             </span>
+            {badge && (
+              <span className="inline-block px-2 py-1 text-xs font-semibold rounded bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">
+                {badge}
+              </span>
+            )}
           </div>
 
           <h4 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2 line-clamp-2">
@@ -104,6 +198,14 @@ export default function DashboardArticlesCard() {
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">
             {article.content.replace(/<[^>]*>/g, '')}
           </p>
+
+          {/* Helpful feedback display */}
+          {(article.helpful_count || article.unhelpful_count) ? (
+            <div className="mb-3 flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+              <span>👍 {article.helpful_count || 0}</span>
+              <span>👎 {article.unhelpful_count || 0}</span>
+            </div>
+          ) : null}
 
           <div className="mt-auto pt-3 border-t border-gray-200 dark:border-gray-700 mb-4">
             <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-3">
