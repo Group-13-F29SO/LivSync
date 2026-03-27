@@ -12,6 +12,7 @@ export default function PasswordInput({
   showValidation = true,
   required = false,
   className = '',
+  hideInfoIcon = false,
 }) {
   const [showTooltip, setShowTooltip] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -23,9 +24,28 @@ export default function PasswordInput({
   const handleMouseEnter = () => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
+      const tooltipWidth = 320; // w-80 = 20rem = 320px
+      const rightSpace = window.innerWidth - rect.right;
+      
+      let left;
+      // Position tooltip to the right if there's space, otherwise to the left
+      if (rightSpace >= tooltipWidth + 12) {
+        left = rect.right + 12;
+      } else {
+        left = Math.max(12, rect.left - tooltipWidth - 12);
+      }
+      
+      // Hard cap: ensure tooltip never exceeds window bounds
+      if (left + tooltipWidth > window.innerWidth) {
+        left = window.innerWidth - tooltipWidth - 12;
+      }
+      if (left < 12) {
+        left = 12;
+      }
+      
       setTooltipPos({
         top: rect.top + rect.height / 2,
-        left: rect.right + 12,
+        left: left,
       });
     }
     setShowTooltip(true);
@@ -80,28 +100,30 @@ export default function PasswordInput({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-2">
+      <div className={hideInfoIcon ? 'mb-2' : 'flex items-center justify-between mb-2'}>
         <label className="block text-slate-700 dark:text-slate-300 text-sm font-semibold">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
-        <div>
-          <button
-            ref={buttonRef}
-            type="button"
-            tabIndex={-1}
-            className="p-1 rounded hover:bg-blue-50 transition-colors"
-            title="Password requirements"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={() => setShowTooltip(false)}
-          >
-            <InfoIcon />
-          </button>
-        </div>
+        {!hideInfoIcon && (
+          <div>
+            <button
+              ref={buttonRef}
+              type="button"
+              tabIndex={-1}
+              className="p-1 rounded hover:bg-blue-50 transition-colors"
+              title="Password requirements"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
+              <InfoIcon />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Tooltip */}
-      {showTooltip && (
+      {!hideInfoIcon && showTooltip && (
         <div 
           className="fixed w-80 bg-white dark:bg-gray-800 border-2 border-blue-200 dark:border-blue-600 rounded-lg shadow-2xl z-[9999] p-4 pointer-events-auto"
           style={{

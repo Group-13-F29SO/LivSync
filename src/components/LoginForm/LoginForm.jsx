@@ -71,9 +71,19 @@ export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFacto
             </div>
 
             <div>
-              <label className="block text-gray-100 dark:text-gray-200 text-sm font-medium mb-2">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-gray-100 dark:text-gray-200 text-sm font-medium">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  disabled={isLoading}
+                  className="text-yellow-300 dark:text-yellow-300 underline hover:text-yellow-200 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Forgot Password?
+                </button>
+              </div>
               <input
                 type="password"
                 value={formData.password}
@@ -83,17 +93,6 @@ export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFacto
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 transition-colors disabled:opacity-50"
                 required
               />
-            </div>
-
-            <div className="text-right">
-              <button
-                type="button"
-                onClick={onForgotPassword}
-                disabled={isLoading}
-                className="text-blue-400 dark:text-blue-300 hover:underline text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Forgot Password?
-              </button>
             </div>
           </>
         ) : (
@@ -132,7 +131,7 @@ export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFacto
         {!requiresTwoFactor && (
           <div className="text-center text-sm">
             <span className="text-gray-100 dark:text-gray-300">Don't have an account? </span>
-            <a href="/signup" className="text-blue-400 dark:text-blue-300 hover:underline font-medium">
+            <a href="/signup" className="text-yellow-300 dark:text-yellow-300 underline hover:text-yellow-200 font-medium">
               Sign up
             </a>
           </div>

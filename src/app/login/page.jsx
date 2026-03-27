@@ -100,6 +100,7 @@ export default function LoginPage() {
                     onSubmit={handleLogin} 
                     isLoading={isLoading} 
                     error={error}
+                    onForgotPassword={() => setShowForgotPassword(true)}
                   />
                 )}
               </>

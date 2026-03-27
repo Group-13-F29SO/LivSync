@@ -82,6 +82,7 @@ export default function Step1SignUp({ formData, handleChange, handleNext, isLoad
           label="Password"
           placeholder="Enter your password"
           showValidation={true}
+          hideInfoIcon={true}
           required
         />
         {errors.password && (

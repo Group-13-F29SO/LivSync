@@ -68,6 +68,7 @@ export default function ProviderStep1SignUp({ formData, handleChange, handleNext
           label="Password"
           placeholder="Enter your password"
           showValidation={true}
+          hideInfoIcon={true}
           required
         />
         {errors.password && (
