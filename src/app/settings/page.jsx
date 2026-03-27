@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useAccessibility } from '@/hooks/useAccessibility';
 import TwoFactorModal from '@/components/Settings/TwoFactorModal';
 import DeleteAccountModal from '@/components/Settings/DeleteAccountModal';
+import DeleteAllDataModal from '@/components/Settings/DeleteAllDataModal';
 import ProfileSection from '@/components/Settings/Sections/ProfileSection';
 import DevicesSection from '@/components/Settings/Sections/DevicesSection';
 import AccountSecuritySection from '@/components/Settings/Sections/AccountSecuritySection';
@@ -60,6 +61,10 @@ export default function SettingsPage() {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [twoFactorMode, setTwoFactorMode] = useState('enable'); // 'enable' or 'disable'
   const [isLoadingTwoFactor, setIsLoadingTwoFactor] = useState(false);
+  const [showDeleteDataModal, setShowDeleteDataModal] = useState(false);
+  const [isDeletingData, setIsDeletingData] = useState(false);
+  const [deleteDataError, setDeleteDataError] = useState(null);
+  const [deleteDataSuccess, setDeleteDataSuccess] = useState(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -407,6 +412,59 @@ export default function SettingsPage() {
     setPasswordForm(newForm);
   };
 
+  const handleDeleteDataClick = () => {
+    setShowDeleteDataModal(true);
+    setDeleteDataError(null);
+  };
+
+  const handleCloseDeleteDataModal = () => {
+    if (!isDeletingData) {
+      setShowDeleteDataModal(false);
+      setDeleteDataError(null);
+      setDeleteDataSuccess(null);
+    }
+  };
+
+  const handleConfirmDeleteData = async () => {
+    try {
+      setIsDeletingData(true);
+      setDeleteDataError(null);
+      setDeleteDataSuccess(null);
+
+      const response = await fetch('/api/patient/delete-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setDeleteDataError(data.error || 'Failed to delete data');
+        setIsDeletingData(false);
+        return;
+      }
+
+      setDeleteDataSuccess('All data has been successfully deleted. Your account remains active.');
+      
+      // Close modal after success message
+      setTimeout(() => {
+        setShowDeleteDataModal(false);
+        setDeleteDataSuccess(null);
+        // Optionally refresh the page or navigate
+        window.location.reload();
+      }, 2000);
+    } catch (error) {
+      console.error('Error deleting data:', error);
+      setDeleteDataError('An error occurred while deleting your data. Please try again.');
+      setIsDeletingData(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
       {/* Navbar */}
@@ -459,6 +517,7 @@ export default function SettingsPage() {
             onAnonymousAnalyticsToggle={handleAnonymousAnalyticsToggle}
             privacyError={privacyError}
             onDeleteClick={handleDeleteClick}
+            onDeleteDataClick={handleDeleteDataClick}
           />
         </div>
       </main>
@@ -483,6 +542,15 @@ export default function SettingsPage() {
         onVerifyCredentials={handleVerifyCredentials}
         onConfirmDelete={handleConfirmDelete}
         onClose={handleCloseDeleteModal}
+      />
+
+      {/* Delete All Data Modal */}
+      <DeleteAllDataModal
+        isOpen={showDeleteDataModal}
+        isDeleting={isDeletingData}
+        deleteError={deleteDataError}
+        onConfirm={handleConfirmDeleteData}
+        onClose={handleCloseDeleteDataModal}
       />
     </div>
   );
