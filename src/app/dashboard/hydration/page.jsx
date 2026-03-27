@@ -41,6 +41,8 @@ export default function HydrationChartPage() {
   const [error, setError] = useState(null);
   const [goal, setGoal] = useState(null);
   const [goalLoading, setGoalLoading] = useState(true);
+  const [historicalStats, setHistoricalStats] = useState(null);
+  const [historicalLoading, setHistoricalLoading] = useState(true);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -72,9 +74,27 @@ export default function HydrationChartPage() {
     }
   };
 
+  const fetchHistoricalStats = async () => {
+    try {
+      setHistoricalLoading(true);
+      const response = await fetch(`/api/biometrics/hydration?getAll=true`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHistoricalStats(data.historicalStats || null);
+      }
+    } catch (err) {
+      console.error('Error fetching historical stats:', err);
+      setHistoricalStats(null);
+    } finally {
+      setHistoricalLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user && !isLoading) {
       fetchGoal();
+      fetchHistoricalStats();
     }
   }, [user, isLoading]);
 
@@ -181,18 +201,18 @@ export default function HydrationChartPage() {
             <StatCard 
               title="Current Progress" 
               value={`${stats.latest}/${goal ? goal.target_value : stats.goal}`}
-              unit="glasses today"
+              unit={!goal ? "glasses today (ideal)" : "glasses today"}
               color="blue"
             />
             <StatCard 
               title="Daily Average" 
-              value={stats.average}
+              value={historicalStats?.overallAverage || stats.average}
               unit="glasses/day"
               color="cyan"
             />
             <StatCard 
               title="Best Day" 
-              value={stats.max}
+              value={historicalStats?.bestDay || stats.max}
               unit="glasses"
               color="green"
             />
@@ -321,76 +341,7 @@ export default function HydrationChartPage() {
           </div>
         </div>
 
-        {/* Historical Chart */}
-        {chartData.length > 0 && (
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg mb-8">
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">
-              Hydration History
-            </h2>
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart
-                data={chartData}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis 
-                  dataKey="timestamp" 
-                  stroke="#6b7280"
-                  style={{ fontSize: '12px' }}
-                />
-                <YAxis 
-                  stroke="#6b7280"
-                  style={{ fontSize: '12px' }}
-                  label={{ value: 'Glasses', angle: -90, position: 'insideLeft' }}
-                />
-                <ReferenceLine 
-                  y={stats.goal} 
-                  stroke="#10b981" 
-                  strokeDasharray="3 3"
-                  strokeWidth={2}
-                  label={{ 
-                    value: `Goal: ${stats.goal} glasses`, 
-                    position: 'right', 
-                    fill: '#10b981', 
-                    fontSize: 12,
-                    fontWeight: 'bold'
-                  }}
-                />
-                <Tooltip 
-                  contentStyle={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #3b82f6',
-                    borderRadius: '8px',
-                    color: '#1f2937'
-                  }}
-                  formatter={(value) => [value + ' glasses', 'Hydration']}
-                />
-                <Legend />
-                <Bar 
-                  dataKey="value" 
-                  name="Glasses"
-                  radius={[8, 8, 0, 0]}
-                >
-                  {chartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={getBarColor(entry.value)} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        )}
-
         {/* Additional Info */}
-        <div className="mt-8 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-lg">
-          <h3 className="font-semibold text-blue-900 dark:text-blue-200">Hydration Benefits</h3>
-          <ul className="mt-2 text-sm text-blue-800 dark:text-blue-300 space-y-1">
-            <li>• <strong>Recommended Daily:</strong> 8 glasses (64 oz) of water per day</li>
-            <li>• <strong>Energy Boost:</strong> Proper hydration improves energy levels and brain function</li>
-            <li>• <strong>Physical Performance:</strong> Even mild dehydration can impair physical performance</li>
-            <li>• <strong>Skin Health:</strong> Adequate water intake helps maintain healthy, glowing skin</li>
-            <li>• <strong>Weight Management:</strong> Drinking water before meals can help with portion control</li>
-          </ul>
-        </div>
 
         {/* Hydration Levels */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
