@@ -1,19 +1,41 @@
+'use client';
+
+import { useState } from 'react';
+import PasswordInput from '../PasswordInput';
+import { isPasswordValid } from '@/utils/passwordValidation';
+
 export default function ProviderStep1SignUp({ formData, handleChange, handleNext, isLoading }) {
+  const [errors, setErrors] = useState({});
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    
-    // Validate passwords match
+    const newErrors = {};
+
+    // Validate password complexity
+    if (!isPasswordValid(formData.password)) {
+      newErrors.password = 'Password must meet all complexity requirements';
+    }
+
+    // Validate confirm password
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
       return;
     }
 
-    if (formData.password.length < 6) {
-      alert('Password must be at least 6 characters long');
-      return;
-    }
-
+    setErrors({});
     handleNext(e);
+  };
+
+  const handlePasswordChange = (field, value) => {
+    handleChange(field, value);
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
   return (
@@ -40,19 +62,19 @@ export default function ProviderStep1SignUp({ formData, handleChange, handleNext
           />
         </div>
 
-        <div>
-          <label className="block text-black text-sm font-medium mb-2">
-            Password
-          </label>
-          <input
-            type="password"
-            value={formData.password}
-            onChange={(e) => handleChange('password', e.target.value)}
-            placeholder="Enter your password"
-            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500 transition-colors"
-            required
-          />
-        </div>
+        <PasswordInput
+          value={formData.password}
+          onChange={(e) => handlePasswordChange('password', e.target.value)}
+          label="Password"
+          placeholder="Enter your password"
+          showValidation={true}
+          required
+        />
+        {errors.password && (
+          <div className="text-red-600 text-sm py-2">
+            {errors.password}
+          </div>
+        )}
 
         <div>
           <label className="block text-black text-sm font-medium mb-2">
@@ -61,12 +83,17 @@ export default function ProviderStep1SignUp({ formData, handleChange, handleNext
           <input
             type="password"
             value={formData.confirmPassword}
-            onChange={(e) => handleChange('confirmPassword', e.target.value)}
+            onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
             placeholder="Confirm your password"
             className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500 transition-colors"
             required
           />
         </div>
+        {errors.confirmPassword && (
+          <div className="text-red-600 text-sm py-2">
+            {errors.confirmPassword}
+          </div>
+        )}
 
         <button
           type="submit"

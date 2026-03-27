@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Watch } from 'lucide-react';
 
 const DEVICE_OPTIONS = [
   { id: 'apple-health', name: 'Apple Health', label: 'iPhone/Apple Watch' },
@@ -45,10 +46,7 @@ export default function Step5SignUp({ formData, handleChange, handleNext, isLoad
   };
 
   const SmartWatchIcon = () => (
-    <svg className="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M17 3H7c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H7V5h10v14z" />
-      <path d="M9 7h6v2H9z" />
-    </svg>
+    <Watch className="w-12 h-12 text-white" strokeWidth={1.5} />
   );
 
   const CheckmarkIcon = ({ className = '' }) => (
@@ -70,7 +68,7 @@ export default function Step5SignUp({ formData, handleChange, handleNext, isLoad
         {/* Title */}
         <div>
           <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-600 bg-clip-text text-transparent text-center">
-            Connect Your Health App
+            Connect Your Wearable Device
           </h1>
           <p className="text-center text-gray-600 dark:text-gray-400 text-sm">
             Enable automatic syncing of your health and fitness data for better insights
@@ -78,7 +76,7 @@ export default function Step5SignUp({ formData, handleChange, handleNext, isLoad
         </div>
 
         {/* Benefits Box */}
-        <div className="bg-slate-50 dark:bg-slate-900 rounded-xl p-6 space-y-4">
+        <div className="bg-white dark:bg-gray-900 bg-opacity-20 dark:bg-opacity-30 backdrop-blur-sm rounded-xl p-6 space-y-4 border border-white dark:border-gray-700 border-opacity-30">
           <h2 className="text-sm font-bold text-gray-900 dark:text-white">Benefits of Connecting:</h2>
           <div className="space-y-3">
             {BENEFITS.map((benefit, index) => (

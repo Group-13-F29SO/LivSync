@@ -1,4 +1,43 @@
+'use client';
+
+import { useState } from 'react';
+import PasswordInput from '../PasswordInput';
+import { isPasswordValid } from '@/utils/passwordValidation';
+
 export default function Step1SignUp({ formData, handleChange, handleNext, isLoading }) {
+  const [errors, setErrors] = useState({});
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const newErrors = {};
+
+    // Validate password complexity
+    if (!isPasswordValid(formData.password)) {
+      newErrors.password = 'Password must meet all complexity requirements';
+    }
+
+    // Validate confirm password
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
+    handleNext(e);
+  };
+
+  const handlePasswordChange = (field, value) => {
+    handleChange(field, value);
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
   return (
     <>
       <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-600 via-purple-500 to-pink-600 bg-clip-text text-transparent text-center" style={{paddingBottom: '8px'}}>
@@ -8,7 +47,7 @@ export default function Step1SignUp({ formData, handleChange, handleNext, isLoad
         Begin your wellness journey today
       </p>
 
-      <form onSubmit={handleNext} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-black text-sm font-medium mb-2">
             Email
@@ -37,19 +76,38 @@ export default function Step1SignUp({ formData, handleChange, handleNext, isLoad
           />
         </div>
 
+        <PasswordInput
+          value={formData.password}
+          onChange={(e) => handlePasswordChange('password', e.target.value)}
+          label="Password"
+          placeholder="Enter your password"
+          showValidation={true}
+          required
+        />
+        {errors.password && (
+          <div className="text-red-600 text-sm py-2">
+            {errors.password}
+          </div>
+        )}
+
         <div>
           <label className="block text-black text-sm font-medium mb-2">
-            Password
+            Confirm Password
           </label>
           <input
             type="password"
-            value={formData.password}
-            onChange={(e) => handleChange('password', e.target.value)}
-            placeholder="Enter your password"
+            value={formData.confirmPassword}
+            onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
+            placeholder="Confirm your password"
             className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:border-purple-500 transition-colors"
             required
           />
         </div>
+        {errors.confirmPassword && (
+          <div className="text-red-600 text-sm py-2">
+            {errors.confirmPassword}
+          </div>
+        )}
 
         <button
           type="submit"
