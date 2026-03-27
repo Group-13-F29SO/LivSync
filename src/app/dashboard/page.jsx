@@ -16,6 +16,7 @@ import AlertNotification from '@/components/Alerts/AlertNotification';
 import CriticalEventsWidget from '@/components/Alerts/CriticalEventsWidget';
 import { useAuth } from '@/hooks/useAuth';
 import { getBadgeDefinition } from '@/services/badgeDefinitions';
+import { getRelativeSyncTime } from '@/utils/syncTimeFormatter';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -135,6 +136,23 @@ export default function DashboardPage() {
     }
   };
 
+  // Fetch last sync time
+  const fetchLastSyncTime = async () => {
+    try {
+      const res = await fetch('/api/patient/last-sync');
+      const json = await res.json();
+
+      if (json.success && json.lastSync) {
+        setLastSyncTime(getRelativeSyncTime(json.lastSync));
+      } else {
+        setLastSyncTime('Never synced');
+      }
+    } catch (err) {
+      console.error('Failed to load last sync time', err);
+      setLastSyncTime('Unknown');
+    }
+  };
+
   useEffect(() => {
     if (!isLoading && user) {
       fetchDashboardData();
@@ -147,12 +165,18 @@ export default function DashboardPage() {
     }
   }, [isLoading, user]);
 
+  useEffect(() => {
+    if (!isLoading && user) {
+      fetchLastSyncTime();
+    }
+  }, [isLoading, user]);
+
   const handleLogout = () => {
     logout();
   };
 
   const handleSyncComplete = (syncResult) => {
-    setLastSyncTime('Just now');
+    setLastSyncTime(getRelativeSyncTime(new Date()));
 
     // Refresh dashboard data and streaks after sync completes
     fetchDashboardData();

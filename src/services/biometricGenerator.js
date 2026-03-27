@@ -62,7 +62,7 @@ class BiometricDataGenerator {
       validateCompleteDataset(allData);
 
       // Step 3: Save to database
-      await this.saveToDatabase(allData);
+      await this.saveToDatabase(allData, patientId);
 
       const generationEndTime = Date.now();
 
@@ -86,23 +86,30 @@ class BiometricDataGenerator {
   /**
    * Save generated data to database using batch insert
    * @param {Array<Object>} data - Array of data points
+   * @param {string} patientId - Patient UUID to update last_sync time
    * @returns {Promise<void>}
    */
-  async saveToDatabase(data) {
+  async saveToDatabase(data, patientId) {
     if (!data || data.length === 0) {
       throw new Error('No data to save to database');
     }
 
     try {
-      // Use Prisma createMany for batch insertion
-      await this.prisma.biometric_data.createMany({
-        data: data,
-        skipDuplicates: false // Fail if duplicates exist
-      });
+      // Use Prisma createMany for batch insertion and update last_sync
+      await this.prisma.$transaction([
+        this.prisma.biometric_data.createMany({
+          data: data,
+          skipDuplicates: false // Fail if duplicates exist
+        }),
+        this.prisma.patients.update({
+          where: { id: patientId },
+          data: { last_sync: new Date() }
+        })
+      ]);
     } catch (error) {
-      // If createMany isn't available, try individual inserts with transaction
+      // If transaction fails, try individual inserts with transaction
       if (error.message.includes('createMany')) {
-        await this.saveWithTransaction(data);
+        await this.saveWithTransaction(data, patientId);
       } else {
         throw new Error(`Database insertion failed: ${error.message}`);
       }
@@ -112,23 +119,33 @@ class BiometricDataGenerator {
   /**
    * Fallback: Save data with transaction for atomicity
    * @param {Array<Object>} data - Array of data points
+   * @param {string} patientId - Patient UUID to update last_sync time
    * @returns {Promise<void>}
    */
-  async saveWithTransaction(data) {
+  async saveWithTransaction(data, patientId) {
     try {
-      await this.prisma.$transaction(
-        data.map(point =>
-          this.prisma.biometric_data.create({
-            data: {
-              patient_id: point.patient_id,
-              metric_type: point.metric_type,
-              value: point.value,
-              timestamp: point.timestamp,
-              source: point.source || 'simulated'
-            }
-          })
-        )
+      const createOperations = data.map(point =>
+        this.prisma.biometric_data.create({
+          data: {
+            patient_id: point.patient_id,
+            metric_type: point.metric_type,
+            value: point.value,
+            timestamp: point.timestamp,
+            source: point.source || 'simulated'
+          }
+        })
       );
+
+      // Add patient update to the transaction
+      const operations = [
+        ...createOperations,
+        this.prisma.patients.update({
+          where: { id: patientId },
+          data: { last_sync: new Date() }
+        })
+      ];
+
+      await this.prisma.$transaction(operations);
     } catch (error) {
       throw new Error(`Transactional insertion failed: ${error.message}`);
     }
