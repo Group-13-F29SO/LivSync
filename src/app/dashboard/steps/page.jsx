@@ -11,6 +11,14 @@ import StepsInfo from '@/components/Dashboard/Steps/StepsInfo';
 import StepsStats from '@/components/Dashboard/Steps/StepsStats';
 import StepsDatePicker from '@/components/Dashboard/Steps/StepsDatePicker';
 
+function getLocalDateString() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function StepsChartPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
@@ -19,7 +27,7 @@ export default function StepsChartPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
   const [period, setPeriod] = useState('today');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [refreshKey, setRefreshKey] = useState(0);
 
   const GOAL = 10000; // Daily step goal

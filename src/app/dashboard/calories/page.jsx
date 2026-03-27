@@ -18,7 +18,16 @@ export default function CaloriesChartPage() {
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
   const [period, setPeriod] = useState('today');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+
+  function getLocalDateString() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  const [selectedDate, setSelectedDate] = useState(getLocalDateString());
   const [refreshKey, setRefreshKey] = useState(0);
 
   const caloriesPeriodOptions = [
