@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFactor = false }) {
+export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFactor = false, onForgotPassword }) {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -83,6 +83,17 @@ export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFacto
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-purple-500 dark:focus:border-purple-400 transition-colors disabled:opacity-50"
                 required
               />
+            </div>
+
+            <div className="text-right">
+              <button
+                type="button"
+                onClick={onForgotPassword}
+                disabled={isLoading}
+                className="text-blue-400 dark:text-blue-300 hover:underline text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Forgot Password?
+              </button>
             </div>
           </>
         ) : (

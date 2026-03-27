@@ -251,3 +251,17 @@ model critical_events {
   @@index([patient_id, created_at], map: "idx_critical_events_patient_time")
 }
 
+model password_reset_tokens {
+  id        String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email     String    @db.VarChar(255)
+  user_type String    @db.VarChar(20)
+  token     String    @db.VarChar(255)
+  expiresAt DateTime  @db.Timestamptz(6)
+  usedAt    DateTime? @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([email], map: "idx_password_reset_tokens_email")
+  @@index([token], map: "idx_password_reset_tokens_token")
+  @@index([expiresAt], map: "idx_password_reset_tokens_expiresAt")
+}
+
