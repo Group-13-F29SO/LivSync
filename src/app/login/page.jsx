@@ -6,6 +6,7 @@ import LoginForm from '@/components/LoginForm/LoginForm';
 import ProviderLoginForm from '@/components/LoginForm/ProviderLoginForm';
 import UserTypeSelector from '@/components/UserTypeSelector/UserTypeSelector';
 import { useAuth } from '@/hooks/useAuth';
+import { useForceLightMode } from '@/hooks/useForceLightMode';
 
 export default function LoginPage() {
   const [userType, setUserType] = useState(null);
@@ -13,6 +14,9 @@ export default function LoginPage() {
   const [userId, setUserId] = useState(null);
   const [tempCredentials, setTempCredentials] = useState(null);
   const { login, isLoading, error, setError } = useAuth();
+
+  // Force light mode on login page
+  useForceLightMode();
 
   const handleLogin = async (formData) => {
     try {

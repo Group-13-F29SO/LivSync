@@ -12,11 +12,15 @@ import ProviderStep2SignUp from '@/components/SignUpForm/ProviderStep2SignUp';
 import ProviderStep3SignUp from '@/components/SignUpForm/ProviderStep3SignUp';
 import UserTypeSelector from '@/components/UserTypeSelector/UserTypeSelector';
 import { useAuth } from '@/hooks/useAuth';
+import { useForceLightMode } from '@/hooks/useForceLightMode';
 
 export default function SignUpPage() {
   const [userType, setUserType] = useState(null);
   const [step, setStep] = useState(1);
   const { signup, isLoading, error, setError } = useAuth();
+
+  // Force light mode on signup page
+  useForceLightMode();
   const [formData, setFormData] = useState({
     email: '',
     username: '',
