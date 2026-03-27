@@ -6,8 +6,6 @@ import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import PeriodSelector from '@/components/HeartRate/PeriodSelector';
 import StepsChart from '@/components/Dashboard/Steps/StepsChart';
-import StepsDataManagement from '@/components/Dashboard/Steps/StepsDataManagement';
-import StepsInfo from '@/components/Dashboard/Steps/StepsInfo';
 import StepsStats from '@/components/Dashboard/Steps/StepsStats';
 import StepsDatePicker from '@/components/Dashboard/Steps/StepsDatePicker';
 
@@ -129,14 +127,6 @@ export default function StepsChartPage() {
           />
         )}
 
-        {/* Data Management Section */}
-        {period === 'today' && (
-          <StepsDataManagement 
-            selectedDate={selectedDate}
-            onDataGenerated={() => setRefreshKey(prev => prev + 1)}
-          />
-        )}
-
         {/* Statistics Cards */}
         {stats && (
           <StepsStats stats={stats} period={period} goal={GOAL} />
@@ -149,9 +139,6 @@ export default function StepsChartPage() {
           error={error}
           period={period}
         />
-
-        {/* Additional Info */}
-        <StepsInfo period={period} />
       </main>
     </div>
   );
