@@ -606,7 +606,7 @@ export default function DashboardPage() {
 
           if (widget.id === 'summary') {
             return (
-              <div key={widget.id} className="mt-6">
+              <div key={widget.id} className="mt-6 cursor-pointer" onClick={() => router.push('/dashboard/weekly-summary')}>
                 <DraggableWidget
                   widgetId={widget.id}
                   isEditMode={isEditMode}
