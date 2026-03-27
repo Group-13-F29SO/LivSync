@@ -12,7 +12,32 @@ export default function ChatPage() {
   const { user, isLoading } = useAuth();
   const [messages, setMessages] = useState([]);
   const [isWaitingForResponse, setIsWaitingForResponse] = useState(false);
+  const [healthData, setHealthData] = useState(null);
+  const [healthDataLoading, setHealthDataLoading] = useState(true);
   const messagesEndRef = useRef(null);
+
+  // Fetch today's health data
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchHealthData = async () => {
+      try {
+        setHealthDataLoading(true);
+        const response = await fetch(`/api/biometrics/today?patientId=${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setHealthData(data.currentValues || {});
+        }
+      } catch (error) {
+        console.error('Error fetching health data:', error);
+        setHealthData({});
+      } finally {
+        setHealthDataLoading(false);
+      }
+    };
+
+    fetchHealthData();
+  }, [user?.id]);
 
   // Initialize with welcome message
   useEffect(() => {
@@ -50,17 +75,73 @@ export default function ChatPage() {
     return `${hours}:${minutes} ${ampm}`;
   };
 
+  const formatNumber = (num) => {
+    return num ? Number(num).toLocaleString() : '0';
+  };
+
+  const getHealthStatus = (metric, value, target) => {
+    if (!value && value !== 0) return 'gray';
+    const percentage = (value / target) * 100;
+    if (percentage >= 100) return 'excellent';
+    if (percentage >= 80) return 'good';
+    if (percentage >= 60) return 'fair';
+    return 'low';
+  };
+
   const generateAssistantResponse = (userMessage) => {
     const lowerMessage = userMessage.toLowerCase();
 
+    if (!healthData || (Object.keys(healthData).length === 0 && !healthDataLoading)) {
+      return "I'm sorry, I couldn't retrieve your health data at the moment. Please try again in a few moments.";
+    }
+
     if (lowerMessage.includes('summary')) {
-      return "Here's your daily summary:\n\n📊 Steps: 7,834 steps\n😴 Sleep: 7.5 hours\n💧 Water: 8 glasses\n🏃 Active Time: 45 minutes\n\nGreat job staying on track!";
+      const steps = Math.round(healthData.steps || 0);
+      const sleep = (healthData.sleep || 0).toFixed(1);
+      const water = Math.round(healthData.water || 0);
+      const calories = Math.round(healthData.calories || 0);
+
+      const stepsStatus = getHealthStatus('steps', steps, 10000);
+      const sleepStatus = getHealthStatus('sleep', sleep, 8);
+      const waterStatus = getHealthStatus('water', water, 8);
+      const caloriesStatus = getHealthStatus('calories', calories, 2200);
+
+      return `Here's your daily summary:\n\n📊 Steps: ${formatNumber(steps)} steps (${Math.round((steps / 10000) * 100)}% of goal)\n😴 Sleep: ${sleep} hours (${sleepStatus === 'excellent' ? 'Great!' : sleepStatus === 'good' ? 'Good!' : sleepStatus === 'fair' ? 'Fair' : 'Low'})\n💧 Water: ${water} glasses (${Math.round((water / 8) * 100)}% of goal)\n🔥 Calories: ${formatNumber(calories)} kcal burned\n\nKeep up the great work on your health journey!`;
     } else if (lowerMessage.includes('sleep')) {
-      return "Last night you got 7.5 hours of sleep. That's within the recommended 7-9 hours range. Your sleep quality was good with minimal interruptions.";
+      const sleep = (healthData.sleep || 0).toFixed(1);
+      if (!healthData.sleep) {
+        return "I don't have your sleep data from last night yet. Make sure your device is synced to see your sleep information.";
+      }
+      const sleepGoal = 8;
+      const sleepStatus = sleep >= 8 && sleep <= 9 ? 'perfect' : sleep < 6 ? 'too low' : 'good';
+      return `Last night you got ${sleep} hours of sleep. That's ${sleepStatus}. The recommended range is 7-9 hours. ${sleep >= 7 ? 'Great job getting quality sleep!' : 'Try to get a bit more sleep tonight.'}`;
     } else if (lowerMessage.includes('steps') || lowerMessage.includes('step')) {
-      return "You've reached 7,834 steps today! That's 78% of your daily goal of 10,000 steps. Keep moving to reach your target!";
+      const steps = Math.round(healthData.steps || 0);
+      if (steps === 0) {
+        return "You haven't recorded any steps yet today. Get moving and check back later to see your progress!";
+      }
+      const goalSteps = 10000;
+      const percentage = Math.round((steps / goalSteps) * 100);
+      const remaining = Math.max(0, goalSteps - steps);
+      return `You've reached ${formatNumber(steps)} steps today! That's ${percentage}% of your daily goal of ${formatNumber(goalSteps)} steps. ${remaining > 0 ? `Keep moving to reach your target! You need ${formatNumber(remaining)} more steps.` : '🎉 Congratulations! You reached your daily step goal!'}`;
+    } else if (lowerMessage.includes('water') || lowerMessage.includes('hydration')) {
+      const water = Math.round(healthData.water || 0);
+      if (water === 0) {
+        return "You haven't logged any water intake today. Remember to stay hydrated! The recommended intake is 8 glasses per day.";
+      }
+      const goalWater = 8;
+      const percentage = Math.round((water / goalWater) * 100);
+      return `You've had ${water} glasses of water today. That's ${percentage}% of your daily goal of ${goalWater} glasses. Keep drinking water throughout the day!`;
+    } else if (lowerMessage.includes('calories')) {
+      const calories = Math.round(healthData.calories || 0);
+      if (calories === 0) {
+        return "You haven't recorded any calorie burn data yet today. Your activity data will show up here as you move throughout the day.";
+      }
+      const goalCalories = 2200;
+      const percentage = Math.round((calories / goalCalories) * 100);
+      return `You've burned ${formatNumber(calories)} calories today. That's ${percentage}% of your daily goal of ${formatNumber(goalCalories)} calories. Keep up the activity!`;
     } else {
-      return "I'm sorry, I'm still learning. Can you ask about your sleep, steps, or daily summary?";
+      return "I can help you with information about your daily summary, steps, sleep, water intake, and calories burned. Just ask me about any of these!";
     }
   };
 
