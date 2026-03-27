@@ -6,3 +6,4 @@ export { default as NotificationsSection } from './NotificationsSection';
 export { default as AlertThresholdsSection } from './AlertThresholdsSection';
 export { default as AccessibilitySection } from './AccessibilitySection';
 export { default as PrivacyConsentSection } from './PrivacyConsentSection';
+export { default as DataManagementSection } from './DataManagementSection';

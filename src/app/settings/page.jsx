@@ -14,6 +14,7 @@ import NotificationsSection from '@/components/Settings/Sections/NotificationsSe
 import AlertThresholdsSection from '@/components/Settings/Sections/AlertThresholdsSection';
 import AccessibilitySection from '@/components/Settings/Sections/AccessibilitySection';
 import PrivacyConsentSection from '@/components/Settings/Sections/PrivacyConsentSection';
+import DataManagementSection from '@/components/Settings/Sections/DataManagementSection';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -424,6 +425,7 @@ export default function SettingsPage() {
 
           {/* Sections */}
           <ProfileSection />
+          <DataManagementSection />
           <DevicesSection />
           <AccountSecuritySection
             passwordForm={passwordForm}
