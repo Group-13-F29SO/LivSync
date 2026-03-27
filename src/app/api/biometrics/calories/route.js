@@ -250,7 +250,8 @@ export async function GET(req) {
     if (period === 'today') {
       const hourlyValues = chartData.map((d) => d.value);
       const maxHourly = Math.max(...hourlyValues);
-      const avgHourly = Math.round(totalCalories / 24);
+      const hoursWithData = hourlyValues.filter((v) => v > 0).length || 1;
+      const avgHourly = Math.round(totalCalories / hoursWithData);
 
       statsToReturn = {
         total: totalCalories,
@@ -262,32 +263,49 @@ export async function GET(req) {
         goal: goal,
       };
     } else if (period === 'year') {
+      // For year view, calculate daily totals to get the peak day
+      const yearDailyMap = new Map();
+      caloriesData.forEach((item) => {
+        const timestamp = new Date(item.timestamp);
+        const dateKey = formatLocalDate(timestamp);
+        if (!yearDailyMap.has(dateKey)) {
+          yearDailyMap.set(dateKey, 0);
+        }
+        yearDailyMap.set(dateKey, yearDailyMap.get(dateKey) + Number(item.value));
+      });
+      
+      const dailyTotals = Array.from(yearDailyMap.values());
+      const maxDaily = dailyTotals.length > 0 ? Math.max(...dailyTotals) : 0;
+      const minDaily = dailyTotals.length > 0 ? Math.min(...dailyTotals) : 0;
+      
+      const daysWithData = yearDailyMap.size;
       const monthlyValues = chartData.map((d) => d.value);
-      const maxMonthly = Math.max(...monthlyValues);
-      const avgMonthly = Math.round(
-        monthlyValues.reduce((a, b) => a + b, 0) / (monthlyValues.length || 1)
-      );
+      const avgMonthly = daysWithData > 0 ? Math.round(totalCalories / daysWithData) : 0;
 
       statsToReturn = {
         total: totalCalories,
         average: avgMonthly,
-        max: maxMonthly,
-        min: Math.min(...monthlyValues.filter((v) => v > 0)) || 0,
+        max: maxDaily,
+        min: minDaily,
         monthsWithData: monthlyValues.filter((v) => v > 0).length,
         totalMonths: monthlyValues.length,
       };
     } else {
       const dailyValues = chartData.map((d) => d.value);
-      const avgDaily = Math.round(totalCalories / (dailyValues.length || 1));
-      const maxDaily = Math.max(...dailyValues);
+      const daysWithData = dailyValues.filter((v) => v > 0).length;
+      const avgDaily = daysWithData > 0 ? Math.round(totalCalories / daysWithData) : 0;
+      
+      // Get max from daily totals (days with data)
+      const maxDaily = Math.max(...dailyValues.filter(v => v > 0)) || 0;
+      const minDaily = Math.min(...dailyValues.filter(v => v > 0)) || 0;
 
       statsToReturn = {
         total: totalCalories,
         average: avgDaily,
         max: maxDaily,
-        min: Math.min(...dailyValues.filter((v) => v > 0)) || 0,
+        min: minDaily,
         latest: dailyValues[dailyValues.length - 1] || 0,
-        daysWithData: dailyValues.filter((v) => v > 0).length,
+        daysWithData: daysWithData,
         totalDays: dailyValues.length,
       };
     }

@@ -48,6 +48,13 @@ function getBloodGlucoseStatus(value) {
   return 'High';
 }
 
+function formatLocalDate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 export async function GET(request) {
   try {
     const session = getSession();
@@ -98,7 +105,7 @@ export async function GET(request) {
     const weeksWithData = new Set();
     allData.forEach((record) => {
       const weekStart = getStartOfWeek(new Date(record.timestamp));
-      const weekKey = weekStart.toISOString().split('T')[0];
+      const weekKey = formatLocalDate(weekStart);
       weeksWithData.add(weekKey);
     });
 
@@ -107,7 +114,7 @@ export async function GET(request) {
     let currentWeekStart = new Date(startDate);
 
     while (currentWeekStart <= endDate) {
-      const weekKey = currentWeekStart.toISOString().split('T')[0];
+      const weekKey = formatLocalDate(currentWeekStart);
       if (weeksWithData.has(weekKey)) {
         const weekEnd = getEndOfWeek(currentWeekStart);
         weeks.push({
@@ -151,7 +158,8 @@ export async function GET(request) {
                 metric_type: 'sleep',
                 timestamp: { gte: week.start, lte: week.end },
               },
-              select: { value: true, timestamp: true },
+              select: { value: true, timestamp: true, is_user_entered: true },
+              orderBy: { timestamp: 'asc' },
             }),
 
             // Hydration - need to get max per day, then sum and average
@@ -195,8 +203,7 @@ export async function GET(request) {
 
         // Helper function to get date key from timestamp
         const getDateKey = (timestamp) => {
-          const d = new Date(timestamp);
-          return d.toISOString().split('T')[0];
+          return formatLocalDate(new Date(timestamp));
         };
 
         // Process steps: get daily total, then average
@@ -219,25 +226,41 @@ export async function GET(request) {
         const caloriesTotal = caloriesDailyValues.reduce((a, b) => a + b, 0);
         const caloriesAverage = caloriesDailyValues.length > 0 ? Math.round(caloriesTotal / caloriesDailyValues.length) : 0;
 
-        // Process sleep: get max per day, then sum and average
+        // Process sleep: use manual entries when present, otherwise take the daily max
         const sleepDaily = {};
+        const sleepManualDays = new Set();
+        
         sleepData.forEach((record) => {
           const dateKey = getDateKey(record.timestamp);
           const value = Number(record.value);
-          sleepDaily[dateKey] = Math.max(sleepDaily[dateKey] || 0, value);
-        });
-        const sleepDailyValues = Object.values(sleepDaily);
-        const sleepTotal = sleepDailyValues.reduce((a, b) => a + b, 0);
-        const sleepAverage = sleepDailyValues.length > 0 ? sleepTotal / sleepDailyValues.length : 0;
+          
+          if (!Number.isFinite(value) || value <= 0) return;
+          
+          if (record.is_user_entered) {
+            sleepDaily[dateKey] = value;
+            sleepManualDays.add(dateKey);
+            return;
+          }
 
-        // Process hydration: get max per day, then sum and average
+          if (!sleepManualDays.has(dateKey)) {
+            sleepDaily[dateKey] = Math.max(sleepDaily[dateKey] || 0, value);
+          }
+        });
+        
+        // Only include days with actual sleep data (non-zero values)
+        const sleepDailyValues = Object.values(sleepDaily).filter(v => v > 0);
+        const sleepTotal = sleepDailyValues.reduce((a, b) => a + b, 0);
+        const sleepAverageRounded = sleepDailyValues.length > 0 ? Number((sleepTotal / sleepDailyValues.length).toFixed(1)) : 0;
+
+        // Process hydration: get daily value (max per day), then average across days with data
         const hydrationDaily = {};
         hydrationData.forEach((record) => {
           const dateKey = getDateKey(record.timestamp);
           const value = Number(record.value);
           hydrationDaily[dateKey] = Math.max(hydrationDaily[dateKey] || 0, value);
         });
-        const hydrationDailyValues = Object.values(hydrationDaily);
+        // Only include days with actual hydration data (non-zero values)
+        const hydrationDailyValues = Object.values(hydrationDaily).filter(v => v > 0);
         const hydrationTotal = hydrationDailyValues.reduce((a, b) => a + b, 0);
         const hydrationAverage = hydrationDailyValues.length > 0 ? Math.round(hydrationTotal / hydrationDailyValues.length) : 0;
 
@@ -245,8 +268,8 @@ export async function GET(request) {
         const avgBloodGlucose = bloodGlucoseData._avg.value ? Math.round(Number(bloodGlucoseData._avg.value)) : 0;
 
         return {
-          weekStart: week.start.toISOString().split('T')[0],
-          weekEnd: week.end.toISOString().split('T')[0],
+          weekStart: formatLocalDate(week.start),
+          weekEnd: formatLocalDate(week.end),
           steps: {
             total: Math.round(stepsTotal),
             average: stepsAverage,
@@ -257,8 +280,8 @@ export async function GET(request) {
           },
           sleep: {
             totalHours: Number(sleepTotal.toFixed(1)),
-            averageHours: Number(sleepAverage.toFixed(1)),
-            quality: getSleepQuality(Number(sleepAverage.toFixed(1))),
+            averageHours: sleepAverageRounded,
+            quality: getSleepQuality(sleepAverageRounded),
           },
           hydration: {
             total: Math.round(hydrationTotal),

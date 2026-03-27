@@ -290,9 +290,79 @@ async function checkDailyGoalCompletion(patientId, criteria) {
  * Check daily goal streak (specific goal type)
  */
 async function checkDailyGoalStreak(patientId, criteria) {
-  // Similar to daily goal completion but for a specific goal type
-  // This is a placeholder implementation
-  return true;
+  const now = new Date();
+  const requiredDays = criteria.days;
+  const goalType = criteria.goalType;
+
+  // Get the user's goal for this goal type
+  const goal = await prisma.goals.findFirst({
+    where: {
+      patient_id: patientId,
+      metric_type: goalType,
+      is_active: true,
+    },
+  });
+
+  // If no goal set, can't complete it
+  if (!goal) {
+    return false;
+  }
+
+  const targetValue = goal.target_value;
+
+  // Get all data for the goal type in the last N+10 days
+  const startDate = new Date(now.getTime() - (requiredDays + 10) * 24 * 60 * 60 * 1000);
+
+  const data = await prisma.biometric_data.findMany({
+    where: {
+      patient_id: patientId,
+      metric_type: goalType,
+      timestamp: {
+        gte: startDate,
+        lt: now,
+      },
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
+  });
+
+  // Group by day and sum values
+  const daysWithGoalMet = new Set();
+  const dayGroups = {};
+
+  data.forEach((entry) => {
+    const date = new Date(entry.timestamp);
+    const dateStr = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    if (!dayGroups[dateStr]) {
+      dayGroups[dateStr] = [];
+    }
+    dayGroups[dateStr].push(parseFloat(entry.value));
+  });
+
+  // Check which days met the goal
+  Object.entries(dayGroups).forEach(([dateStr, values]) => {
+    const sum = values.reduce((a, b) => a + b, 0);
+    if (sum >= targetValue) {
+      daysWithGoalMet.add(dateStr);
+    }
+  });
+
+  // Check for consecutive days from today backwards
+  let consecutiveDays = 0;
+  let currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  for (let i = 0; i < requiredDays; i++) {
+    const dateStr = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+    if (daysWithGoalMet.has(dateStr)) {
+      consecutiveDays++;
+    } else {
+      break;
+    }
+    currentDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
+  }
+
+  return consecutiveDays >= requiredDays;
 }
 
 /**
