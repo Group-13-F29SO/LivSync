@@ -161,22 +161,7 @@ export default function RangeBarChart({ chartData, period }) {
             activeDot={{ r: 5 }}
           />
         </LineChart>
-      </ResponsiveContainer>
-
-      <div className="mt-4 text-sm text-gray-600 dark:text-gray-400">
-        <p className="mb-2">
-          <span className="inline-block w-6 h-0.5 bg-red-500 mr-2"></span>
-          <strong>Red line:</strong> Maximum heart rate for each day
-        </p>
-        <p className="mb-2">
-          <span className="inline-block w-6 h-0.5 bg-blue-500 mr-2"></span>
-          <strong>Blue line:</strong> Average heart rate for each day
-        </p>
-        <p>
-          <span className="inline-block w-6 h-0.5 bg-cyan-500 mr-2"></span>
-          <strong>Cyan line:</strong> Minimum heart rate for each day
-        </p>
-      </div>
+      </ResponsiveContainer>      
     </div>
   );
 }

@@ -187,7 +187,7 @@ export default function HeartRateChartPage() {
         <HeartRateChart period={period} chartData={chartData} dataLoading={dataLoading} error={error} chartType={chartType} useRangeBar={useRangeBar} />
 
         {/* Manual Entry Section */}
-        <div className="mb-8">
+        <div className="mt-12 mb-8">
           <MetricManualEntrySection 
             metricType="heart_rate"
             selectedDate={period === 'today' ? selectedDate : null}

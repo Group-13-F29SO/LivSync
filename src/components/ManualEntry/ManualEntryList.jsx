@@ -93,7 +93,7 @@ export default function ManualEntryList({
 
   return (
     <div className="space-y-2">
-      <h3 className="font-semibold text-gray-700 mb-3">Manual Entries</h3>
+      <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">Manual Entries</h3>
       {error && (
         <div className="p-3 mb-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
           {error}
@@ -103,13 +103,13 @@ export default function ManualEntryList({
         {entries.map((entry) => (
           <div
             key={entry.id}
-            className="flex items-center justify-between p-3 bg-blue-50 border border-blue-200 rounded-md"
+            className="flex items-center justify-between p-3 bg-blue-50 dark:bg-gray-800 border border-blue-200 dark:border-gray-700 rounded-md"
           >
             <div className="flex-1">
-              <p className="font-medium text-gray-800">
+              <p className="font-medium text-gray-800 dark:text-gray-100">
                 {entry.value} {unit}
               </p>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {formatDateTime(entry.timestamp)}
               </p>
             </div>

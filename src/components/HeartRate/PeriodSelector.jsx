@@ -3,8 +3,8 @@
 export default function PeriodSelector({ period, onPeriodChange, periodOptions }) {
   const defaultPeriodOptions = [
     { value: 'today', label: 'Today' },
-    { value: '7days', label: 'Last 7 Days' },
-    { value: '30days', label: 'Last 30 Days' },
+    { value: 'thisWeek', label: 'This Week' },
+    { value: 'thisMonth', label: 'This Month' },
     { value: 'all', label: 'All Data' }
   ];
 
