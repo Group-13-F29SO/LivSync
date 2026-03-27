@@ -325,7 +325,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Metric Cards Grid - Auto-sizing */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Render metric widgets based on preferences */}
           {getVisibleWidgets().filter(w => ['steps', 'heart-rate', 'calories', 'hydration', 'sleep', 'blood-glucose'].includes(w.id)).map((widget) => {
             switch (widget.id) {
