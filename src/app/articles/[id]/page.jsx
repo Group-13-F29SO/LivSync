@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
-import Navbar from '@/components/Navbar/Navbar';
 import ArticleDisplay from '@/components/Articles/ArticleDisplay';
 import ArticleCard from '@/components/Articles/ArticleCard';
 import { useAuth } from '@/hooks/useAuth';
@@ -81,9 +80,7 @@ export default function ArticleDetailPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950">
+      <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950">
         <div className="max-w-4xl mx-auto">
           {/* Back Button */}
           <Link

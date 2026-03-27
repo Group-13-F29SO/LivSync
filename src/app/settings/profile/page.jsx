@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { PrimaryButton, SecondaryButton } from '@/components/Settings/Buttons';
 
@@ -121,11 +120,8 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      {/* Navbar */}
-      <Navbar />
-
       {/* Main Content */}
-      <main className="flex-1 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <div className="p-8 max-w-4xl">
           {/* Page Header with Back Button */}
           <div className="mb-8">

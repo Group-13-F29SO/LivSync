@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar/Navbar';
 import SettingsSection from '@/components/Settings/SettingsSection';
 import DeviceCard from '@/components/Settings/DeviceCard';
 import EmptyDevicesState from '@/components/Settings/EmptyDevicesState';
@@ -119,9 +118,7 @@ export default function DevicesPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
-      <main className="flex-1 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <div className="p-8 max-w-4xl">
           <BackButton onClick={() => router.push('/settings')} />
           <PageHeader />

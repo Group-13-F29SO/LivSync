@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar/Navbar';
 import MetricSelector from '@/components/Streaks/MetricSelector';
 import StreakContent from '@/components/Streaks/StreakContent';
 import StreakPageHeader from '@/components/Streaks/StreakPageHeader';
@@ -68,10 +67,8 @@ export default function StreaksPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
       {/* Main Content Area */}
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <StreakPageHeader />
 
         <MetricSelector selectedMetric={metric} onMetricChange={setMetric} />

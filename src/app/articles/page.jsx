@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar/Navbar';
 import ArticleCard from '@/components/Articles/ArticleCard';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -86,9 +85,7 @@ export default function ArticlesPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950">
+      <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950">
         {/* Header */}
         <div className="max-w-6xl mx-auto mb-8">
           <h1 className="inline-block text-4xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent mb-2">
