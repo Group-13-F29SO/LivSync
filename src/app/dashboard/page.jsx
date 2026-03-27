@@ -14,13 +14,25 @@ import BadgeNotification from '@/components/Badges/BadgeNotification';
 import ConnectionRequestsNotification from '@/components/Provider/ConnectionRequestsNotification';
 import AlertNotification from '@/components/Alerts/AlertNotification';
 import CriticalEventsWidget from '@/components/Alerts/CriticalEventsWidget';
+import DraggableWidget from '@/components/Dashboard/DraggableWidget';
+import DashboardWidgetManager from '@/components/Dashboard/DashboardWidgetManager';
 import { useAuth } from '@/hooks/useAuth';
+import { useWidgetPreferences } from '@/hooks/useWidgetPreferences';
 import { getBadgeDefinition } from '@/services/badgeDefinitions';
 import { getRelativeSyncTime } from '@/utils/syncTimeFormatter';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { user, logout, isLoading } = useAuth();
+  const {
+    preferences,
+    toggleWidgetVisibility,
+    reorderWidgets,
+    resetToDefaults,
+    getVisibleWidgets,
+    getWidgetPreference,
+    isLoading: preferencesLoading,
+  } = useWidgetPreferences();
 
   const [lastSyncTime, setLastSyncTime] = useState('Just now');
   const [dashboardData, setDashboardData] = useState(null);
@@ -29,6 +41,8 @@ export default function DashboardPage() {
   const [currentBadge, setCurrentBadge] = useState(null);
   const [currentAlert, setCurrentAlert] = useState(null);
   const [alertQueue, setAlertQueue] = useState([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [draggingId, setDraggingId] = useState(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -39,6 +53,28 @@ export default function DashboardPage() {
       router.push('/provider');
     }
   }, [user, isLoading, router]);
+
+  // Drag and drop handlers
+  const handleDragStart = (widgetId) => {
+    setDraggingId(widgetId);
+  };
+
+  const handleDragOver = (widgetId) => {
+    if (!draggingId || draggingId === widgetId) return;
+
+    const visibleWidgets = getVisibleWidgets();
+    const sourceIndex = visibleWidgets.findIndex((w) => w.id === draggingId);
+    const destIndex = visibleWidgets.findIndex((w) => w.id === widgetId);
+
+    if (sourceIndex !== -1 && destIndex !== -1) {
+      reorderWidgets(sourceIndex, destIndex);
+      setDraggingId(widgetId);
+    }
+  };
+
+  const handleDrop = () => {
+    setDraggingId(null);
+  };
 
   // Handle badge queue - show next badge after current one closes
   useEffect(() => {
@@ -210,7 +246,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading || !user) {
+  if (isLoading || !user || preferencesLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-950">
         <p className="text-gray-600 dark:text-gray-400">Loading...</p>
@@ -258,134 +294,339 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex gap-2 items-center">
-            <ConnectionRequestsNotification patientId={user?.id} />
-            <button
-              onClick={handleLogout}
-              className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              title="Logout"
-            >
-              <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400" />
-            </button>
+          <div className="flex gap-2 items-center flex-col">
+            <div className="flex gap-2 items-center">
+              <ConnectionRequestsNotification patientId={user?.id} />
+              <button
+                onClick={handleLogout}
+                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                title="Logout"
+              >
+                <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400" />
+              </button>
+            </div>
+            
+            {/* Widget Manager - Moved to header */}
+            <DashboardWidgetManager
+              isEditMode={isEditMode}
+              onToggleEditMode={() => setIsEditMode(!isEditMode)}
+              onResetToDefaults={resetToDefaults}
+              visibleWidgetCount={getVisibleWidgets().length}
+            />
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-          
+        {/* Metric Cards Grid - Auto-sizing */}
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Render metric widgets based on preferences */}
+          {getVisibleWidgets().filter(w => ['steps', 'heart-rate', 'calories', 'hydration', 'sleep', 'blood-glucose'].includes(w.id)).map((widget) => {
+            switch (widget.id) {
+              case 'steps':
+                return (
+                  <DraggableWidget
+                    key={widget.id}
+                    widgetId={widget.id}
+                    isEditMode={isEditMode}
+                    isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                    onToggleVisibility={toggleWidgetVisibility}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    draggingId={draggingId}
+                  >
+                    <div className="h-full flex flex-col">
+                      <button
+                        onClick={() => router.push('/dashboard/steps')}
+                        className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        <DashboardCard
+                          title="Steps"
+                          value={dashboardData ? dashboardData.steps : '...'}
+                          unit="steps"
+                          iconBgColor="bg-blue-50"
+                          iconColor="text-blue-600"
+                          icon={<Footprints className="w-6 h-6 text-blue-600" />}
+                        />
+                      </button>
+                    </div>
+                  </DraggableWidget>
+                );
 
-          <button
-            onClick={() => router.push('/dashboard/steps')}
-            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
-          >
-            <DashboardCard
-              title="Steps"
-              value={dashboardData ? dashboardData.steps : "..."}
-              unit="steps"
-              iconBgColor="bg-blue-50"
-              iconColor="text-blue-600"
-              icon={<Footprints className="w-6 h-6 text-blue-600" />}
-            />
-          </button>
+              case 'heart-rate':
+                return (
+                  <DraggableWidget
+                    key={widget.id}
+                    widgetId={widget.id}
+                    isEditMode={isEditMode}
+                    isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                    onToggleVisibility={toggleWidgetVisibility}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    draggingId={draggingId}
+                  >
+                    <div className="h-full flex flex-col">
+                      <button
+                        onClick={() => router.push('/dashboard/heart-rate')}
+                        className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        <DashboardCard
+                          title="Heart Rate"
+                          value={dashboardData ? dashboardData.heart_rate : '...'}
+                          unit="bpm"
+                          subtitle={dashboardData ? `Resting: ${dashboardData.resting_heart_rate} bpm` : '...'}
+                          iconBgColor="bg-red-50"
+                          iconColor="text-red-600"
+                          icon={<Heart className="w-6 h-6 text-red-600" />}
+                        />
+                      </button>
+                    </div>
+                  </DraggableWidget>
+                );
 
-          <button
-            onClick={() => router.push('/dashboard/heart-rate')}
-            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
-          >
-            <DashboardCard
-              title="Heart Rate"
-              value={dashboardData ? dashboardData.heart_rate : "..."}
-              unit="bpm"
-              subtitle={dashboardData ? `Resting: ${dashboardData.resting_heart_rate} bpm` : "..."}
-              iconBgColor="bg-red-50"
-              iconColor="text-red-600"
-              icon={<Heart className="w-6 h-6 text-red-600" />}
-            />
-          </button>
+              case 'calories':
+                return (
+                  <DraggableWidget
+                    key={widget.id}
+                    widgetId={widget.id}
+                    isEditMode={isEditMode}
+                    isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                    onToggleVisibility={toggleWidgetVisibility}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    draggingId={draggingId}
+                  >
+                    <div className="h-full flex flex-col">
+                      <button
+                        onClick={() => router.push('/dashboard/calories')}
+                        className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        <DashboardCard
+                          title="Calories Burned"
+                          value={dashboardData ? dashboardData.calories : '...'}
+                          unit="kcal"
+                          iconBgColor="bg-orange-50"
+                          iconColor="text-orange-600"
+                          icon={<Flame className="w-6 h-6 text-orange-600" />}
+                        />
+                      </button>
+                    </div>
+                  </DraggableWidget>
+                );
 
-          <button
-            onClick={() => router.push('/dashboard/calories')}
-            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
-          >
-            <DashboardCard
-              title="Calories Burned"
-              value={dashboardData ? dashboardData.calories : "..."}
-              unit="kcal"
-              iconBgColor="bg-orange-50"
-              iconColor="text-orange-600"
-              icon={<Flame className="w-6 h-6 text-orange-600" />}
-            />
-          </button>
+              case 'hydration':
+                return (
+                  <DraggableWidget
+                    key={widget.id}
+                    widgetId={widget.id}
+                    isEditMode={isEditMode}
+                    isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                    onToggleVisibility={toggleWidgetVisibility}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    draggingId={draggingId}
+                  >
+                    <div className="h-full flex flex-col">
+                      <button
+                        onClick={() => router.push('/dashboard/hydration')}
+                        className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        <DashboardCard
+                          title="Hydration"
+                          value={dashboardData ? dashboardData.hydration : '...'}
+                          unit="glasses"
+                          iconBgColor="bg-cyan-50"
+                          iconColor="text-cyan-600"
+                          icon={<Droplets className="w-6 h-6 text-cyan-600" />}
+                        />
+                      </button>
+                    </div>
+                  </DraggableWidget>
+                );
 
-          <button
-            onClick={() => router.push('/dashboard/hydration')}
-            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
-          >
-            <DashboardCard
-              title="Hydration"
-              value={dashboardData ? dashboardData.hydration : "..."}
-              unit="glasses"
-              iconBgColor="bg-cyan-50"
-              iconColor="text-cyan-600"
-              icon={<Droplets className="w-6 h-6 text-cyan-600" />}
-            />
-          </button>
+              case 'sleep':
+                return (
+                  <DraggableWidget
+                    key={widget.id}
+                    widgetId={widget.id}
+                    isEditMode={isEditMode}
+                    isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                    onToggleVisibility={toggleWidgetVisibility}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    draggingId={draggingId}
+                  >
+                    <div className="h-full flex flex-col">
+                      <button
+                        onClick={() => router.push('/dashboard/sleep')}
+                        className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        <DashboardCard
+                          title="Sleep"
+                          value={dashboardData ? dashboardData.sleep : '...'}
+                          unit="hours"
+                          subtitle={dashboardData ? `Quality: ${dashboardData.sleep_quality}` : '...'}
+                          iconBgColor="bg-purple-50"
+                          iconColor="text-purple-600"
+                          icon={<Moon className="w-6 h-6 text-purple-600" />}
+                        />
+                      </button>
+                    </div>
+                  </DraggableWidget>
+                );
 
-          <button
-            onClick={() => router.push('/dashboard/sleep')}
-            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
-          >
-            <DashboardCard
-              title="Sleep"
-              value={dashboardData ? dashboardData.sleep : "..."}
-              unit="hours"
-              subtitle={dashboardData ? `Quality: ${dashboardData.sleep_quality}` : "..."}
-              iconBgColor="bg-purple-50"
-              iconColor="text-purple-600"
-              icon={<Moon className="w-6 h-6 text-purple-600" />}
-            />
-          </button>
+              case 'blood-glucose':
+                return (
+                  <DraggableWidget
+                    key={widget.id}
+                    widgetId={widget.id}
+                    isEditMode={isEditMode}
+                    isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                    onToggleVisibility={toggleWidgetVisibility}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDrop={handleDrop}
+                    draggingId={draggingId}
+                  >
+                    <div className="h-full flex flex-col">
+                      <button
+                        onClick={() => router.push('/dashboard/blood-glucose')}
+                        className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
+                      >
+                        <DashboardCard
+                          title="Blood Glucose"
+                          value={dashboardData ? dashboardData.blood_glucose : '...'}
+                          unit="mg/dL"
+                          subtitle={dashboardData ? `Status: ${dashboardData.blood_glucose_status}` : '...'}
+                          iconBgColor="bg-green-50"
+                          iconColor="text-green-600"
+                          icon={<Activity className="w-6 h-6 text-green-600" />}
+                        />
+                      </button>
+                    </div>
+                  </DraggableWidget>
+                );
 
-          <button
-            onClick={() => router.push('/dashboard/blood-glucose')}
-            className="w-full h-full bg-transparent border-none p-0 cursor-pointer"
-          >
-            <DashboardCard
-              title="Blood Glucose"
-              value={dashboardData ? dashboardData.blood_glucose : "..."}
-              unit="mg/dL"
-              subtitle={dashboardData ? `Status: ${dashboardData.blood_glucose_status}` : "..."}
-              iconBgColor="bg-green-50"
-              iconColor="text-green-600"
-              icon={<Activity className="w-6 h-6 text-green-600" />}
-            />
-          </button>
+              default:
+                return null;
+            }
+          })}
         </div>
 
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-1">
-            <ArticlesCard />
+        {/* Other Widgets Grid - Articles & Manual Entry */}
+        {getVisibleWidgets().filter(w => ['articles', 'manual-entry'].includes(w.id)).length > 0 && (
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {getVisibleWidgets().filter(w => ['articles', 'manual-entry'].includes(w.id)).map((widget) => {
+              switch (widget.id) {
+                case 'articles':
+                  return (
+                    <DraggableWidget
+                      key={widget.id}
+                      widgetId={widget.id}
+                      isEditMode={isEditMode}
+                      isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                      onToggleVisibility={toggleWidgetVisibility}
+                      onDragStart={handleDragStart}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      draggingId={draggingId}
+                    >
+                      <ArticlesCard />
+                    </DraggableWidget>
+                  );
+
+                case 'manual-entry':
+                  return (
+                    <DraggableWidget
+                      key={widget.id}
+                      widgetId={widget.id}
+                      isEditMode={isEditMode}
+                      isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                      onToggleVisibility={toggleWidgetVisibility}
+                      onDragStart={handleDragStart}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      draggingId={draggingId}
+                    >
+                      <QuickManualEntryCard />
+                    </DraggableWidget>
+                  );
+
+                default:
+                  return null;
+              }
+            })}
           </div>
+        )}
 
-          <div className="lg:col-span-1">
-            <QuickManualEntryCard />
-          </div>
-        </div>
+        {/* Special Widgets - Rendered Separately */}
+        {getVisibleWidgets().filter(w => ['streaks', 'summary', 'critical-events'].includes(w.id)).map((widget) => {
+          if (widget.id === 'streaks') {
+            return (
+              <div key={widget.id} className="mt-8 cursor-pointer" onClick={() => router.push('/dashboard/streaks')}>
+                <DraggableWidget
+                  widgetId={widget.id}
+                  isEditMode={isEditMode}
+                  isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                  onToggleVisibility={toggleWidgetVisibility}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  draggingId={draggingId}
+                >
+                  <StreakCard
+                    currentStreak={streakData?.currentStreak || 0}
+                    targetMetric={streakData?.targetMetric || '10,000 steps'}
+                    message={streakData?.message || 'Keep going!'}
+                  />
+                </DraggableWidget>
+              </div>
+            );
+          }
 
-        <div className="mt-8 cursor-pointer" onClick={() => router.push('/dashboard/streaks')}>
-          <StreakCard
-            currentStreak={streakData?.currentStreak || 0}
-            targetMetric={streakData?.targetMetric || '10,000 steps'}
-            message={streakData?.message || 'Keep going!'}
-          />
-        </div>
+          if (widget.id === 'summary') {
+            return (
+              <div key={widget.id} className="mt-6">
+                <DraggableWidget
+                  widgetId={widget.id}
+                  isEditMode={isEditMode}
+                  isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                  onToggleVisibility={toggleWidgetVisibility}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  draggingId={draggingId}
+                >
+                  <SummaryCard summaryData={dashboardData} />
+                </DraggableWidget>
+              </div>
+            );
+          }
 
-        <div className="mt-6">
-          <SummaryCard summaryData={dashboardData} />
-        </div>
+          if (widget.id === 'critical-events') {
+            return (
+              <div key={widget.id} className="mt-8">
+                <DraggableWidget
+                  widgetId={widget.id}
+                  isEditMode={isEditMode}
+                  isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                  onToggleVisibility={toggleWidgetVisibility}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  draggingId={draggingId}
+                >
+                  <CriticalEventsWidget />
+                </DraggableWidget>
+              </div>
+            );
+          }
 
-        <div className="mt-8">
-          <CriticalEventsWidget />
-        </div>
+          return null;
+        })}
       </main>
     </div>
   );
