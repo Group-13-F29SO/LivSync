@@ -149,14 +149,6 @@ const fetchCaloriesData = async () => {
           </div>
         )}
 
-        {/* Data Management Section - only show for "today" period */}
-        {period === 'today' && (
-          <CaloriesDataManagement 
-            selectedDate={selectedDate}
-            onDataGenerated={() => setRefreshKey(prev => prev + 1)}
-          />
-        )}
-
         {/* Statistics Cards */}
         <CaloriesStats stats={stats} period={period} activityLevel={activityLevel} />
 
