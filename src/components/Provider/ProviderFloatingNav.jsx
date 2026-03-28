@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Calendar, FileText, Moon, Sun, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, FileText, Settings, Moon, Sun, LogOut } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -32,6 +32,9 @@ export default function ProviderFloatingNav() {
     if (path === '/provider/appointments') {
       return pathname === '/provider/appointments' || pathname === '/provider/appointments/';
     }
+    if (path === '/provider/settings') {
+      return pathname.startsWith('/provider/settings');
+    }
     return pathname.startsWith(path);
   };
 
@@ -59,6 +62,12 @@ export default function ProviderFloatingNav() {
       path: '/provider/prescriptions',
       label: 'Prescriptions',
       icon: <FileText className="w-6 h-6" />,
+    },
+    {
+      id: 'settings',
+      path: '/provider/settings',
+      label: 'Settings',
+      icon: <Settings className="w-6 h-6" />,
     },
   ];
 
