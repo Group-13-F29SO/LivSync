@@ -3,21 +3,24 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Users, Stethoscope, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
-import AdminSection from '@/components/Admin/AdminSection';
 import SecurityLogsWidget from '@/components/Admin/SecurityLogsWidget';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const [patients, setPatients] = useState([]);
-  const [providers, setProviders] = useState([]);
+  const [stats, setStats] = useState({
+    totalPatients: 0,
+    totalProviders: 0,
+    approvedProviders: 0,
+    pendingProviders: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    fetchData();
+    fetchStats();
   }, []);
 
-  const fetchData = async () => {
+  const fetchStats = async () => {
     try {
       setIsLoading(true);
       
@@ -38,117 +41,20 @@ export default function AdminDashboard() {
       const patientsData = await patientsRes.json();
       const providersData = await providersRes.json();
 
-      setPatients(patientsData.patients);
-      setProviders(providersData.data?.providers || providersData.providers || []);
+      const patients = patientsData.patients || [];
+      const providers = providersData.data?.providers || providersData.providers || [];
+
+      setStats({
+        totalPatients: patients.length,
+        totalProviders: providers.length,
+        approvedProviders: providers.filter(p => p.isVerified).length,
+        pendingProviders: providers.filter(p => !p.isVerified).length,
+      });
     } catch (err) {
-      setError('Failed to load data. Please try again.');
+      setError('Failed to load statistics. Please try again.');
       console.error('Error fetching data:', err);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleDeletePatient = async (patientId) => {
-    try {
-      const response = await fetch('/api/admin/patients', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          patientId,
-        }),
-      });
-
-      if (response.ok) {
-        setPatients(prev => prev.filter(p => p.id !== patientId));
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to delete patient');
-      }
-    } catch (err) {
-      console.error('Error deleting patient:', err);
-      setError('Failed to delete patient');
-    }
-  };
-
-  const handleApproveProvider = async (providerId) => {
-    try {
-      const response = await fetch('/api/admin/providers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'approve',
-          providerId,
-        }),
-      });
-
-      if (response.ok) {
-        // Update the provider's status in the local state
-        setProviders(prev => prev.map(p => 
-          p.id === providerId ? { ...p, isVerified: true, approvalStatus: 'approved' } : p
-        ));
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to approve provider');
-      }
-    } catch (err) {
-      console.error('Error approving provider:', err);
-      setError('Failed to approve provider');
-    }
-  };
-
-  const handleRejectProvider = async (providerId) => {
-    try {
-      const response = await fetch('/api/admin/providers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'reject',
-          providerId,
-        }),
-      });
-
-      if (response.ok) {
-        // Remove the rejected provider from the list
-        setProviders(prev => prev.filter(p => p.id !== providerId));
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to reject provider');
-      }
-    } catch (err) {
-      console.error('Error rejecting provider:', err);
-      setError('Failed to reject provider');
-    }
-  };
-
-  const handleDeleteProvider = async (providerId) => {
-    try {
-      const response = await fetch('/api/admin/providers', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          providerId,
-        }),
-      });
-
-      if (response.ok) {
-        setProviders(prev => prev.filter(p => p.id !== providerId));
-      } else {
-        const data = await response.json();
-        setError(data.error || 'Failed to delete provider');
-      }
-    } catch (err) {
-      console.error('Error deleting provider:', err);
-      setError('Failed to delete provider');
     }
   };
 
@@ -201,7 +107,7 @@ export default function AdminDashboard() {
         )}
 
         {/* Pending Approvals Alert */}
-        {providers.filter(p => !p.isVerified).length > 0 && (
+        {stats.pendingProviders > 0 && (
           <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-600 rounded-lg">
             <div className="flex items-start">
               <div className="flex-shrink-0">
@@ -209,10 +115,10 @@ export default function AdminDashboard() {
               </div>
               <div className="ml-3 flex-1">
                 <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                  {providers.filter(p => !p.isVerified).length} Provider{providers.filter(p => !p.isVerified).length === 1 ? '' : 's'} Pending Approval
+                  {stats.pendingProviders} Provider{stats.pendingProviders === 1 ? '' : 's'} Pending Approval
                 </h3>
                 <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-400">
-                  Review and approve or reject provider applications below in the Healthcare Providers section.
+                  Review and approve or reject provider applications on the Healthcare Providers page.
                 </p>
               </div>
             </div>
@@ -221,78 +127,70 @@ export default function AdminDashboard() {
 
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-800">
+          <button
+            onClick={() => router.push('/admin/patients')}
+            className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 text-left"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Patients</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{patients.length}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.totalPatients}</p>
               </div>
               <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg">
                 <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-800">
+          <button
+            onClick={() => router.push('/admin/providers')}
+            className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 text-left"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Providers</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{providers.length}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.totalProviders}</p>
               </div>
               <div className="flex items-center justify-center w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg">
                 <Stethoscope className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-800">
+          <button
+            onClick={() => router.push('/admin/providers')}
+            className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300 text-left"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Approved Providers</p>
                 <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {providers.filter(p => p.isVerified).length}
+                  {stats.approvedProviders}
                 </p>
               </div>
               <div className="flex items-center justify-center w-12 h-12 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
                 <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
-          </div>
+          </button>
 
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-amber-200 dark:border-amber-700">
+          <button
+            onClick={() => router.push('/admin/providers')}
+            className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-amber-200 dark:border-amber-700 hover:shadow-lg hover:border-amber-400 dark:hover:border-amber-500 transition-all duration-300 text-left"
+          >
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending Approval</p>
                 <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
-                  {providers.filter(p => !p.isVerified).length}
+                  {stats.pendingProviders}
                 </p>
               </div>
               <div className="flex items-center justify-center w-12 h-12 bg-amber-100 dark:bg-amber-900 rounded-lg">
                 <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
               </div>
             </div>
-          </div>
+          </button>
         </div>
-
-        {/* Patients Section */}
-        <AdminSection
-          title="Patients"
-          users={patients}
-          type="patients"
-          onDelete={handleDeletePatient}
-          icon={<Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
-        />
-
-        {/* Healthcare Providers Section */}
-        <AdminSection
-          title="Healthcare Providers"
-          users={providers}
-          type="providers"
-          onDelete={handleDeleteProvider}
-          onApprove={handleApproveProvider}
-          onReject={handleRejectProvider}
-          icon={<Stethoscope className="w-6 h-6 text-purple-600 dark:text-purple-400" />}
-        />
 
         {/* Security Logs Section */}
         <SecurityLogsWidget />

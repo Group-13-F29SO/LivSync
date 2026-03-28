@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, Moon, Sun, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Stethoscope, Moon, Sun, LogOut } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
 export default function AdminFloatingNav() {
@@ -25,6 +25,18 @@ export default function AdminFloatingNav() {
       path: '/admin/dashboard',
       label: 'Dashboard',
       icon: <LayoutDashboard className="w-6 h-6" />,
+    },
+    {
+      id: 'patients',
+      path: '/admin/patients',
+      label: 'Patients',
+      icon: <Users className="w-6 h-6" />,
+    },
+    {
+      id: 'providers',
+      path: '/admin/providers',
+      label: 'Providers',
+      icon: <Stethoscope className="w-6 h-6" />,
     },
     {
       id: 'articles',

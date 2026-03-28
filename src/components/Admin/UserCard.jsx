@@ -96,21 +96,6 @@ export default function UserCard({ user, type, onDelete, onApprove, onReject }) 
                 Provider Consent: <span className="ml-1 capitalize font-medium">{user.providerConsentStatus}</span>
               </div>
             )}
-            
-            <div className="grid grid-cols-3 gap-2 mt-3">
-              <div className="bg-blue-50 dark:bg-blue-900/30 rounded p-2 text-center">
-                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{user.biometricDataCount || 0}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Metrics</div>
-              </div>
-              <div className="bg-green-50 dark:bg-green-900/30 rounded p-2 text-center">
-                <div className="text-lg font-bold text-green-600 dark:text-green-400">{user.goalsCount || 0}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Goals</div>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900/30 rounded p-2 text-center">
-                <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{user.devicesCount || 0}</div>
-                <div className="text-xs text-gray-600 dark:text-gray-400">Devices</div>
-              </div>
-            </div>
           </>
         )}
 
