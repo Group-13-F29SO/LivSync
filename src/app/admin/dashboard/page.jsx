@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Users, Stethoscope, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
 import AdminSection from '@/components/Admin/AdminSection';
+import SecurityLogsWidget from '@/components/Admin/SecurityLogsWidget';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -177,13 +179,8 @@ export default function AdminDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-red-500 to-purple-600 rounded-lg mr-3">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   Admin Dashboard
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -191,16 +188,6 @@ export default function AdminDashboard() {
                 </p>
               </div>
             </div>
-            
-            <button
-              onClick={handleLogout}
-              className="flex items-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-            >
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
-            </button>
           </div>
         </div>
       </header>
@@ -218,9 +205,7 @@ export default function AdminDashboard() {
           <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-600 rounded-lg">
             <div className="flex items-start">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
+                <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
               </div>
               <div className="ml-3 flex-1">
                 <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
@@ -243,9 +228,7 @@ export default function AdminDashboard() {
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{patients.length}</p>
               </div>
               <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
+                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </div>
@@ -257,9 +240,7 @@ export default function AdminDashboard() {
                 <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{providers.length}</p>
               </div>
               <div className="flex items-center justify-center w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+                <Stethoscope className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
             </div>
           </div>
@@ -268,30 +249,26 @@ export default function AdminDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Approved Providers</p>
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                   {providers.filter(p => p.isVerified).length}
                 </p>
               </div>
-              <div className="flex items-center justify-center w-12 h-12 bg-green-100 dark:bg-green-900 rounded-lg">
-                <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="flex items-center justify-center w-12 h-12 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
+                <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-yellow-300 dark:border-yellow-700">
+          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-amber-200 dark:border-amber-700">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending Approval</p>
-                <p className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
+                <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
                   {providers.filter(p => !p.isVerified).length}
                 </p>
               </div>
-              <div className="flex items-center justify-center w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-                <svg className="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="flex items-center justify-center w-12 h-12 bg-amber-100 dark:bg-amber-900 rounded-lg">
+                <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
               </div>
             </div>
           </div>
@@ -303,11 +280,7 @@ export default function AdminDashboard() {
           users={patients}
           type="patients"
           onDelete={handleDeletePatient}
-          icon={
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          }
+          icon={<Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
         />
 
         {/* Healthcare Providers Section */}
@@ -318,12 +291,11 @@ export default function AdminDashboard() {
           onDelete={handleDeleteProvider}
           onApprove={handleApproveProvider}
           onReject={handleRejectProvider}
-          icon={
-            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          }
+          icon={<Stethoscope className="w-6 h-6 text-purple-600 dark:text-purple-400" />}
         />
+
+        {/* Security Logs Section */}
+        <SecurityLogsWidget />
       </main>
     </div>
   );

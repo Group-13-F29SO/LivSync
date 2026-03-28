@@ -362,3 +362,24 @@ model prescription_items {
   @@index([prescription_id], map: "idx_prescription_items_prescription_id")
 }
 
+model security_logs {
+  id              String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  event_type      String    @db.VarChar(50)
+  user_email      String?   @db.VarChar(255)
+  user_type       String?   @db.VarChar(20)
+  ip_address      String?   @db.VarChar(45)
+  user_agent      String?   @db.Text
+  message         String
+  severity        String    @default("info") @db.VarChar(20)
+  is_read         Boolean   @default(false)
+  read_at         DateTime?
+  metadata        String?   @db.Text
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([event_type], map: "idx_security_logs_event_type")
+  @@index([user_email], map: "idx_security_logs_user_email")
+  @@index([created_at], map: "idx_security_logs_created_at")
+  @@index([is_read], map: "idx_security_logs_is_read")
+  @@index([severity], map: "idx_security_logs_severity")
+}
+

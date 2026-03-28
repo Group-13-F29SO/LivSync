@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Zap } from 'lucide-react';
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -151,9 +152,7 @@ export default function AdminLoginPage() {
             disabled={isLoading}
             className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
+            <Zap className="w-5 h-5 mr-2" />
             Quick Test Login
           </button>
 

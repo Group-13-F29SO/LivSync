@@ -6,7 +6,7 @@ export default function AdminSection({ title, users, type, onDelete, onApprove, 
   return (
     <div className="mb-12">
       <div className="flex items-center mb-6">
-        <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg mr-3">
+        <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-lg mr-3">
           {icon}
         </div>
         <div>

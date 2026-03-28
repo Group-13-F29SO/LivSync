@@ -1,6 +1,49 @@
 import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
 
+const FAILED_LOGIN_ATTEMPTS_KEY = 'failed_login_attempts';
+const MAX_FAILED_ATTEMPTS = 3;
+const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes
+
+// In-memory store for failed login attempts (in production, use Redis)
+const failedLoginAttempts = new Map();
+
+/**
+ * Track failed login attempts
+ */
+export function trackFailedLoginAttempt(identifier) {
+  const now = Date.now();
+  const attempts = failedLoginAttempts.get(identifier) || [];
+  
+  // Remove old attempts outside the lockout window
+  const recentAttempts = attempts.filter(time => now - time < LOCKOUT_TIME);
+  recentAttempts.push(now);
+  
+  failedLoginAttempts.set(identifier, recentAttempts);
+  
+  return recentAttempts.length;
+}
+
+/**
+ * Check if account is locked
+ */
+export function isAccountLocked(identifier) {
+  const attempts = failedLoginAttempts.get(identifier) || [];
+  const now = Date.now();
+  
+  // Remove old attempts
+  const recentAttempts = attempts.filter(time => now - time < LOCKOUT_TIME);
+  
+  return recentAttempts.length >= MAX_FAILED_ATTEMPTS;
+}
+
+/**
+ * Reset failed login attempts
+ */
+export function resetFailedLoginAttempts(identifier) {
+  failedLoginAttempts.delete(identifier);
+}
+
 /**
  * Authenticate an admin user
  * @param {string} email - Admin email
