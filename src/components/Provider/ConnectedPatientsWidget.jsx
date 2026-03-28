@@ -3,39 +3,41 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Users, ChevronRight, Plus } from 'lucide-react';
+import ConnectionRequestModal from '@/components/Provider/ConnectionRequestModal';
 
 export default function ConnectedPatientsWidget({ providerId }) {
   const router = useRouter();
   const [patients, setPatients] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const fetchPatients = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        `/api/provider/get-patients?providerId=${providerId}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch patients');
+      }
+
+      const data = await response.json();
+      // Only display first 5 patients on the widget
+      const displayPatients = (data.patients || []).slice(0, 5);
+      setPatients(displayPatients);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching patients:', err);
+      setError(err.message);
+      setPatients([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchPatients = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(
-          `/api/provider/get-patients?providerId=${providerId}`
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch patients');
-        }
-
-        const data = await response.json();
-        // Only display first 5 patients on the widget
-        const displayPatients = (data.patients || []).slice(0, 5);
-        setPatients(displayPatients);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching patients:', err);
-        setError(err.message);
-        setPatients([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (providerId) {
       fetchPatients();
     }
@@ -50,7 +52,13 @@ export default function ConnectedPatientsWidget({ providerId }) {
   };
 
   const handleConnectPatient = () => {
-    router.push('/provider/patients');
+    setIsModalOpen(true);
+  };
+
+  const handleConnectionSuccess = () => {
+    setIsModalOpen(false);
+    // Refresh patients list after successful connection
+    fetchPatients();
   };
 
   if (isLoading) {
@@ -62,10 +70,18 @@ export default function ConnectedPatientsWidget({ providerId }) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+    <>
+      <ConnectionRequestModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={handleConnectionSuccess}
+        providerId={providerId}
+      />
+      
+      <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600 transition-colors" onClick={handleViewAll}>
       {/* Widget Header */}
       <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
           <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
             <Users size={20} className="text-blue-600 dark:text-blue-400" />
           </div>
@@ -79,7 +95,10 @@ export default function ConnectedPatientsWidget({ providerId }) {
           </div>
         </div>
         <button
-          onClick={handleConnectPatient}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleConnectPatient();
+          }}
           className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           title="Add patient"
         >
@@ -93,7 +112,10 @@ export default function ConnectedPatientsWidget({ providerId }) {
           {patients.map((patient) => (
             <button
               key={patient.id}
-              onClick={() => handlePatientClick(patient.id)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePatientClick(patient.id);
+              }}
               className="w-full text-left p-3 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex items-center justify-between group"
             >
               <div className="min-w-0 flex-1">
@@ -131,12 +153,16 @@ export default function ConnectedPatientsWidget({ providerId }) {
       {/* View All Button */}
       {patients.length > 0 && (
         <button
-          onClick={handleViewAll}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleViewAll();
+          }}
           className="w-full py-2 text-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
         >
           View All Patients
         </button>
       )}
     </div>
+    </>
   );
 }

@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { BarChart3, TrendingUp } from 'lucide-react';
 import CriticalEventsWarningsWidget from '@/components/Provider/CriticalEventsWarningsWidget';
 import ConnectedPatientsWidget from '@/components/Provider/ConnectedPatientsWidget';
+import NotificationsCenter from '@/components/Provider/NotificationsCenter';
 
 export default function ProviderDashboardPage() {
   const router = useRouter();
@@ -33,13 +34,16 @@ export default function ProviderDashboardPage() {
     <div className="min-h-screen bg-white dark:bg-gray-950">
       <main className="p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         {/* Header Section */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
-            Dashboard
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400">
-            Welcome back, {user?.firstName}. Here's an overview of your patients' health status.
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2">
+              Dashboard
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400">
+              Welcome back, {user?.firstName}. Here's an overview of your patients' health status.
+            </p>
+          </div>
+          <NotificationsCenter providerId={user?.id} />
         </div>
 
         {/* Dashboard Grid */}
