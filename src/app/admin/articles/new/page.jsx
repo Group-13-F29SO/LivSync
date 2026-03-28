@@ -44,31 +44,35 @@ export default function NewArticlePage() {
   };
 
   return (
-    <div className="p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 min-h-screen">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-8">
-          <button
-            onClick={() => router.back()}
-            className="text-blue-600 hover:text-blue-700 font-semibold mb-4"
-          >
-            ← Back to Articles
-          </button>
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
-            Create New Article
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
-            Add a new health-related article to the content hub
-          </p>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      <header className="bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div>
+            <button
+              onClick={() => router.back()}
+              className="text-blue-600 hover:text-blue-700 font-semibold mb-3"
+            >
+              ← Back to Articles
+            </button>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Create New Article
+            </h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Add a new health-related article to the content hub
+            </p>
+          </div>
         </div>
+      </header>
 
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28">
         {error && (
-          <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg">
-            {error}
+          <div className="mb-6 p-4 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg">
+            <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
           </div>
         )}
 
         <ArticleForm onSubmit={handleSubmit} isLoading={isLoading} />
-      </div>
+      </main>
     </div>
   );
 }

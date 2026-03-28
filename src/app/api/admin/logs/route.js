@@ -9,6 +9,8 @@ export async function GET(request) {
     const eventType = searchParams.get('eventType');
     const severity = searchParams.get('severity');
     const isRead = searchParams.get('isRead');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
 
     const skip = (page - 1) * limit;
     const where = {};
@@ -23,6 +25,23 @@ export async function GET(request) {
 
     if (isRead !== null && isRead !== undefined) {
       where.is_read = isRead === 'true';
+    }
+
+    // Handle date range filtering
+    if (startDate || endDate) {
+      where.created_at = {};
+
+      if (startDate) {
+        // Start of the day
+        where.created_at.gte = new Date(startDate);
+      }
+
+      if (endDate) {
+        // End of the day
+        const endOfDay = new Date(endDate);
+        endOfDay.setHours(23, 59, 59, 999);
+        where.created_at.lte = endOfDay;
+      }
     }
 
     const [logs, total] = await Promise.all([

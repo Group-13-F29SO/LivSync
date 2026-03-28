@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, Users, Stethoscope, Moon, Sun, LogOut } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Stethoscope, AlertCircle, Moon, Sun, LogOut } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 
 export default function AdminFloatingNav() {
@@ -37,6 +37,12 @@ export default function AdminFloatingNav() {
       path: '/admin/providers',
       label: 'Providers',
       icon: <Stethoscope className="w-6 h-6" />,
+    },
+    {
+      id: 'security-logs',
+      path: '/admin/security-logs',
+      label: 'Security Logs',
+      icon: <AlertCircle className="w-6 h-6" />,
     },
     {
       id: 'articles',

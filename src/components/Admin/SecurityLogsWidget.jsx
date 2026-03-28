@@ -68,6 +68,7 @@ export default function SecurityLogsWidget() {
       const params = new URLSearchParams({
         page: page.toString(),
         limit: '10',
+        isRead: 'false',
       });
 
       if (filterSeverity) {
@@ -251,13 +252,8 @@ export default function SecurityLogsWidget() {
 
                 <button
                   onClick={() => handleMarkAsRead(log.id)}
-                  disabled={log.is_read}
-                  className={`ml-2 flex-shrink-0 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ${
-                    log.is_read
-                      ? 'opacity-50 cursor-default'
-                      : 'text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400'
-                  }`}
-                  title={log.is_read ? 'Already read' : 'Mark as read'}
+                  className="ml-2 flex-shrink-0 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-400"
+                  title="Dismiss log"
                 >
                   <X className="w-5 h-5" />
                 </button>
