@@ -140,7 +140,7 @@ export default function FloatingBottomNav() {
       })}
 
       {/* Separator */}
-      <div className={`h-6 w-px ${isDarkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
+      <div className={`h-12 w-px ${isDarkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
 
       {/* Dark Mode Toggle */}
       <button
