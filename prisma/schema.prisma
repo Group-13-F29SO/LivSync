@@ -125,6 +125,7 @@ model patients {
   alert_thresholds        alert_thresholds[]
   critical_events         critical_events[]
   article_feedback        article_feedback[]
+  appointments            appointments[]
 
   @@index([email], map: "idx_patients_email")
   @@index([provider_id], map: "idx_patients_provider_id")
@@ -165,6 +166,7 @@ model providers {
   patients                patients[]
   connection_requests     connection_requests[]
   notifications           notifications[]
+  appointments            appointments[]
 
   @@index([email], map: "idx_providers_email")
 }
@@ -267,5 +269,26 @@ model password_reset_tokens {
   @@index([email], map: "idx_password_reset_tokens_email")
   @@index([token], map: "idx_password_reset_tokens_token")
   @@index([expiresAt], map: "idx_password_reset_tokens_expiresAt")
+}
+
+model appointments {
+  id                String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  provider_id       String    @db.Uuid
+  patient_id        String    @db.Uuid
+  appointment_date  DateTime  @db.Date
+  appointment_time  String    @db.VarChar(5)
+  status            String    @default("scheduled") @db.VarChar(20)
+  notes             String?   @db.Text
+  created_at        DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime  @default(now()) @db.Timestamptz(6)
+  providers         providers @relation(fields: [provider_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  patients          patients  @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([provider_id], map: "idx_appointments_provider_id")
+  @@index([patient_id], map: "idx_appointments_patient_id")
+  @@index([appointment_date], map: "idx_appointments_appointment_date")
+  @@index([status], map: "idx_appointments_status")
+  @@index([provider_id, appointment_date], map: "idx_appointments_provider_date")
+  @@unique([provider_id, appointment_date, appointment_time], map: "unique_provider_appointment_slot")
 }
 
