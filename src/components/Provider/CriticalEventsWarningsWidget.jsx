@@ -5,13 +5,15 @@ import { AlertCircle, AlertTriangle } from 'lucide-react';
 
 export default function CriticalEventsWarningsWidget({ providerId }) {
   const [stats, setStats] = useState({ critical: 0, criticalPatients: 0, warnings: 0 });
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchStats = async (isInitial = false) => {
       try {
-        setIsLoading(true);
+        if (isInitial) {
+          setIsInitialLoading(true);
+        }
         const response = await fetch(
           `/api/provider/dashboard-stats?providerId=${providerId}`
         );
@@ -28,19 +30,21 @@ export default function CriticalEventsWarningsWidget({ providerId }) {
         setError(err.message);
         setStats({ critical: 0, criticalPatients: 0, warnings: 0 });
       } finally {
-        setIsLoading(false);
+        if (isInitial) {
+          setIsInitialLoading(false);
+        }
       }
     };
 
     if (providerId) {
-      fetchStats();
-      // Refresh every 60 seconds
-      const interval = setInterval(fetchStats, 60000);
+      fetchStats(true);
+      // Refresh every 60 seconds silently in the background
+      const interval = setInterval(() => fetchStats(false), 60000);
       return () => clearInterval(interval);
     }
   }, [providerId]);
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
         <p className="text-gray-600 dark:text-gray-400">Loading...</p>
