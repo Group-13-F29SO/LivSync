@@ -152,7 +152,7 @@ export default function WeeklySummaryPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50 pb-32">
         {/* Header */}
         <div className="flex items-center justify-between gap-4 mb-8">
           <div className="flex items-center gap-4">
