@@ -114,7 +114,22 @@ export default function PrescriptionsPage() {
       );
       setEditingPrescription(null);
     } else {
-      // Refetch prescriptions after creating a new one to ensure we have all data
+      // Add the new prescription immediately so the list updates without a manual refresh
+      setPrescriptions((currentPrescriptions) => {
+        const alreadyExists = currentPrescriptions.some(
+          (prescription) => prescription.id === newPrescription.id
+        );
+
+        if (alreadyExists) {
+          return currentPrescriptions.map((prescription) =>
+            prescription.id === newPrescription.id ? newPrescription : prescription
+          );
+        }
+
+        return [newPrescription, ...currentPrescriptions];
+      });
+
+      // Refetch in the background to keep the list aligned with the server state
       refetchPrescriptions();
     }
   };

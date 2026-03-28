@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Download, Trash2, Edit2, Eye, Loader, AlertCircle } from 'lucide-react';
 import PrescriptionTemplate from './PrescriptionTemplate';
 import { exportPrescriptionToPDF } from '@/utils/prescriptionPDFExport';
@@ -17,6 +17,10 @@ export default function PrescriptionsList({
   const [isExporting, setIsExporting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const prescriptionRefMap = useRef({});
+
+  useEffect(() => {
+    setPrescriptions(initialPrescriptions || []);
+  }, [initialPrescriptions]);
 
   const handleExportPDF = async (prescription) => {
     try {
