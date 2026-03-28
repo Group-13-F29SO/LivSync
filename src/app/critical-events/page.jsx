@@ -69,6 +69,79 @@ export default function CriticalEventsPage() {
     }
   };
 
+  const handleClearAll = async () => {
+    if (events.length === 0) {
+      alert('No events to clear');
+      return;
+    }
+
+    const confirmed = confirm(
+      `Are you sure you want to clear all ${events.length} critical event${events.length !== 1 ? 's' : ''}? This action cannot be undone.`
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setLoading(true);
+      const res = await fetch('/api/patient/critical-events', {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setEvents([]);
+        setTotalEvents(0);
+        setPage(0);
+      } else {
+        console.error('Failed to clear events:', res.statusText);
+        alert('Failed to clear events. Please try again.');
+      }
+    } catch (err) {
+      console.error('Failed to clear events:', err);
+      alert('Failed to clear events. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    const unreadCount = events.filter(e => !e.isAcknowledged).length;
+    
+    if (unreadCount === 0) {
+      alert('No unread events to mark');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch('/api/patient/critical-events', {
+        method: 'PATCH',
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Update all events to be marked as read
+        setEvents((prev) =>
+          prev.map((e) => ({
+            ...e,
+            isAcknowledged: true,
+            acknowledgedAt: new Date(),
+          }))
+        );
+        // Refresh to get updated data
+        await fetchEvents();
+      } else {
+        console.error('Failed to mark events as read:', res.statusText);
+        alert('Failed to mark events as read. Please try again.');
+      }
+    } catch (err) {
+      console.error('Failed to mark events as read:', err);
+      alert('Failed to mark events as read. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getMetricLabel = (metric) => {
     const labels = {
       steps: 'Steps',
@@ -116,7 +189,7 @@ export default function CriticalEventsPage() {
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
       <main className="flex-1 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
-        <div className="p-8 max-w-6xl">
+        <div className="p-8 max-w-6xl pb-32">
           <div className="mb-8">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
               Critical Events Log
@@ -126,28 +199,51 @@ export default function CriticalEventsPage() {
             </p>
           </div>
 
-          {/* Filter Tabs */}
-          <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-gray-700">
-            {['all', 'unacknowledged', 'acknowledged'].map((filterOption) => (
-              <button
-                key={filterOption}
-                onClick={() => {
-                  setFilter(filterOption);
-                  setPage(0);
-                }}
-                className={`px-4 py-2 font-medium text-sm transition-colors capitalize ${
-                  filter === filterOption
-                    ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                {filterOption === 'all'
-                  ? `All (${totalEvents})`
-                  : filterOption === 'unacknowledged'
-                  ? 'Unacknowledged'
-                  : 'Acknowledged'}
-              </button>
-            ))}
+          {/* Filter Tabs and Clear All Button */}
+          <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-gray-700">
+            <div className="flex gap-2">
+              {['all', 'unread', 'read'].map((filterOption) => {
+                const filterValue = filterOption === 'unread' ? 'unacknowledged' : filterOption === 'read' ? 'acknowledged' : 'all';
+                return (
+                  <button
+                    key={filterOption}
+                    onClick={() => {
+                      setFilter(filterValue);
+                      setPage(0);
+                    }}
+                    className={`px-4 py-2 font-medium text-sm transition-colors capitalize ${
+                      filter === filterValue
+                        ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {filterOption === 'all'
+                      ? `All (${totalEvents})`
+                      : filterOption === 'unread'
+                      ? 'Unread'
+                      : 'Read'}
+                  </button>
+                );
+              })}
+            </div>
+            {totalEvents > 0 && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleMarkAllAsRead}
+                  disabled={loading || events.filter(e => !e.isAcknowledged).length === 0}
+                  className="px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Mark All as Read
+                </button>
+                <button
+                  onClick={handleClearAll}
+                  disabled={loading}
+                  className="px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Events Table */}
@@ -165,8 +261,8 @@ export default function CriticalEventsPage() {
                   {filter === 'all'
                     ? 'No critical events found'
                     : filter === 'unacknowledged'
-                    ? 'All events have been acknowledged'
-                    : 'No acknowledged events yet'}
+                    ? 'All events have been read'
+                    : 'No read events yet'}
                 </p>
               </div>
             ) : (
@@ -226,11 +322,11 @@ export default function CriticalEventsPage() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           {event.isAcknowledged ? (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                              Acknowledged
+                              Read
                             </span>
                           ) : (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200">
-                              Pending
+                              Unread
                             </span>
                           )}
                         </td>
@@ -240,7 +336,7 @@ export default function CriticalEventsPage() {
                               onClick={() => handleAcknowledge(event.id)}
                               className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                             >
-                              Acknowledge
+                              Mark as Read
                             </button>
                           )}
                         </td>

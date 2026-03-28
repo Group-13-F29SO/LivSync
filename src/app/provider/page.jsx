@@ -32,7 +32,7 @@ export default function ProviderDashboardPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950">
-      <main className="p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50 pb-32">
         {/* Header Section */}
         <div className="mb-8 flex justify-between items-start">
           <div>

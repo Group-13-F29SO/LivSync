@@ -467,7 +467,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
       {/* Main Content */}
-      <main className="flex-1 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50 pb-32">
         <div className="p-8 max-w-4xl">
           {/* Page Header */}
           <div className="mb-8">

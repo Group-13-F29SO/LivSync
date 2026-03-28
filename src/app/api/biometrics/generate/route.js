@@ -188,12 +188,43 @@ export async function POST(request) {
             const metricLabel = getMetricLabel(metricType);
             const metricUnit = getMetricUnit(metricType);
 
+            // Process values based on metric type to handle extremely low readings
+            let processedDataPoints = dataPoints;
+            
+            if (metricType === 'steps') {
+              // For steps: aggregate to hourly readings instead of individual 5-minute readings
+              const hourlyAggregates = {};
+              dataPoints.forEach(point => {
+                const timestamp = new Date(point.timestamp);
+                const hourKey = new Date(timestamp.getFullYear(), timestamp.getMonth(), timestamp.getDate(), timestamp.getHours()).getTime();
+                if (!hourlyAggregates[hourKey]) {
+                  hourlyAggregates[hourKey] = { total: 0, count: 0, timestamp: new Date(hourKey) };
+                }
+                hourlyAggregates[hourKey].total += parseFloat(point.value);
+                hourlyAggregates[hourKey].count++;
+              });
+              
+              processedDataPoints = Object.values(hourlyAggregates).map(agg => ({
+                ...agg,
+                value: agg.total
+              }));
+            } else if (metricType === 'hydration' || metricType === 'sleep') {
+              // For hydration and sleep: filter out extremely low readings (0 for hydration, <0.5 for sleep)
+              const minValue = metricType === 'hydration' ? 0.1 : 0.5;
+              processedDataPoints = dataPoints.filter(p => parseFloat(p.value) > minValue);
+              
+              // If all readings are below minimum, skip alert checking for this metric
+              if (processedDataPoints.length === 0) {
+                continue;
+              }
+            }
+
             // Find the max and min values for this metric
-            const values = dataPoints.map(p => parseFloat(p.value));
+            const values = processedDataPoints.map(p => parseFloat(p.value));
             const maxValue = Math.max(...values);
             const minValue = Math.min(...values);
-            const maxDataPoint = dataPoints.find(p => parseFloat(p.value) === maxValue);
-            const minDataPoint = dataPoints.find(p => parseFloat(p.value) === minValue);
+            const maxDataPoint = processedDataPoints.find(p => parseFloat(p.value) === maxValue);
+            const minDataPoint = processedDataPoints.find(p => parseFloat(p.value) === minValue);
 
             // Check max threshold
             if (threshold.max_value && maxValue > parseFloat(threshold.max_value)) {
