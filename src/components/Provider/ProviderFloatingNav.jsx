@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { LayoutDashboard, Users, Calendar, Moon, Sun, LogOut } from 'lucide-react';
+import { LayoutDashboard, Users, Calendar, FileText, Moon, Sun, LogOut } from 'lucide-react';
 import { useTheme } from '@/hooks/useTheme';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -53,6 +53,12 @@ export default function ProviderFloatingNav() {
       path: '/provider/appointments',
       label: 'Appointments',
       icon: <Calendar className="w-6 h-6" />,
+    },
+    {
+      id: 'prescriptions',
+      path: '/provider/prescriptions',
+      label: 'Prescriptions',
+      icon: <FileText className="w-6 h-6" />,
     },
   ];
 

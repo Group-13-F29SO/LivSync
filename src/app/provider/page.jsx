@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { BarChart3, TrendingUp } from 'lucide-react';
+import { BarChart3, TrendingUp, FileText } from 'lucide-react';
 import CriticalEventsWarningsWidget from '@/components/Provider/CriticalEventsWarningsWidget';
 import ConnectedPatientsWidget from '@/components/Provider/ConnectedPatientsWidget';
+import PrescriptionsWidget from '@/components/Provider/PrescriptionsWidget';
 import NotificationsCenter from '@/components/Provider/NotificationsCenter';
 
 export default function ProviderDashboardPage() {
@@ -68,6 +69,17 @@ export default function ProviderDashboardPage() {
               </h2>
             </div>
             <ConnectedPatientsWidget providerId={user?.id} />
+          </div>
+
+          {/* Prescriptions Row */}
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <FileText size={20} className="text-green-500" />
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
+                Prescriptions
+              </h2>
+            </div>
+            <PrescriptionsWidget providerId={user?.id} />
           </div>
         </div>
       </main>
