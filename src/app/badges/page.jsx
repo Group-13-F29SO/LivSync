@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import CategorySection from '@/components/CategorySection/CategorySection';
-import Navbar from '@/components/Navbar/Navbar';
 import BadgeNotification from '@/components/Badges/BadgeNotification';
 import { useAuth } from '@/hooks/useAuth';
 import { useBadges } from '@/hooks/useBadges';
@@ -35,8 +34,6 @@ export default function BadgesPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
       {/* Badge Notification */}
       <BadgeNotification
         isVisible={displayNotification !== null}
@@ -47,7 +44,7 @@ export default function BadgesPage() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50 pb-32">
         {/* Page Header & Summary Section */}
         <div className="mb-12">
           {/* Main Title */}

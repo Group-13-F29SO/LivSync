@@ -1,17 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import LoginForm from '@/components/LoginForm/LoginForm';
+import ForgotPasswordForm from '@/components/LoginForm/ForgotPasswordForm';
 import ProviderLoginForm from '@/components/LoginForm/ProviderLoginForm';
 import UserTypeSelector from '@/components/UserTypeSelector/UserTypeSelector';
 import { useAuth } from '@/hooks/useAuth';
+import { useForceLightMode } from '@/hooks/useForceLightMode';
 
 export default function LoginPage() {
   const [userType, setUserType] = useState(null);
   const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
   const [userId, setUserId] = useState(null);
   const [tempCredentials, setTempCredentials] = useState(null);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const { login, isLoading, error, setError } = useAuth();
+
+  // Force light mode on login page
+  useForceLightMode();
 
   const handleLogin = async (formData) => {
     try {
@@ -35,6 +42,19 @@ export default function LoginPage() {
     setRequiresTwoFactor(false);
     setUserId(null);
     setTempCredentials(null);
+    setShowForgotPassword(false);
+  };
+
+  const handleBackFromForgotPassword = () => {
+    setShowForgotPassword(false);
+    setError('');
+  };
+
+  const handlePasswordResetSuccess = () => {
+    setShowForgotPassword(false);
+    setError('');
+    // Show success message
+    alert('Password reset successful! You can now sign in with your new password.');
   };
 
   return (
@@ -44,39 +64,63 @@ export default function LoginPage() {
         {!userType ? (
           <>
             <UserTypeSelector userType={userType} onUserTypeChange={handleChangeUserType} />
+            
+            {/* Sign up link */}
+            <div className="mt-6 text-center">
+              <p className="text-gray-200 dark:text-gray-400 text-sm">
+                New to the app?{' '}
+                <Link href="/signup" className="text-yellow-300 hover:text-yellow-200 font-semibold underline">
+                  Sign up here
+                </Link>
+              </p>
+            </div>
           </>
         ) : (
           <>
-            {userType === 'patient' && (
-              <LoginForm 
-                onSubmit={handleLogin} 
-                isLoading={isLoading} 
-                error={error}
-                requiresTwoFactor={requiresTwoFactor}
+            {showForgotPassword ? (
+              <ForgotPasswordForm 
+                userType={userType}
+                onBack={handleBackFromForgotPassword}
+                onSuccess={handlePasswordResetSuccess}
               />
-            )}
+            ) : (
+              <>
+                {userType === 'patient' && (
+                  <LoginForm 
+                    onSubmit={handleLogin} 
+                    isLoading={isLoading} 
+                    error={error}
+                    requiresTwoFactor={requiresTwoFactor}
+                    onForgotPassword={() => setShowForgotPassword(true)}
+                  />
+                )}
 
-            {userType === 'provider' && (
-              <ProviderLoginForm 
-                onSubmit={handleLogin} 
-                isLoading={isLoading} 
-                error={error}
-              />
+                {userType === 'provider' && (
+                  <ProviderLoginForm 
+                    onSubmit={handleLogin} 
+                    isLoading={isLoading} 
+                    error={error}
+                    onForgotPassword={() => setShowForgotPassword(true)}
+                  />
+                )}
+              </>
             )}
 
             {/* Back to type selector button */}
-            <button
-              onClick={() => {
-                setUserType(null);
-                setError('');
-                setRequiresTwoFactor(false);
-                setUserId(null);
-                setTempCredentials(null);
-              }}
-              className="mt-4 w-full text-center text-gray-100 dark:text-gray-300 text-sm hover:underline"
-            >
-              Back to account type
-            </button>
+            {!showForgotPassword && (
+              <button
+                onClick={() => {
+                  setUserType(null);
+                  setError('');
+                  setRequiresTwoFactor(false);
+                  setUserId(null);
+                  setTempCredentials(null);
+                }}
+                className="mt-4 w-full text-center text-gray-100 dark:text-gray-300 text-sm hover:underline"
+              >
+                Back to account type
+              </button>
+            )}
           </>
         )}
       </div>

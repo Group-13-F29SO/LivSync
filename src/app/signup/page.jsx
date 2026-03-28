@@ -1,20 +1,26 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import Step1SignUp from '@/components/SignUpForm/Step1SignUp';
 import Step2SignUp from '@/components/SignUpForm/Step2SignUp';
 import Step3SignUp from '@/components/SignUpForm/Step3SignUp';
 import Step4SignUp from '@/components/SignUpForm/Step4SignUp';
+import Step5SignUp from '@/components/SignUpForm/Step5SignUp';
 import ProviderStep1SignUp from '@/components/SignUpForm/ProviderStep1SignUp';
 import ProviderStep2SignUp from '@/components/SignUpForm/ProviderStep2SignUp';
 import ProviderStep3SignUp from '@/components/SignUpForm/ProviderStep3SignUp';
 import UserTypeSelector from '@/components/UserTypeSelector/UserTypeSelector';
 import { useAuth } from '@/hooks/useAuth';
+import { useForceLightMode } from '@/hooks/useForceLightMode';
 
 export default function SignUpPage() {
   const [userType, setUserType] = useState(null);
   const [step, setStep] = useState(1);
   const { signup, isLoading, error, setError } = useAuth();
+
+  // Force light mode on signup page
+  useForceLightMode();
   const [formData, setFormData] = useState({
     email: '',
     username: '',
@@ -26,6 +32,7 @@ export default function SignUpPage() {
     biologicalSex: '',
     height: '',
     weight: '',
+    connectedDevice: null,
     specialty: '',
     medicalLicenseNumber: '',
     workplaceName: ''
@@ -40,7 +47,7 @@ export default function SignUpPage() {
     e.preventDefault();
     
     if (userType === 'patient') {
-      if (step < 4) {
+      if (step < 5) {
         setStep(step + 1);
       } else {
         // Final submission for patient
@@ -78,6 +85,7 @@ export default function SignUpPage() {
       biologicalSex: '',
       height: '',
       weight: '',
+      connectedDevice: null,
       specialty: '',
       medicalLicenseNumber: '',
       workplaceName: ''
@@ -98,7 +106,19 @@ export default function SignUpPage() {
 
         {/* User Type Selector */}
         {!userType && (
-          <UserTypeSelector userType={userType} onUserTypeChange={handleChangeUserType} />
+          <>
+            <UserTypeSelector userType={userType} onUserTypeChange={handleChangeUserType} />
+            
+            {/* Login link */}
+            <div className="mt-6 text-center">
+              <p className="text-gray-200 dark:text-gray-400 text-sm">
+                Already have an account?{' '}
+                <Link href="/login" className="text-yellow-300 hover:text-yellow-200 font-semibold underline">
+                  Login here
+                </Link>
+              </p>
+            </div>
+          </>
         )}
 
         {/* Patient Flow */}
@@ -124,6 +144,11 @@ export default function SignUpPage() {
               <Step4SignUp formData={formData} handleChange={handleChange} handleNext={handleNext} isLoading={isLoading} />
             )}
 
+            {/* Step 5: Connect Wearable Device */}
+            {step === 5 && (
+              <Step5SignUp formData={formData} handleChange={handleChange} handleNext={handleNext} isLoading={isLoading} />
+            )}
+
             {/* Back to type selector button */}
             {step > 0 && (
               <button
@@ -137,6 +162,16 @@ export default function SignUpPage() {
                 Back to account type
               </button>
             )}
+            
+            {/* Login link */}
+            <div className="mt-6 text-center">
+              <p className="text-gray-200 dark:text-gray-400 text-sm">
+                Already have an account?{' '}
+                <Link href="/login" className="text-yellow-300 hover:text-yellow-200 font-semibold underline">
+                  Login here
+                </Link>
+              </p>
+            </div>
           </>
         )}
 
@@ -171,6 +206,16 @@ export default function SignUpPage() {
                 Back to account type
               </button>
             )}
+            
+            {/* Login link */}
+            <div className="mt-6 text-center">
+              <p className="text-gray-200 dark:text-gray-400 text-sm">
+                Already have an account?{' '}
+                <Link href="/login" className="text-yellow-300 hover:text-yellow-200 font-semibold underline">
+                  Login here
+                </Link>
+              </p>
+            </div>
           </>
         )}
       </div>

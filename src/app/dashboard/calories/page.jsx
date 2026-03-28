@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar/Navbar';
 import PeriodSelector from '@/components/HeartRate/PeriodSelector';
 import CaloriesDataManagement from '@/components/Dashboard/Calories/CaloriesDataManagement';
 import CaloriesChart from '@/components/Dashboard/Calories/CaloriesChart';
@@ -108,10 +107,8 @@ const fetchCaloriesData = async () => {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
       {/* Main Content Area */}
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div>
@@ -147,14 +144,6 @@ const fetchCaloriesData = async () => {
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
           </div>
-        )}
-
-        {/* Data Management Section - only show for "today" period */}
-        {period === 'today' && (
-          <CaloriesDataManagement 
-            selectedDate={selectedDate}
-            onDataGenerated={() => setRefreshKey(prev => prev + 1)}
-          />
         )}
 
         {/* Statistics Cards */}

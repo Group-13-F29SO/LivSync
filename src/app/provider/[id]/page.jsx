@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowLeft, Heart, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Heart, AlertCircle, LogOut } from 'lucide-react';
 import BiometricDataTab from '@/components/Provider/BiometricDataTab';
 import CriticalEventsTab from '@/components/Provider/CriticalEventsTab';
 
@@ -15,6 +15,7 @@ export default function PatientDetailPage() {
   const [patient, setPatient] = useState(null);
   const [patientLoading, setPatientLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -57,6 +58,39 @@ export default function PatientDetailPage() {
       fetchPatientData();
     }
   }, [isLoading, user, params.id]);
+
+  const handleDisconnect = async () => {
+    if (!patient || !user) return;
+    
+    const confirmed = confirm(`Are you sure you want to revoke access to ${patient.name}'s data? This action cannot be undone immediately.`);
+    if (!confirmed) return;
+
+    try {
+      setIsDisconnecting(true);
+      const response = await fetch('/api/provider/disconnect-patient', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          providerId: user.id,
+          patientId: params.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to disconnect patient');
+      }
+
+      // Redirect back to patient management page
+      router.push('/provider/patients');
+    } catch (error) {
+      console.error('Error disconnecting patient:', error);
+      setError(error.message || 'Failed to disconnect patient');
+    } finally {
+      setIsDisconnecting(false);
+    }
+  };
 
   if (isLoading || patientLoading) {
     return (
@@ -122,17 +156,30 @@ export default function PatientDetailPage() {
               </h1>
               <p className="text-gray-500 dark:text-gray-400">
                 {patient.age && `Age: ${patient.age}`}
-                {patient.lastSync && ` • Last sync: ${patient.lastSync}${patient.lastSync === 'just now' ? '' : ' ago'}`}
+                {patient.lastSync && ` • Last sync: ${patient.lastSync}`}
               </p>
             </div>
           </div>
 
           {/* Connection Status Badge */}
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900 rounded-full">
-            <Heart size={16} className="text-green-600 dark:text-green-400 fill-current animate-pulse" />
-            <span className="text-green-800 dark:text-green-100 font-semibold text-sm">
-              {patient.status}
-            </span>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900 rounded-full">
+              <Heart size={16} className="text-green-600 dark:text-green-400 fill-current animate-pulse" />
+              <span className="text-green-800 dark:text-green-100 font-semibold text-sm">
+                {patient.status}
+              </span>
+            </div>
+
+            {/* Disconnect Button */}
+            <button
+              onClick={handleDisconnect}
+              disabled={isDisconnecting}
+              className="flex items-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-700 dark:text-red-400 font-medium rounded-lg transition-colors disabled:opacity-50"
+              title="Revoke connection with patient"
+            >
+              <LogOut size={16} />
+              <span className="text-sm">{isDisconnecting ? 'Revoking...' : 'Revoke'}</span>
+            </button>
           </div>
         </div>
 

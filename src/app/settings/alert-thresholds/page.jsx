@@ -2,26 +2,27 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import { PrimaryButton, SecondaryButton } from '@/components/Settings/Buttons';
 
 const BIOMARKER_DEFAULTS = {
-  heart_rate: { label: 'Heart Rate (bpm)', min: 60, max: 100, step: 1 },
-  blood_glucose: { label: 'Blood Glucose (mg/dL)', min: 70, max: 130, step: 1 },
-  steps: { label: 'Steps (daily)', min: 5000, max: 20000, step: 100 },
-  sleep: { label: 'Sleep (hours)', min: 6, max: 10, step: 0.5 },
-  calories: { label: 'Calories Burned (kcal)', min: 1500, max: 3000, step: 50 },
-  hydration: { label: 'Hydration (glasses)', min: 6, max: 12, step: 1 },
+  heart_rate: { label: 'Heart Rate (bpm)', min: 60, max: 100, step: 1, default: true },
+  blood_glucose: { label: 'Blood Glucose (mg/dL)', min: 70, max: 130, step: 1, default: true },
+  steps: { label: 'Steps (daily)', min: 5000, max: 20000, step: 100, default: false },
+  sleep: { label: 'Sleep (hours)', min: 6, max: 10, step: 0.5, default: false },
+  calories: { label: 'Calories Burned (kcal)', min: 1500, max: 3000, step: 50, default: false },
+  hydration: { label: 'Hydration (glasses)', min: 6, max: 12, step: 1, default: false },
 };
 
 export default function AlertThresholdsPage() {
   const router = useRouter();
   const { user, isLoading } = useAuth();
   const [thresholds, setThresholds] = useState({});
+  const [enabledThresholds, setEnabledThresholds] = useState({});
   const [isLoadingThresholds, setIsLoadingThresholds] = useState(true);
   const [thresholdError, setThresholdError] = useState(null);
   const [thresholdSuccess, setThresholdSuccess] = useState(null);
+  const [showAdditionalThresholds, setShowAdditionalThresholds] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -47,11 +48,13 @@ export default function AlertThresholdsPage() {
       if (json.success) {
         // Create a map of thresholds by metric type
         const thresholdMap = {};
+        const enabledMap = {};
         json.data.forEach((t) => {
           thresholdMap[t.metricType] = {
             min: t.minValue,
             max: t.maxValue,
           };
+          enabledMap[t.metricType] = t.isActive;
         });
 
         // Initialize with defaults for all biomarkers
@@ -61,9 +64,12 @@ export default function AlertThresholdsPage() {
             min: BIOMARKER_DEFAULTS[key].min,
             max: BIOMARKER_DEFAULTS[key].max,
           };
+          // Use the is_active status from API if available, otherwise use default
+          enabledMap[key] = enabledMap[key] !== undefined ? enabledMap[key] : BIOMARKER_DEFAULTS[key].default;
         });
 
         setThresholds(allThresholds);
+        setEnabledThresholds(enabledMap);
         setThresholdError(null);
       }
     } catch (err) {
@@ -85,13 +91,21 @@ export default function AlertThresholdsPage() {
     setThresholdSuccess(null);
   };
 
+  const handleToggleThreshold = (metric) => {
+    setEnabledThresholds((prev) => ({
+      ...prev,
+      [metric]: !prev[metric],
+    }));
+    setThresholdSuccess(null);
+  };
+
   const handleSaveThresholds = async () => {
     try {
       setThresholdError(null);
       setThresholdSuccess(null);
       setIsLoadingThresholds(true);
 
-      // Validate all thresholds before saving
+      // Validate all thresholds
       for (const [metricType, values] of Object.entries(thresholds)) {
         if (values.min >= values.max) {
           setThresholdError(`${BIOMARKER_DEFAULTS[metricType].label}: Minimum must be less than maximum`);
@@ -100,7 +114,7 @@ export default function AlertThresholdsPage() {
         }
       }
 
-      // Save each threshold
+      // Save all thresholds with their active status
       const savePromises = Object.entries(thresholds).map(async ([metricType, values]) => {
         const response = await fetch('/api/patient/alert-thresholds', {
           method: 'POST',
@@ -109,6 +123,7 @@ export default function AlertThresholdsPage() {
             metricType,
             minValue: values.min,
             maxValue: values.max,
+            isActive: enabledThresholds[metricType],
           }),
         });
 
@@ -144,11 +159,8 @@ export default function AlertThresholdsPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      {/* Navbar */}
-      <Navbar />
-
       {/* Main Content */}
-      <main className="flex-1 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         <div className="p-8 max-w-4xl">
           {/* Page Header with Back Button */}
           <div className="mb-8">
@@ -172,50 +184,154 @@ export default function AlertThresholdsPage() {
             </p>
 
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {Object.entries(BIOMARKER_DEFAULTS).map(([metricType, config]) => (
-                  <div key={metricType} className="bg-slate-50 dark:bg-gray-800 p-4 rounded-lg border border-slate-200 dark:border-gray-700">
-                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
-                      {config.label}
-                    </label>
-
-                    <div className="space-y-3">
-                      <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
-                          Minimum Alert
+              {/* Default Thresholds Section */}
+              <div>
+                <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">
+                  Essential Alerts
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Object.entries(BIOMARKER_DEFAULTS)
+                    .filter(([, config]) => config.default)
+                    .map(([metricType, config]) => (
+                      <div key={metricType} className="bg-slate-50 dark:bg-gray-800 p-4 rounded-lg border border-slate-200 dark:border-gray-700">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                          {config.label}
                         </label>
-                        <input
-                          type="number"
-                          value={thresholds[metricType]?.min ?? config.min}
-                          onChange={(e) => handleThresholdChange(metricType, 'min', e.target.value)}
-                          step={config.step}
-                          disabled={isLoadingThresholds}
-                          className="w-full px-3 py-2 bg-white dark:bg-gray-700 rounded-lg text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                        />
-                      </div>
 
-                      <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
-                          Maximum Alert
-                        </label>
-                        <input
-                          type="number"
-                          value={thresholds[metricType]?.max ?? config.max}
-                          onChange={(e) => handleThresholdChange(metricType, 'max', e.target.value)}
-                          step={config.step}
-                          disabled={isLoadingThresholds}
-                          className="w-full px-3 py-2 bg-white dark:bg-gray-700 rounded-lg text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-                        />
-                      </div>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
+                              Minimum Alert
+                            </label>
+                            <input
+                              type="number"
+                              value={thresholds[metricType]?.min ?? config.min}
+                              onChange={(e) => handleThresholdChange(metricType, 'min', e.target.value)}
+                              step={config.step}
+                              disabled={isLoadingThresholds}
+                              className="w-full px-3 py-2 bg-white dark:bg-gray-700 rounded-lg text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                            />
+                          </div>
 
-                      <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900 rounded text-xs text-blue-700 dark:text-blue-200">
-                        You will receive an alert if your {config.label.toLowerCase()} falls below{' '}
-                        <span className="font-semibold">{thresholds[metricType]?.min ?? config.min}</span> or exceeds{' '}
-                        <span className="font-semibold">{thresholds[metricType]?.max ?? config.max}</span>.
+                          <div>
+                            <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
+                              Maximum Alert
+                            </label>
+                            <input
+                              type="number"
+                              value={thresholds[metricType]?.max ?? config.max}
+                              onChange={(e) => handleThresholdChange(metricType, 'max', e.target.value)}
+                              step={config.step}
+                              disabled={isLoadingThresholds}
+                              className="w-full px-3 py-2 bg-white dark:bg-gray-700 rounded-lg text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                            />
+                          </div>
+
+                          <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900 rounded text-xs text-blue-700 dark:text-blue-200">
+                            You will receive an alert if your {config.label.toLowerCase()} falls below{' '}
+                            <span className="font-semibold">{thresholds[metricType]?.min ?? config.min}</span> or exceeds{' '}
+                            <span className="font-semibold">{thresholds[metricType]?.max ?? config.max}</span>.
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Optional Thresholds Section */}
+              <div>
+                <button
+                  onClick={() => setShowAdditionalThresholds(!showAdditionalThresholds)}
+                  className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors mb-4 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
+                >
+                  <svg
+                    className={`w-5 h-5 transition-transform ${showAdditionalThresholds ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                  Additional Alerts (Optional)
+                </button>
+
+                {showAdditionalThresholds && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {Object.entries(BIOMARKER_DEFAULTS)
+                      .filter(([, config]) => !config.default)
+                      .map(([metricType, config]) => (
+                        <div key={metricType} className={`bg-slate-50 dark:bg-gray-800 p-4 rounded-lg border ${enabledThresholds[metricType] ? 'border-slate-200 dark:border-gray-700' : 'border-slate-200 dark:border-gray-700 opacity-60'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">
+                              {config.label}
+                            </label>
+                            <button
+                              onClick={() => handleToggleThreshold(metricType)}
+                              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                enabledThresholds[metricType]
+                                  ? 'bg-blue-600 dark:bg-blue-500'
+                                  : 'bg-slate-300 dark:bg-slate-600'
+                              }`}
+                            >
+                              <span
+                                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                  enabledThresholds[metricType] ? 'translate-x-6' : 'translate-x-1'
+                                }`}
+                              />
+                            </button>
+                          </div>
+
+                          {!enabledThresholds[metricType] && (
+                            <div className="p-2 mb-3 bg-slate-100 dark:bg-slate-700 rounded text-xs text-slate-600 dark:text-slate-400">
+                              Enable to configure alerts for this metric
+                            </div>
+                          )}
+
+                          <div className={`space-y-3 ${!enabledThresholds[metricType] ? 'opacity-50 pointer-events-none' : ''}`}>
+                            <div>
+                              <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
+                                Minimum Alert
+                              </label>
+                              <input
+                                type="number"
+                                value={thresholds[metricType]?.min ?? config.min}
+                                onChange={(e) => handleThresholdChange(metricType, 'min', e.target.value)}
+                                step={config.step}
+                                disabled={isLoadingThresholds || !enabledThresholds[metricType]}
+                                className="w-full px-3 py-2 bg-white dark:bg-gray-700 rounded-lg text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">
+                                Maximum Alert
+                              </label>
+                              <input
+                                type="number"
+                                value={thresholds[metricType]?.max ?? config.max}
+                                onChange={(e) => handleThresholdChange(metricType, 'max', e.target.value)}
+                                step={config.step}
+                                disabled={isLoadingThresholds || !enabledThresholds[metricType]}
+                                className="w-full px-3 py-2 bg-white dark:bg-gray-700 rounded-lg text-slate-900 dark:text-slate-100 border border-slate-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                              />
+                            </div>
+
+                            <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 rounded text-xs text-amber-700 dark:text-amber-200">
+                              {enabledThresholds[metricType] ? (
+                                <>
+                                  You will receive an alert if your {config.label.toLowerCase()} falls below{' '}
+                                  <span className="font-semibold">{thresholds[metricType]?.min ?? config.min}</span> or exceeds{' '}
+                                  <span className="font-semibold">{thresholds[metricType]?.max ?? config.max}</span>.
+                                </>
+                              ) : (
+                                'This alert is disabled and will not trigger'
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                   </div>
-                ))}
+                )}
               </div>
 
               {/* Error and Success Messages */}

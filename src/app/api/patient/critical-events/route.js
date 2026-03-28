@@ -121,3 +121,64 @@ export async function POST(request) {
     );
   }
 }
+
+// DELETE - Clear all critical events for a patient
+export async function DELETE(request) {
+  try {
+    const session = getAuthenticatedUser(request);
+    if (!session || !session.userId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const result = await prisma.critical_events.deleteMany({
+      where: {
+        patient_id: session.userId,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Deleted ${result.count} critical events`,
+      deletedCount: result.count,
+    });
+  } catch (error) {
+    console.error('Error deleting critical events:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to clear critical events' },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - Mark all unread critical events as read for a patient
+export async function PATCH(request) {
+  try {
+    const session = getAuthenticatedUser(request);
+    if (!session || !session.userId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const result = await prisma.critical_events.updateMany({
+      where: {
+        patient_id: session.userId,
+        is_acknowledged: false,
+      },
+      data: {
+        is_acknowledged: true,
+        acknowledged_at: new Date(),
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: `Marked ${result.count} critical events as read`,
+      updatedCount: result.count,
+    });
+  } catch (error) {
+    console.error('Error marking critical events as read:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to mark critical events as read' },
+      { status: 500 }
+    );
+  }
+}

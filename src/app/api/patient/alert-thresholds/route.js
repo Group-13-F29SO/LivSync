@@ -28,7 +28,6 @@ export async function GET(request) {
     const thresholds = await prisma.alert_thresholds.findMany({
       where: {
         patient_id: session.userId,
-        is_active: true,
       },
     });
 
@@ -62,7 +61,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { metricType, minValue, maxValue } = body;
+    const { metricType, minValue, maxValue, isActive } = body;
 
     if (!metricType) {
       return NextResponse.json(
@@ -98,7 +97,7 @@ export async function POST(request) {
       update: {
         min_value: parseFloat(minValue),
         max_value: parseFloat(maxValue),
-        is_active: true,
+        is_active: isActive !== undefined ? isActive : true,
         updated_at: new Date(),
       },
       create: {
@@ -106,7 +105,7 @@ export async function POST(request) {
         metric_type: metricType,
         min_value: parseFloat(minValue),
         max_value: parseFloat(maxValue),
-        is_active: true,
+        is_active: isActive !== undefined ? isActive : true,
       },
     });
 

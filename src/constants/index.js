@@ -5,6 +5,9 @@ export const API_ENDPOINTS = {
     signup: '/api/auth/signup',
     signupProvider: '/api/auth/signup/provider',
     logout: '/api/auth/logout',
+    forgotPassword: '/api/auth/forgot-password',
+    verifyResetToken: '/api/auth/verify-reset-token',
+    resetPassword: '/api/auth/reset-password',
   },
 };
 

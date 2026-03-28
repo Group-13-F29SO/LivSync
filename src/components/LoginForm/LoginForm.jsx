@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFactor = false }) {
+export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFactor = false, onForgotPassword }) {
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -71,9 +71,19 @@ export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFacto
             </div>
 
             <div>
-              <label className="block text-gray-100 dark:text-gray-200 text-sm font-medium mb-2">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-gray-100 dark:text-gray-200 text-sm font-medium">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  disabled={isLoading}
+                  className="text-yellow-300 dark:text-yellow-300 underline hover:text-yellow-200 text-xs font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Forgot Password?
+                </button>
+              </div>
               <input
                 type="password"
                 value={formData.password}
@@ -121,7 +131,7 @@ export default function LoginForm({ onSubmit, isLoading, error, requiresTwoFacto
         {!requiresTwoFactor && (
           <div className="text-center text-sm">
             <span className="text-gray-100 dark:text-gray-300">Don't have an account? </span>
-            <a href="/signup" className="text-blue-400 dark:text-blue-300 hover:underline font-medium">
+            <a href="/signup" className="text-yellow-300 dark:text-yellow-300 underline hover:text-yellow-200 font-medium">
               Sign up
             </a>
           </div>

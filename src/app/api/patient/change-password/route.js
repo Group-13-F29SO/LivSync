@@ -2,6 +2,25 @@ import bcrypt from 'bcrypt';
 import { authenticatePatient } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
+// Password validation rules
+const PASSWORD_RULES = {
+  minLength: 8,
+  upperCase: /[A-Z]/,
+  lowerCase: /[a-z]/,
+  number: /[0-9]/,
+  specialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+};
+
+function isPasswordValid(password) {
+  return (
+    password.length >= PASSWORD_RULES.minLength &&
+    PASSWORD_RULES.upperCase.test(password) &&
+    PASSWORD_RULES.lowerCase.test(password) &&
+    PASSWORD_RULES.number.test(password) &&
+    PASSWORD_RULES.specialChar.test(password)
+  );
+}
+
 export async function POST(req) {
   try {
     const { patientId, currentPassword, newPassword } = await req.json();
@@ -14,9 +33,12 @@ export async function POST(req) {
       );
     }
 
-    if (newPassword.length < 8) {
+    // Validate password complexity
+    if (!isPasswordValid(newPassword)) {
       return Response.json(
-        { error: 'Password must be at least 8 characters long' },
+        { 
+          error: 'Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character' 
+        },
         { status: 400 }
       );
     }

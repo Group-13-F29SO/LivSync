@@ -265,11 +265,10 @@ async function checkTotalMetricCount(patientId, criteria) {
  * Check daily goal completion streak
  */
 async function checkDailyGoalCompletion(patientId, criteria) {
-  // This would require tracking goal completions
-  // For now, we'll implement a basic version
-  // In a full implementation, you'd track goal progress separately
-  
-  // Get goals for this patient
+  const now = new Date();
+  const requiredDays = criteria.threshold;
+
+  // Get all active goals for this patient
   const goals = await prisma.goals.findMany({
     where: {
       patient_id: patientId,
@@ -277,22 +276,158 @@ async function checkDailyGoalCompletion(patientId, criteria) {
     },
   });
 
+  // If no goals are set, cannot complete goals
   if (goals.length === 0) {
     return false;
   }
 
-  // For each active goal, check if it was met for the required number of days
-  // This is a simplified check - a full implementation would track daily completions
-  return true; // Placeholder
+  // Get biometric data for the last N+10 days
+  const startDate = new Date(now.getTime() - (requiredDays + 10) * 24 * 60 * 60 * 1000);
+
+  const biometricData = await prisma.biometric_data.findMany({
+    where: {
+      patient_id: patientId,
+      timestamp: {
+        gte: startDate,
+        lt: now,
+      },
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
+  });
+
+  // Group biometric data by date and metric type
+  const dayGroups = {}; // { dateStr: { metric_type: [values] } }
+
+  biometricData.forEach((entry) => {
+    const date = new Date(entry.timestamp);
+    const dateStr = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    if (!dayGroups[dateStr]) {
+      dayGroups[dateStr] = {};
+    }
+    if (!dayGroups[dateStr][entry.metric_type]) {
+      dayGroups[dateStr][entry.metric_type] = [];
+    }
+    dayGroups[dateStr][entry.metric_type].push(parseFloat(entry.value));
+  });
+
+  // Check which days had ALL goals met
+  const daysWithAllGoalsMet = new Set();
+
+  Object.entries(dayGroups).forEach(([dateStr, metricData]) => {
+    let allGoalsMet = true;
+
+    // Check if each active goal was met on this day
+    for (const goal of goals) {
+      const values = metricData[goal.metric_type] || [];
+      const sum = values.reduce((a, b) => a + b, 0);
+
+      if (sum < goal.target_value) {
+        allGoalsMet = false;
+        break;
+      }
+    }
+
+    if (allGoalsMet) {
+      daysWithAllGoalsMet.add(dateStr);
+    }
+  });
+
+  // Check for consecutive days from today backwards
+  let consecutiveDays = 0;
+  let currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  for (let i = 0; i < requiredDays; i++) {
+    const dateStr = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+    if (daysWithAllGoalsMet.has(dateStr)) {
+      consecutiveDays++;
+    } else {
+      break;
+    }
+    currentDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
+  }
+
+  return consecutiveDays >= requiredDays;
 }
 
 /**
  * Check daily goal streak (specific goal type)
  */
 async function checkDailyGoalStreak(patientId, criteria) {
-  // Similar to daily goal completion but for a specific goal type
-  // This is a placeholder implementation
-  return true;
+  const now = new Date();
+  const requiredDays = criteria.days;
+  const goalType = criteria.goalType;
+
+  // Get the user's goal for this goal type
+  const goal = await prisma.goals.findFirst({
+    where: {
+      patient_id: patientId,
+      metric_type: goalType,
+      is_active: true,
+    },
+  });
+
+  // If no goal set, can't complete it
+  if (!goal) {
+    return false;
+  }
+
+  const targetValue = goal.target_value;
+
+  // Get all data for the goal type in the last N+10 days
+  const startDate = new Date(now.getTime() - (requiredDays + 10) * 24 * 60 * 60 * 1000);
+
+  const data = await prisma.biometric_data.findMany({
+    where: {
+      patient_id: patientId,
+      metric_type: goalType,
+      timestamp: {
+        gte: startDate,
+        lt: now,
+      },
+    },
+    orderBy: {
+      timestamp: 'desc',
+    },
+  });
+
+  // Group by day and sum values
+  const daysWithGoalMet = new Set();
+  const dayGroups = {};
+
+  data.forEach((entry) => {
+    const date = new Date(entry.timestamp);
+    const dateStr = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    if (!dayGroups[dateStr]) {
+      dayGroups[dateStr] = [];
+    }
+    dayGroups[dateStr].push(parseFloat(entry.value));
+  });
+
+  // Check which days met the goal
+  Object.entries(dayGroups).forEach(([dateStr, values]) => {
+    const sum = values.reduce((a, b) => a + b, 0);
+    if (sum >= targetValue) {
+      daysWithGoalMet.add(dateStr);
+    }
+  });
+
+  // Check for consecutive days from today backwards
+  let consecutiveDays = 0;
+  let currentDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  for (let i = 0; i < requiredDays; i++) {
+    const dateStr = `${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`;
+    if (daysWithGoalMet.has(dateStr)) {
+      consecutiveDays++;
+    } else {
+      break;
+    }
+    currentDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
+  }
+
+  return consecutiveDays >= requiredDays;
 }
 
 /**

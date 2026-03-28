@@ -30,6 +30,63 @@ export async function GET(req) {
     // Get the date parameter from the query string
     const { searchParams } = new URL(req.url);
     const selectedDate = searchParams.get('date');
+    const getAll = searchParams.get('getAll') === 'true';
+
+    // If getAll is true, fetch all historical data for statistics
+    if (getAll) {
+      const allHydrationData = await prisma.biometric_data.findMany({
+        where: {
+          patient_id: patientId,
+          metric_type: 'hydration'
+        },
+        orderBy: {
+          timestamp: 'asc'
+        }
+      });
+
+      if (!allHydrationData || allHydrationData.length === 0) {
+        return new Response(
+          JSON.stringify({ 
+            data: [],
+            message: 'No hydration data available',
+            historicalStats: null
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Calculate daily totals
+      const dailyTotals = {};
+      allHydrationData.forEach(item => {
+        const date = new Date(item.timestamp).toLocaleDateString();
+        if (!dailyTotals[date]) {
+          dailyTotals[date] = { total: 0, count: 0, entries: [] };
+        }
+        dailyTotals[date].total += Number(item.value);
+        dailyTotals[date].count += 1;
+        dailyTotals[date].entries.push(Number(item.value));
+      });
+
+      // Calculate statistics
+      const allDailyMaxes = Object.values(dailyTotals).map(d => Math.max(...d.entries));
+      const allEntryValues = Object.values(dailyTotals).flatMap(d => d.entries);
+      
+      const overallAverage = (allDailyMaxes.reduce((a, b) => a + b, 0) / allDailyMaxes.length).toFixed(1);
+      const bestDay = Math.max(...allEntryValues);
+      const totalDays = allDailyMaxes.length;
+
+      return new Response(
+        JSON.stringify({
+          historicalStats: {
+            overallAverage: Number(overallAverage),
+            bestDay,
+            totalDays,
+            totalEntries: allHydrationData.length
+          }
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
 
     // If no date is provided, return no data
     if (!selectedDate) {

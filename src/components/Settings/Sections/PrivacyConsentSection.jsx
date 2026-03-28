@@ -12,6 +12,7 @@ export default function PrivacyConsentSection({
   onAnonymousAnalyticsToggle,
   privacyError,
   onDeleteClick,
+  onDeleteDataClick,
 }) {
   return (
     <div className="mb-8">
@@ -41,15 +42,30 @@ export default function PrivacyConsentSection({
           {/* Divider */}
           <div className="border-t border-slate-200 dark:border-gray-700 my-6"></div>
 
-          {/* Delete Account */}
+          {/* Danger Zone */}
           <div>
-            <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-2">Danger Zone</h4>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-              Permanently delete your account and all associated data
-            </p>
-            <DangerButton onClick={onDeleteClick}>
-              Delete Account
-            </DangerButton>
+            <h4 className="font-bold text-slate-800 dark:text-slate-200 mb-4">Danger Zone</h4>
+            <div className="space-y-3">
+              {/* Delete All Data Button */}
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                  Delete all your health data (but keep your account)
+                </p>
+                <DangerButton onClick={onDeleteDataClick}>
+                  Delete All My Data
+                </DangerButton>
+              </div>
+
+              {/* Delete Account Button */}
+              <div>
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                  Permanently delete your account and all associated data
+                </p>
+                <DangerButton onClick={onDeleteClick}>
+                  Delete Account
+                </DangerButton>
+              </div>
+            </div>
           </div>
         </div>
       </SettingsSection>

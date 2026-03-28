@@ -41,13 +41,24 @@ export async function GET(req) {
     endDate.setHours(23, 59, 59, 999);
 
     switch (period) {
-      case '7days':
-        startDate.setDate(startDate.getDate() - 6); // Include today + 6 previous days
+      case 'thisWeek':
+        // Get Monday of current week
+        const dayOfWeek = startDate.getDay();
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday is 0
+        startDate.setDate(startDate.getDate() - daysToMonday);
         startDate.setHours(0, 0, 0, 0);
+        // Set end date to Sunday of current week
+        endDate.setDate(startDate.getDate() + 6);
+        endDate.setHours(23, 59, 59, 999);
         break;
-      case '30days':
-        startDate.setDate(startDate.getDate() - 29);
+      case 'thisMonth':
+        // Get first day of current month
+        startDate.setDate(1);
         startDate.setHours(0, 0, 0, 0);
+        // Set end date to last day of current month
+        endDate.setMonth(endDate.getMonth() + 1);
+        endDate.setDate(0);
+        endDate.setHours(23, 59, 59, 999);
         break;
 case 'all':
   if (startDateParam && endDateParam) {
@@ -261,8 +272,8 @@ case 'all':
         });
     }
 
-    // For range bar view, fill in missing dates (7days and all periods)
-    if (useRangeBar && (period === '7days' || period === 'all')) {
+    // For range bar view, fill in missing dates (thisWeek, thisMonth and all periods)
+    if (useRangeBar && (period === 'thisWeek' || period === 'thisMonth' || period === 'all')) {
       const allDays = [];
       const currentDate = new Date(startDate);
       

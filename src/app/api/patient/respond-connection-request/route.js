@@ -17,6 +17,14 @@ export async function POST(request) {
     // Get the connection request
     const connectionRequest = await prisma.connection_requests.findUnique({
       where: { id: requestId },
+      include: {
+        patients: {
+          select: {
+            first_name: true,
+            last_name: true,
+          },
+        },
+      },
     });
 
     if (!connectionRequest) {
@@ -64,6 +72,18 @@ export async function POST(request) {
         },
       });
 
+      // Create a notification for the provider
+      const patientName = `${connectionRequest.patients.first_name} ${connectionRequest.patients.last_name}`;
+      await prisma.notifications.create({
+        data: {
+          provider_id: connectionRequest.provider_id,
+          title: 'Connection Accepted',
+          message: `${patientName} accepted your connection request`,
+          notification_type: 'connection_accepted',
+          priority: 'high',
+        },
+      });
+
       return NextResponse.json(
         {
           message: 'Connection request accepted successfully',
@@ -73,10 +93,12 @@ export async function POST(request) {
       );
     } else {
       // Reject - just update status
-      const updatedRequest = await prisma.connection_requests.update({
-        where: { id: requestId },
-        data: { status: 'rejected' },
-      });
+      const updatedRequest = await prisma.connection_requests.update(
+        {
+          where: { id: requestId },
+          data: { status: 'rejected' },
+        }
+      );
 
       return NextResponse.json(
         {

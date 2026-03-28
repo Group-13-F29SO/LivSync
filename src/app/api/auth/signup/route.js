@@ -2,6 +2,25 @@ import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+// Password validation rules
+const PASSWORD_RULES = {
+  minLength: 8,
+  upperCase: /[A-Z]/,
+  lowerCase: /[a-z]/,
+  number: /[0-9]/,
+  specialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+};
+
+function isPasswordValid(password) {
+  return (
+    password.length >= PASSWORD_RULES.minLength &&
+    PASSWORD_RULES.upperCase.test(password) &&
+    PASSWORD_RULES.lowerCase.test(password) &&
+    PASSWORD_RULES.number.test(password) &&
+    PASSWORD_RULES.specialChar.test(password)
+  );
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -15,12 +34,23 @@ export async function POST(request) {
       biologicalSex,
       height,
       weight,
+      connectedDevice,
     } = body;
 
     // Validation
     if (!email || !username || !password || !firstName || !lastName) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate password complexity
+    if (!isPasswordValid(password)) {
+      return NextResponse.json(
+        { 
+          error: 'Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character' 
+        },
         { status: 400 }
       );
     }
@@ -68,6 +98,26 @@ export async function POST(request) {
         patient_profiles: true,
       },
     });
+
+    // Add connected device if provided
+    if (connectedDevice && connectedDevice.name) {
+      try {
+        await prisma.devices.create({
+          data: {
+            patient_id: newUser.id,
+            device_name: connectedDevice.name || 'Connected Device',
+            device_type: connectedDevice.name,
+            device_model: null,
+            battery_level: 100,
+            is_active: true,
+            paired_at: new Date(),
+          },
+        });
+      } catch (deviceError) {
+        console.error('Error adding device during signup:', deviceError);
+        // Don't fail signup if device creation fails
+      }
+    }
 
     return NextResponse.json(
       {

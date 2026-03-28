@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-export default function ProviderLoginForm({ onSubmit, isLoading, error }) {
+export default function ProviderLoginForm({ onSubmit, isLoading, error, onForgotPassword }) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -48,9 +48,21 @@ export default function ProviderLoginForm({ onSubmit, isLoading, error }) {
         </div>
 
         <div>
-          <label className="block text-gray-100 dark:text-gray-200 text-sm font-medium mb-2">
-            Password
-          </label>
+          <div className="flex justify-between items-center mb-2">
+            <label className="block text-gray-100 dark:text-gray-200 text-sm font-medium">
+              Password
+            </label>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onForgotPassword();
+              }}
+              className="text-yellow-300 dark:text-yellow-300 underline hover:text-yellow-200 text-xs font-medium"
+            >
+              Forgot Password?
+            </a>
+          </div>
           <input
             type="password"
             value={formData.password}
@@ -71,7 +83,7 @@ export default function ProviderLoginForm({ onSubmit, isLoading, error }) {
 
         <div className="text-center text-sm">
           <span className="text-gray-100 dark:text-gray-300">Don't have an account? </span>
-          <a href="/signup" className="text-blue-400 dark:text-blue-300 hover:underline font-medium">
+          <a href="/signup" className="text-yellow-300 dark:text-yellow-300 underline hover:text-yellow-200 font-medium">
             Sign up
           </a>
         </div>

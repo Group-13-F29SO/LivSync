@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Footprints, Heart, Flame, Droplets, Moon, Activity, LogOut } from 'lucide-react';
-import Navbar from '@/components/Navbar/Navbar';
+import { Footprints, Heart, Flame, Droplets, Moon, Activity } from 'lucide-react';
 import DashboardCard from '@/components/DashboardCard/DashboardCard';
 import StreakCard from '@/components/Dashboard/StreakCard';
 import SummaryCard from '@/components/Dashboard/SummaryCard';
@@ -215,10 +214,6 @@ export default function DashboardPage() {
     }
   }, [isLoading, user]);
 
-  const handleLogout = () => {
-    logout();
-  };
-
   const handleSyncComplete = (syncResult) => {
     setLastSyncTime(getRelativeSyncTime(new Date()));
 
@@ -264,8 +259,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
       {/* Badge Notification */}
       <BadgeNotification
         isVisible={currentBadge !== null}
@@ -285,7 +278,7 @@ export default function DashboardPage() {
         onClose={() => setCurrentAlert(null)}
       />
 
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50 pb-32">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="inline-block text-3xl font-bold bg-gradient-to-br from-blue-600 via-purple-500 to-pink-400 bg-clip-text text-transparent">
@@ -305,13 +298,6 @@ export default function DashboardPage() {
           <div className="flex gap-2 items-center flex-col justify-end h-24">
             <div className="flex gap-2 items-center ml-auto">
               <ConnectionRequestsNotification patientId={user?.id} />
-              <button
-                onClick={handleLogout}
-                className="p-2 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                title="Logout"
-              >
-                <LogOut className="w-5 h-5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400" />
-              </button>
             </div>
             
             {/* Widget Manager - Moved to header */}
@@ -606,7 +592,7 @@ export default function DashboardPage() {
 
           if (widget.id === 'summary') {
             return (
-              <div key={widget.id} className="mt-6">
+              <div key={widget.id} className="mt-6 cursor-pointer" onClick={() => router.push('/dashboard/weekly-summary')}>
                 <DraggableWidget
                   widgetId={widget.id}
                   isEditMode={isEditMode}

@@ -2,6 +2,25 @@ import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
+// Password validation rules
+const PASSWORD_RULES = {
+  minLength: 8,
+  upperCase: /[A-Z]/,
+  lowerCase: /[a-z]/,
+  number: /[0-9]/,
+  specialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
+};
+
+function isPasswordValid(password) {
+  return (
+    password.length >= PASSWORD_RULES.minLength &&
+    PASSWORD_RULES.upperCase.test(password) &&
+    PASSWORD_RULES.lowerCase.test(password) &&
+    PASSWORD_RULES.number.test(password) &&
+    PASSWORD_RULES.specialChar.test(password)
+  );
+}
+
 export async function POST(request) {
   try {
     const body = await request.json();
@@ -19,6 +38,16 @@ export async function POST(request) {
     if (!email || !password || !firstName || !lastName || !specialty || !medicalLicenseNumber) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    // Validate password complexity
+    if (!isPasswordValid(password)) {
+      return NextResponse.json(
+        { 
+          error: 'Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character' 
+        },
         { status: 400 }
       );
     }

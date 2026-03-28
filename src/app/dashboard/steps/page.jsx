@@ -2,12 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import PeriodSelector from '@/components/HeartRate/PeriodSelector';
 import StepsChart from '@/components/Dashboard/Steps/StepsChart';
-import StepsDataManagement from '@/components/Dashboard/Steps/StepsDataManagement';
-import StepsInfo from '@/components/Dashboard/Steps/StepsInfo';
 import StepsStats from '@/components/Dashboard/Steps/StepsStats';
 import StepsDatePicker from '@/components/Dashboard/Steps/StepsDatePicker';
 
@@ -95,10 +92,8 @@ export default function StepsChartPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
       {/* Main Content Area */}
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 p-8 overflow-auto bg-blue-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div>
@@ -129,14 +124,6 @@ export default function StepsChartPage() {
           />
         )}
 
-        {/* Data Management Section */}
-        {period === 'today' && (
-          <StepsDataManagement 
-            selectedDate={selectedDate}
-            onDataGenerated={() => setRefreshKey(prev => prev + 1)}
-          />
-        )}
-
         {/* Statistics Cards */}
         {stats && (
           <StepsStats stats={stats} period={period} goal={GOAL} />
@@ -149,9 +136,6 @@ export default function StepsChartPage() {
           error={error}
           period={period}
         />
-
-        {/* Additional Info */}
-        <StepsInfo period={period} />
       </main>
     </div>
   );

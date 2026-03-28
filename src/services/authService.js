@@ -61,3 +61,48 @@ export const logoutUser = async () => {
 
   return response.json();
 };
+
+export const forgotPassword = async (email, userType = 'patient') => {
+  const response = await fetch(API_ENDPOINTS.auth.forgotPassword, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, userType }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Failed to send password reset email');
+  }
+
+  return response.json();
+};
+
+export const verifyResetToken = async (email, resetCode, userType = 'patient') => {
+  const response = await fetch(API_ENDPOINTS.auth.verifyResetToken, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, resetCode, userType }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Invalid or expired reset code');
+  }
+
+  return response.json();
+};
+
+export const resetPassword = async (email, resetCode, newPassword, confirmPassword, userType = 'patient') => {
+  const response = await fetch(API_ENDPOINTS.auth.resetPassword, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, resetCode, newPassword, confirmPassword, userType }),
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error || 'Failed to reset password');
+  }
+
+  return response.json();
+};

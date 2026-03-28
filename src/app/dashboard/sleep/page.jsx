@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar/Navbar';
 import { useAuth } from '@/hooks/useAuth';
 import StatCard from '@/components/Sleep/StatCard';
 import InfoCard from '@/components/Sleep/InfoCard';
@@ -25,8 +24,6 @@ export default function SleepChartPage() {
   const [stats, setStats] = useState(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [actionLoading, setActionLoading] = useState(false);
-  const [actionMessage, setActionMessage] = useState(null);
 
   const RECOMMENDED_MIN = 7;
   const RECOMMENDED_MAX = 9;
@@ -78,12 +75,15 @@ export default function SleepChartPage() {
   const getRadialData = () => {
     if (!stats) return [];
     
-    const progress = stats.currentProgress || 0;
+    // Use user's goal if set, otherwise default to 8 hours (ideal sleep time)
+    const goal = stats.goal || 8;
+    const lastNightSleep = stats.latest || 0;
+    const progress = (lastNightSleep / goal) * 100;
     
     return [
       {
         name: 'Progress',
-        value: progress,
+        value: Math.min(progress, 100),
         fill: progress >= 100 ? '#10b981' : progress >= 85 ? '#3b82f6' : progress >= 70 ? '#f59e0b' : '#ef4444'
       }
     ];
@@ -104,73 +104,7 @@ export default function SleepChartPage() {
     return getSleepQuality(value).color;
   };
 
-  // Handle delete sleep data
-  const handleDeleteData = async () => {
-    if (!confirm(`Are you sure you want to delete sleep data for ${selectedDate}? This action cannot be undone.`)) {
-      return;
-    }
 
-    try {
-      setActionLoading(true);
-      setActionMessage(null);
-      
-      const response = await fetch('/api/biometrics/sleep/delete', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: selectedDate })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete sleep data');
-      }
-
-      const result = await response.json();
-      setActionMessage({ type: 'success', text: result.message });
-      
-      // Refresh the data
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const refreshResponse = await fetch(`/api/biometrics/sleep?date=${selectedDate}`);
-      const refreshResult = await refreshResponse.json();
-      setChartData(refreshResult.data);
-      setStats(refreshResult.stats);
-    } catch (err) {
-      setActionMessage({ type: 'error', text: err.message });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Handle generate sleep data
-  const handleGenerateData = async () => {
-    try {
-      setActionLoading(true);
-      setActionMessage(null);
-      
-      const response = await fetch('/api/biometrics/sleep/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: selectedDate })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to generate sleep data');
-      }
-
-      const result = await response.json();
-      setActionMessage({ type: 'success', text: result.message });
-      
-      // Refresh the data
-      await new Promise(resolve => setTimeout(resolve, 500));
-      const refreshResponse = await fetch(`/api/biometrics/sleep?date=${selectedDate}`);
-      const refreshResult = await refreshResponse.json();
-      setChartData(refreshResult.data);
-      setStats(refreshResult.stats);
-    } catch (err) {
-      setActionMessage({ type: 'error', text: err.message });
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   if (isLoading || !user) {
     return (
@@ -182,10 +116,8 @@ export default function SleepChartPage() {
 
   return (
     <div className="min-h-screen flex bg-white dark:bg-gray-950">
-      <Navbar />
-
       {/* Main Content Area */}
-      <main className="flex-1 p-8 ml-20 overflow-auto bg-purple-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
+      <main className="flex-1 p-8 overflow-auto bg-purple-50 dark:bg-gray-950 text-gray-900 dark:text-gray-50">
         {/* Header */}
         <div className="flex justify-between items-start mb-8">
           <div>
@@ -217,33 +149,8 @@ export default function SleepChartPage() {
               max={new Date().toISOString().split('T')[0]}
               className="px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
-            <button
-              onClick={handleDeleteData}
-              disabled={actionLoading}
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 disabled:bg-red-300 dark:bg-red-600 dark:hover:bg-red-700 dark:disabled:bg-red-800 text-white font-medium rounded-lg transition-colors"
-            >
-              {actionLoading ? 'Processing...' : 'Delete Data'}
-            </button>
-            <button
-              onClick={handleGenerateData}
-              disabled={actionLoading}
-              className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-green-300 dark:bg-green-600 dark:hover:bg-green-700 dark:disabled:bg-green-800 text-white font-medium rounded-lg transition-colors"
-            >
-              {actionLoading ? 'Processing...' : 'Generate Data'}
-            </button>
           </div>
         </div>
-
-        {/* Action Message */}
-        {actionMessage && (
-          <div className={`mb-6 p-4 rounded-lg ${
-            actionMessage.type === 'success' 
-              ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400' 
-              : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
-          }`}>
-            {actionMessage.text}
-          </div>
-        )}
 
         {/* Statistics Cards */}
         {stats && stats.latest > 0 && (
@@ -300,17 +207,17 @@ export default function SleepChartPage() {
 
         
 
-          {/* Sleep Tips */}
+          {/* Sleep Quality Guide */}
           <InfoCard
             icon="😴"
-            title="Sleep Tips"
+            title="Ideal Sleep Hours & Quality"
             bgColor="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800"
             textColor="text-purple-900 dark:text-purple-200"
             items={[
-              { label: '🕐 Consistent Schedule', description: 'Go to bed and wake up at the same time daily' },
-              { label: '🌡️ Cool Environment', description: 'Keep bedroom temperature between 60-67°F' },
-              { label: '📱 Limit Screen Time', description: 'Avoid screens 1 hour before bedtime' },
-              { label: '☕ Avoid Caffeine', description: 'No caffeine 6 hours before sleep' }
+              { label: '✅ Optimal (7-9 hours)', description: 'Ideal sleep range for most adults' },
+              { label: '🔴 Bad (Below 7 hours)', description: 'Insufficient sleep - impacts health and performance' },
+              { label: '🔵 Extended (9-10 hours)', description: 'Above ideal range - may indicate need for rest' },
+              { label: '⚠️ Critical (Below 5 hours)', description: 'Severely insufficient - prioritize better sleep' }
             ]}
           />
         </div>
@@ -323,34 +230,7 @@ export default function SleepChartPage() {
           />
         </div>
 
-        {/* Sleep Quality Information */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <InfoCard
-            icon="💚"
-            title="Sleep Benefits"
-            bgColor="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800"
-            textColor="text-green-900 dark:text-green-200"
-            items={[
-              { label: 'Memory & Learning', description: 'Consolidates memories and improves focus' },
-              { label: 'Physical Health', description: 'Repairs tissues and strengthens immune system' },
-              { label: 'Emotional Balance', description: 'Regulates mood and reduces stress' },
-              { label: 'Metabolism', description: 'Helps maintain healthy weight and blood sugar' }
-            ]}
-          />
-
-          <InfoCard
-            icon="📊"
-            title="Sleep Guidelines"
-            bgColor="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-200 dark:border-indigo-800"
-            textColor="text-indigo-900 dark:text-indigo-200"
-            items={[
-              { label: 'Adults (18-64)', description: '7-9 hours recommended per night' },
-              { label: 'Quality matters', description: 'Uninterrupted sleep is more restorative' },
-              { label: 'Sleep cycles', description: 'About 90 minutes per cycle; 5-6 cycles optimal' },
-              { label: 'Individual needs', description: 'Some need more or less than average' }
-            ]}
-          />
-        </div>
+        
       </main>
     </div>
   );
