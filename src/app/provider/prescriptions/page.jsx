@@ -201,7 +201,7 @@ export default function PrescriptionsPage() {
         <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-indigo-100 dark:border-indigo-900/30">
           <div className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+              <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                 <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
                 Filter by Patient
               </label>

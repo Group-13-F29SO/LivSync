@@ -2,17 +2,6 @@ import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// Define thresholds for critical events
-const THRESHOLDS = {
-  heart_rate: {
-    critical: 140, // > 140 bpm is critical
-  },
-  blood_glucose: {
-    critical_high: 180, // > 180 mg/dL is high
-    critical_low: 70,   // < 70 mg/dL is critical
-  },
-};
-
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -71,46 +60,41 @@ export async function GET(request) {
       return NextResponse.json({
         critical: 0,
         warnings: 0,
+        criticalPatients: 0,
       });
     }
 
-    // Get biometric data from the last 24 hours for all patients
+    // Get unread critical events from the last 24 hours for all patients (from provider perspective)
     const last24HoursDate = new Date();
     last24HoursDate.setHours(last24HoursDate.getHours() - 24);
 
-    const biometricData = await prisma.biometric_data.findMany({
+    const unreadCriticalEvents = await prisma.critical_events.findMany({
       where: {
         patient_id: {
           in: patientIds,
         },
-        timestamp: {
+        provider_acknowledged: false,
+        created_at: {
           gte: last24HoursDate,
         },
       },
     });
 
-    // Count critical events (individual readings), patients with critical events, and patients with warnings
+    // Count events by severity
     let criticalCount = 0;
     let warningCount = 0;
     const patientsWithCritical = new Set();
     const patientsWithWarnings = new Set();
 
-    for (const data of biometricData) {
-      const value = parseFloat(data.value);
-
-      if (data.metric_type === 'heart_rate') {
-        if (value > THRESHOLDS.heart_rate.critical) {
-          criticalCount++;
-          patientsWithCritical.add(data.patient_id);
-        }
-      } else if (data.metric_type === 'blood_glucose') {
-        if (value > THRESHOLDS.blood_glucose.critical_high) {
-          warningCount++;
-          patientsWithWarnings.add(data.patient_id);
-        } else if (value < THRESHOLDS.blood_glucose.critical_low) {
-          criticalCount++;
-          patientsWithCritical.add(data.patient_id);
-        }
+    for (const event of unreadCriticalEvents) {
+      if (event.metric_type === 'heart_rate' || event.threshold_type === 'low') {
+        // Heart rate and low blood glucose are critical
+        criticalCount++;
+        patientsWithCritical.add(event.patient_id);
+      } else if (event.metric_type === 'blood_glucose' && event.threshold_type === 'high') {
+        // High blood glucose is a warning
+        warningCount++;
+        patientsWithWarnings.add(event.patient_id);
       }
     }
 
@@ -118,6 +102,7 @@ export async function GET(request) {
       critical: criticalCount,
       criticalPatients: patientsWithCritical.size,
       warnings: warningCount,
+      warningPatients: patientsWithWarnings.size,
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

@@ -187,7 +187,7 @@ export default function PrescriptionForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Patient Selection */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
               Patient *
             </label>
@@ -304,7 +304,7 @@ export default function PrescriptionForm({
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
                         Medicine Name *
                       </label>
@@ -320,7 +320,7 @@ export default function PrescriptionForm({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
                         Dosage *
                       </label>
@@ -339,7 +339,7 @@ export default function PrescriptionForm({
                     </div>
 
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                      <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
                         <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
                         Frequency *
                       </label>
@@ -390,7 +390,7 @@ export default function PrescriptionForm({
 
           {/* General Notes */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
               General Notes
             </label>
@@ -406,7 +406,7 @@ export default function PrescriptionForm({
 
           {/* Expiry Date */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+            <label className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
               <span className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
               Prescription Expiry Date
             </label>
