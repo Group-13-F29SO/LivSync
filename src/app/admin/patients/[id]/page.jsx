@@ -2,19 +2,48 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { AlertCircle, Mail, User, Cake, Users } from 'lucide-react';
+import DetailPageHeader from '@/components/Admin/DetailPageHeader';
+import InfoCardsGrid from '@/components/Admin/InfoCardsGrid';
+import InfoCard from '@/components/Admin/InfoCard';
+import BiometricsTestingTool from '@/components/Admin/BiometricsTestingTool';
 
 export default function PatientDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const patientId = params.id;
+
   const [patient, setPatient] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // This will be implemented with backend API later
-    // For now, just showing a placeholder
-    setIsLoading(false);
-  }, [params.id]);
+    fetchPatientDetails();
+  }, [patientId]);
+
+  const fetchPatientDetails = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/admin/patients/${patientId}`);
+
+      if (response.status === 401) {
+        router.push('/admin/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch patient details');
+      }
+
+      const data = await response.json();
+      setPatient(data.patient);
+    } catch (err) {
+      setError('Failed to load patient details. Please try again.');
+      console.error('Error fetching patient:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -27,42 +56,73 @@ export default function PatientDetailPage() {
     );
   }
 
+  if (!patient) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <DetailPageHeader title="Patient Not Found" subtitle="Go back and try again" icon={User} gradient={false} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-gray-400">Patient not found</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <header className="bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center">
-            <button
-              onClick={() => router.push('/admin/dashboard')}
-              className="mr-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Patient Details
-            </h1>
-          </div>
-        </div>
-      </header>
+      {/* Header */}
+      <DetailPageHeader
+        title={`${patient.firstName} ${patient.lastName}`}
+        subtitle="Patient Details & Settings"
+        icon={User}
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-8 border border-gray-200 dark:border-gray-800">
-          <div className="text-center">
-            <div className="inline-block p-4 bg-blue-100 dark:bg-blue-900 rounded-full mb-4">
-              <svg className="w-12 h-12 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28">
+        {error && (
+          <div className="mb-6 p-4 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              Patient ID: {params.id}
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Detailed view will be implemented with backend integration
-            </p>
           </div>
+        )}
+
+        {/* Patient Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Personal Information Card */}
+          <InfoCardsGrid title="Personal Information" icon={User} color="blue">
+            <InfoCard label="Email" value={patient.email} icon={Mail} color="blue" />
+            <InfoCard label="Username" value={`@${patient.username || 'N/A'}`} color="blue" />
+            <InfoCard
+              label="Date of Birth"
+              value={patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'}
+              icon={Cake}
+              color="blue"
+            />
+            <InfoCard label="Gender" value={patient.gender ? patient.gender.charAt(0).toUpperCase() + patient.gender.slice(1) : 'N/A'} color="blue" />
+          </InfoCardsGrid>
+
+          {/* Account Information Card */}
+          <InfoCardsGrid title="Account Information" icon={Users} color="purple">
+            <InfoCard label="Account Status" value="Active" color="purple" />
+            <InfoCard
+              label="Joined Date"
+              value={new Date(patient.createdAt).toLocaleDateString()}
+              color="purple"
+            />
+            <InfoCard label="Provider Consent" value={patient.providerConsentStatus || 'N/A'} color="purple" />
+            <InfoCard
+              label="Last Sync"
+              value={patient.lastSync ? new Date(patient.lastSync).toLocaleDateString() : 'Never'}
+              color="purple"
+            />
+          </InfoCardsGrid>
         </div>
+
+        {/* Biometrics Testing Tool */}
+        <BiometricsTestingTool patientId={patientId} />
       </main>
     </div>
   );

@@ -92,16 +92,16 @@ export default function AdminArticlesPage() {
   };
 
   return (
-    <div className="p-8 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950 min-h-screen">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+      {/* Header */}
+      <header className="bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Article Management
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Create, edit, and manage all articles in the system
               </p>
             </div>
@@ -112,54 +112,56 @@ export default function AdminArticlesPage() {
               + New Article
             </Link>
           </div>
+        </div>
+      </header>
 
-          {/* Search and Filter */}
-          <div className="flex flex-col gap-4 md:flex-row md:gap-4">
-            <input
-              type="text"
-              placeholder="Search articles by title or content..."
-              value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <select
-              value={selectedCategory}
-              onChange={(e) => handleCategoryFilter(e.target.value)}
-              className="px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Categories</option>
-              {CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>
-                  {cat.charAt(0).toUpperCase() + cat.slice(1).replace('-', ' ')}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28">
+        {/* Search and Filter */}
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:gap-4">
+          <input
+            type="text"
+            placeholder="Search articles by title or content..."
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="flex-1 px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <select
+            value={selectedCategory}
+            onChange={(e) => handleCategoryFilter(e.target.value)}
+            className="px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Categories</option>
+            {CATEGORIES.map(cat => (
+              <option key={cat} value={cat}>
+                {cat.charAt(0).toUpperCase() + cat.slice(1).replace('-', ' ')}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg">
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="mb-6 p-4 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg">
+          <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+        </div>
+      )}
 
-        {/* Loading State */}
-        {isLoading ? (
-          <div className="text-center py-12">
-            <p className="text-gray-600 dark:text-gray-400">Loading articles...</p>
-          </div>
-        ) : articles.length === 0 ? (
-          <div className="text-center py-12 bg-white dark:bg-gray-900 rounded-lg">
-            <p className="text-gray-600 dark:text-gray-400 mb-4">No articles found</p>
-            <Link
-              href="/admin/articles/new"
-              className="text-blue-600 hover:text-blue-700 font-semibold"
-            >
-              Create the first article
-            </Link>
-          </div>
-        ) : (
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mb-2"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading articles...</p>
+        </div>
+      ) : articles.length === 0 ? (
+        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-12 text-center border border-gray-200 dark:border-gray-800">
+          <p className="text-gray-600 dark:text-gray-400 mb-4">No articles found</p>
+          <Link
+            href="/admin/articles/new"
+            className="text-blue-600 hover:text-blue-700 font-semibold"
+          >
+            Create the first article
+          </Link>
+        </div>
+      ) : (
           <>
             {/* Articles Table */}
             <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg overflow-hidden">
@@ -265,7 +267,7 @@ export default function AdminArticlesPage() {
             )}
           </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

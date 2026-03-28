@@ -1,11 +1,17 @@
 import bcrypt from 'bcrypt';
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { getIpFromRequest, getUserAgentFromRequest } from '@/lib/securityLogService';
+import { trackFailedLoginAttempt, isAccountLocked, resetFailedLoginAttempts } from '@/lib/auth';
 
 export async function POST(request) {
   try {
     const body = await request.json();
     const { username, password, twoFactorCode } = body;
+
+    // Extract request info for logging
+    const ipAddress = getIpFromRequest(request);
+    const userAgent = getUserAgentFromRequest(request);
 
     // Validation
     if (!username || !password) {
@@ -15,12 +21,33 @@ export async function POST(request) {
       );
     }
 
+    // Check if account is locked
+    if (isAccountLocked(username)) {
+      await prisma.security_logs.create({
+        data: {
+          event_type: 'account_locked',
+          user_email: username,
+          user_type: 'patient',
+          ip_address: ipAddress,
+          user_agent: userAgent,
+          message: 'Patient account locked due to multiple failed login attempts',
+          severity: 'critical',
+        },
+      });
+
+      return NextResponse.json(
+        { error: 'Account locked due to multiple failed login attempts. Try again later.' },
+        { status: 429 }
+      );
+    }
+
     // Find user by username
     const user = await prisma.patients.findUnique({
       where: { username },
     });
 
     if (!user) {
+      trackFailedLoginAttempt(username);
       return NextResponse.json(
         { error: 'Invalid username or password' },
         { status: 401 }
@@ -31,6 +58,20 @@ export async function POST(request) {
     const passwordValid = await bcrypt.compare(password, user.password_hash);
 
     if (!passwordValid) {
+      const attemptCount = trackFailedLoginAttempt(username);
+
+      await prisma.security_logs.create({
+        data: {
+          event_type: 'login_failed',
+          user_email: user.email,
+          user_type: 'patient',
+          ip_address: ipAddress,
+          user_agent: userAgent,
+          message: `Failed login attempt (Attempt ${attemptCount}/${3})`,
+          severity: attemptCount >= 3 ? 'critical' : 'warning',
+        },
+      });
+
       return NextResponse.json(
         { error: 'Invalid username or password' },
         { status: 401 }
@@ -81,6 +122,22 @@ export async function POST(request) {
         );
       }
     }
+
+    // Reset failed attempts on successful login
+    resetFailedLoginAttempts(username);
+
+    // Log successful login
+    await prisma.security_logs.create({
+      data: {
+        event_type: 'login_success',
+        user_email: user.email,
+        user_type: 'patient',
+        ip_address: ipAddress,
+        user_agent: userAgent,
+        message: `Patient user ${user.email} logged in successfully`,
+        severity: 'info',
+      },
+    });
 
     // Login successful - return user data (without password)
     const response = NextResponse.json(

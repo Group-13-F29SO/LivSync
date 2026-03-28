@@ -2,19 +2,48 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { AlertCircle, Stethoscope, Mail, Building2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import DetailPageHeader from '@/components/Admin/DetailPageHeader';
+import InfoCardsGrid from '@/components/Admin/InfoCardsGrid';
+import InfoCard from '@/components/Admin/InfoCard';
+import ConnectedPatientsList from '@/components/Admin/ConnectedPatientsList';
 
 export default function ProviderDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const providerId = params.id;
+
   const [provider, setProvider] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    // This will be implemented with backend API later
-    // For now, just showing a placeholder
-    setIsLoading(false);
-  }, [params.id]);
+    fetchProviderDetails();
+  }, [providerId]);
+
+  const fetchProviderDetails = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/admin/providers/${providerId}`);
+
+      if (response.status === 401) {
+        router.push('/admin/login');
+        return;
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch provider details');
+      }
+
+      const data = await response.json();
+      setProvider(data.provider);
+    } catch (err) {
+      setError('Failed to load provider details. Please try again.');
+      console.error('Error fetching provider:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -27,42 +56,67 @@ export default function ProviderDetailPage() {
     );
   }
 
+  if (!provider) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+        <DetailPageHeader title="Provider Not Found" subtitle="Go back and try again" icon={Stethoscope} gradient={false} />
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-gray-400">Provider not found</p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <header className="bg-white dark:bg-gray-900 shadow-md border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center">
-            <button
-              onClick={() => router.push('/admin/dashboard')}
-              className="mr-4 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <svg className="w-6 h-6 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-              Healthcare Provider Details
-            </h1>
-          </div>
-        </div>
-      </header>
+      {/* Header */}
+      <DetailPageHeader
+        title={`${provider.firstName} ${provider.lastName}`}
+        subtitle="Healthcare Provider Details"
+        icon={Stethoscope}
+      />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-8 border border-gray-200 dark:border-gray-800">
-          <div className="text-center">
-            <div className="inline-block p-4 bg-purple-100 dark:bg-purple-900 rounded-full mb-4">
-              <svg className="w-12 h-12 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-28">
+        {error && (
+          <div className="mb-6 p-4 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-              Provider ID: {params.id}
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              Detailed view will be implemented with backend integration
-            </p>
           </div>
+        )}
+
+        {/* Provider Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Professional Information Card */}
+          <InfoCardsGrid title="Professional Information" icon={Stethoscope} color="blue">
+            <InfoCard label="Specialty" value={provider.specialty || 'N/A'} color="blue" />
+            <InfoCard label="Email" value={provider.email} icon={Mail} color="blue" />
+            <InfoCard
+              label="Verification Status"
+              value={provider.isVerified ? 'Verified' : 'Pending Approval'}
+              icon={provider.isVerified ? CheckCircle2 : AlertTriangle}
+              color="blue"
+            />
+          </InfoCardsGrid>
+
+          {/* Account Information Card */}
+          <InfoCardsGrid title="Account Information" icon={Building2} color="purple">
+            <InfoCard label="Account Status" value="Active" color="purple" />
+            <InfoCard label="Joined Date" value={new Date(provider.createdAt).toLocaleDateString()} color="purple" />
+            <InfoCard
+              label="Connected Patients"
+              value={`${provider.patientCount} patient${provider.patientCount !== 1 ? 's' : ''}`}
+              color="purple"
+            />
+          </InfoCardsGrid>
         </div>
+
+        {/* Connected Patients Section */}
+        <ConnectedPatientsList patients={provider.patients} patientCount={provider.patientCount} />
       </main>
     </div>
   );

@@ -36,35 +36,6 @@ export default function CriticalEventsWidget() {
     router.push('/critical-events');
   };
 
-  const handleClearAll = async () => {
-    if (events.length === 0) {
-      return;
-    }
-
-    const confirmed = confirm(
-      `Are you sure you want to clear all ${events.length} critical event${events.length !== 1 ? 's' : ''}? This action cannot be undone.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      const res = await fetch('/api/patient/critical-events', {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        setEvents([]);
-        setUnreadCount(0);
-      } else {
-        console.error('Failed to clear events:', res.statusText);
-        alert('Failed to clear events. Please try again.');
-      }
-    } catch (err) {
-      console.error('Failed to clear events:', err);
-      alert('Failed to clear events. Please try again.');
-    }
-  };
-
   const getMetricLabel = (metric) => {
     const labels = {
       steps: 'Steps',
@@ -107,7 +78,7 @@ export default function CriticalEventsWidget() {
   return (
     <div 
       onClick={handleViewAll}
-      className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 cursor-pointer hover:shadow-lg dark:hover:shadow-lg transition-shadow"
+      className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 cursor-pointer hover:shadow-lg dark:hover:shadow-lg transition-shadow"
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
@@ -163,15 +134,9 @@ export default function CriticalEventsWidget() {
           <div className="flex gap-2 mt-4">
             <button
               onClick={handleViewAll}
-              className="flex-1 px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+              className="w-full px-4 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
             >
-              View All
-            </button>
-            <button
-              onClick={handleClearAll}
-              className="flex-1 px-4 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-            >
-              Clear All
+              View All Events
             </button>
           </div>
         </div>

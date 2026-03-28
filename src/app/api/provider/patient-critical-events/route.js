@@ -19,6 +19,163 @@ export async function GET(request) {
     const patientId = searchParams.get('patientId');
     const startDateParam = searchParams.get('startDate');
     const endDateParam = searchParams.get('endDate');
+    const allHistory = searchParams.get('allHistory') === 'true';
+
+    // Validation
+    if (!patientId) {
+      return NextResponse.json(
+        { error: 'Patient ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get the provider from session to verify access
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('livsync_session');
+    
+    if (!sessionCookie) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    let session;
+    try {
+      session = JSON.parse(sessionCookie.value);
+    } catch (error) {
+      return NextResponse.json(
+        { error: 'Invalid session' },
+        { status: 401 }
+      );
+    }
+
+    const providerId = session.userId;
+
+    // Verify that the provider has access to this patient
+    const patient = await prisma.patients.findFirst({
+      where: {
+        id: patientId,
+        provider_id: providerId,
+      },
+      select: {
+        id: true,
+        first_name: true,
+        last_name: true,
+      },
+    });
+
+    if (!patient) {
+      return NextResponse.json(
+        { error: 'Patient not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // Calculate date range based on allHistory flag
+    let startDate;
+    let endDate;
+
+    if (allHistory) {
+      // Fetch all events - set date range to beginning of time and current
+      startDate = new Date('2000-01-01');
+      endDate = new Date();
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      // Default: last 30 days if no dates provided
+      const now = new Date();
+      startDate = new Date(now);
+      endDate = new Date(now);
+
+      if (startDateParam && endDateParam) {
+        const parsedStart = new Date(startDateParam);
+        const parsedEnd = new Date(endDateParam);
+
+        if (!isNaN(parsedStart.getTime()) && !isNaN(parsedEnd.getTime())) {
+          startDate = new Date(parsedStart);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(parsedEnd);
+          endDate.setHours(23, 59, 59, 999);
+        }
+      } else {
+        // Default: last 30 days
+        startDate.setDate(startDate.getDate() - 30);
+        startDate.setHours(0, 0, 0, 0);
+        endDate.setHours(23, 59, 59, 999);
+      }
+    }
+
+    // Fetch critical events from database (not calculated from biometric data)
+    const criticalEvents = await prisma.critical_events.findMany({
+      where: {
+        patient_id: patientId,
+        created_at: {
+          gte: startDate,
+          lte: endDate,
+        },
+        // By default, only show unread events unless viewing history
+        ...(allHistory ? {} : { provider_acknowledged: false }),
+      },
+      orderBy: {
+        created_at: 'desc',
+      },
+      take: allHistory ? 500 : 50,
+    });
+
+    // Format events for response
+    const formattedEvents = criticalEvents.map(event => {
+      let name = 'Health Alert';
+      let status = 'warning';
+      let statusColor = 'orange';
+
+      if (event.metric_type === 'heart_rate') {
+        name = event.threshold_type === 'high' ? 'High Heart Rate' : 'Low Heart Rate';
+        status = 'critical';
+        statusColor = 'red';
+      } else if (event.metric_type === 'blood_glucose') {
+        if (event.threshold_type === 'high') {
+          name = 'Elevated Blood Glucose';
+          status = 'warning';
+          statusColor = 'orange';
+        } else if (event.threshold_type === 'low') {
+          name = 'Low Blood Sugar';
+          status = 'critical';
+          statusColor = 'red';
+        }
+      }
+
+      return {
+        id: event.id,
+        name,
+        status,
+        reading: `${Math.round(event.value)} ${event.metric_type === 'heart_rate' ? 'bpm' : 'mg/dL'}`,
+        timestamp: formatTimestamp(event.created_at),
+        statusColor,
+        isAcknowledged: event.provider_acknowledged,
+        patientName: `${patient.first_name} ${patient.last_name}`,
+      };
+    });
+
+    return NextResponse.json({
+      success: true,
+      events: formattedEvents,
+      patientCount: 1,
+      patientsWithEvents: 1,
+      isHistoryView: allHistory,
+    });
+  } catch (error) {
+    console.error('Error fetching critical events:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch critical events' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const patientId = searchParams.get('patientId');
 
     // Validation
     if (!patientId) {
@@ -66,118 +223,27 @@ export async function GET(request) {
       );
     }
 
-    // Calculate date range (default: last 30 days)
-    const now = new Date();
-    let startDate = new Date(now);
-    let endDate = new Date(now);
-
-    if (startDateParam && endDateParam) {
-      const parsedStart = new Date(startDateParam);
-      const parsedEnd = new Date(endDateParam);
-
-      if (!isNaN(parsedStart.getTime()) && !isNaN(parsedEnd.getTime())) {
-        startDate = new Date(parsedStart);
-        startDate.setHours(0, 0, 0, 0);
-        endDate = new Date(parsedEnd);
-        endDate.setHours(23, 59, 59, 999);
-      }
-    } else {
-      // Default: last 30 days
-      startDate.setDate(startDate.getDate() - 30);
-      startDate.setHours(0, 0, 0, 0);
-      endDate.setHours(23, 59, 59, 999);
-    }
-
-    // Fetch all biometric data for the patient in the date range
-    const biometricData = await prisma.biometric_data.findMany({
+    // Mark all critical events as acknowledged by provider (read for provider view)
+    const result = await prisma.critical_events.updateMany({
       where: {
         patient_id: patientId,
-        timestamp: {
-          gte: startDate,
-          lte: endDate,
-        },
+        provider_acknowledged: false,
       },
-      orderBy: {
-        timestamp: 'desc',
+      data: {
+        provider_acknowledged: true,
+        provider_acknowledged_at: new Date(),
       },
     });
-
-    // Process data to find critical events
-    const criticalEvents = [];
-
-    for (const data of biometricData) {
-      const value = parseFloat(data.value);
-
-      if (data.metric_type === 'heart_rate') {
-        if (value > THRESHOLDS.heart_rate.critical) {
-          criticalEvents.push({
-            id: `${data.id}-hr`,
-            name: 'High Heart Rate',
-            status: 'critical',
-            reading: `${Math.round(value)} bpm`,
-            timestamp: formatTimestamp(data.timestamp),
-            statusColor: 'red',
-            metricType: 'heart_rate',
-            value,
-            dateTime: data.timestamp,
-          });
-        }
-      } else if (data.metric_type === 'blood_glucose') {
-        let event = null;
-
-        if (value > THRESHOLDS.blood_glucose.critical_high) {
-          event = {
-            id: `${data.id}-bg-high`,
-            name: 'Elevated Blood Glucose',
-            status: 'warning',
-            reading: `${Math.round(value)} mg/dL`,
-            timestamp: formatTimestamp(data.timestamp),
-            statusColor: 'orange',
-            metricType: 'blood_glucose',
-            value,
-            dateTime: data.timestamp,
-          };
-        } else if (value < THRESHOLDS.blood_glucose.critical_low) {
-          event = {
-            id: `${data.id}-bg-low`,
-            name: 'Low Blood Sugar',
-            status: 'critical',
-            reading: `${Math.round(value)} mg/dL`,
-            timestamp: formatTimestamp(data.timestamp),
-            statusColor: 'red',
-            metricType: 'blood_glucose',
-            value,
-            dateTime: data.timestamp,
-          };
-        }
-
-        if (event) {
-          criticalEvents.push(event);
-        }
-      }
-    }
-
-    // Sort by timestamp (most recent first)
-    criticalEvents.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
-
-    // Limit to 50 most recent events
-    const limitedEvents = criticalEvents.slice(0, 50);
 
     return NextResponse.json({
       success: true,
-      events: limitedEvents.map(event => ({
-        id: event.id,
-        name: event.name,
-        status: event.status,
-        reading: event.reading,
-        timestamp: event.timestamp,
-        statusColor: event.statusColor,
-      })),
+      message: `Marked ${result.count} critical events as read`,
+      markedCount: result.count,
     });
   } catch (error) {
-    console.error('Error fetching critical events:', error);
+    console.error('Error deleting critical events:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch critical events' },
+      { error: 'Failed to clear critical events' },
       { status: 500 }
     );
   }

@@ -32,7 +32,7 @@ export async function GET(request) {
 
     const where = { patient_id: session.userId };
     if (acknowledged !== null) {
-      where.is_acknowledged = acknowledged === 'true';
+      where.patient_acknowledged = acknowledged === 'true';
     }
 
     const [events, total] = await Promise.all([
@@ -53,9 +53,9 @@ export async function GET(request) {
         value: parseFloat(e.value),
         thresholdType: e.threshold_type,
         thresholdValue: parseFloat(e.threshold_value),
-        isAcknowledged: e.is_acknowledged,
+        isAcknowledged: e.patient_acknowledged,
         createdAt: e.created_at,
-        acknowledgedAt: e.acknowledged_at,
+        acknowledgedAt: e.patient_acknowledged_at,
       })),
       pagination: {
         total,
@@ -122,7 +122,7 @@ export async function POST(request) {
   }
 }
 
-// DELETE - Clear all critical events for a patient
+// DELETE - Mark all unread critical events as read for a patient
 export async function DELETE(request) {
   try {
     const session = getAuthenticatedUser(request);
@@ -130,21 +130,26 @@ export async function DELETE(request) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const result = await prisma.critical_events.deleteMany({
+    const result = await prisma.critical_events.updateMany({
       where: {
         patient_id: session.userId,
+        patient_acknowledged: false,
+      },
+      data: {
+        patient_acknowledged: true,
+        patient_acknowledged_at: new Date(),
       },
     });
 
     return NextResponse.json({
       success: true,
-      message: `Deleted ${result.count} critical events`,
-      deletedCount: result.count,
+      message: `Marked ${result.count} critical events as read`,
+      markedCount: result.count,
     });
   } catch (error) {
-    console.error('Error deleting critical events:', error);
+    console.error('Error marking critical events as read:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to clear critical events' },
+      { success: false, error: 'Failed to mark critical events as read' },
       { status: 500 }
     );
   }
@@ -161,11 +166,11 @@ export async function PATCH(request) {
     const result = await prisma.critical_events.updateMany({
       where: {
         patient_id: session.userId,
-        is_acknowledged: false,
+        patient_acknowledged: false,
       },
       data: {
-        is_acknowledged: true,
-        acknowledged_at: new Date(),
+        patient_acknowledged: true,
+        patient_acknowledged_at: new Date(),
       },
     });
 

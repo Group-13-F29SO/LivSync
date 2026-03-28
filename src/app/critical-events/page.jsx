@@ -9,7 +9,7 @@ export default function CriticalEventsPage() {
   const { user, isLoading } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all'); // all, unacknowledged, acknowledged
+  const [filter, setFilter] = useState('unread'); // unread, read
   const [page, setPage] = useState(0);
   const [totalEvents, setTotalEvents] = useState(0);
   const pageSize = 20;
@@ -29,11 +29,8 @@ export default function CriticalEventsPage() {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const acknowledged = filter === 'all' ? null : filter === 'acknowledged' ? 'true' : 'false';
-      let url = `/api/patient/critical-events?limit=${pageSize}&offset=${page * pageSize}`;
-      if (acknowledged !== null) {
-        url += `&acknowledged=${acknowledged}`;
-      }
+      const acknowledged = filter === 'unread' ? 'false' : 'true';
+      const url = `/api/patient/critical-events?limit=${pageSize}&offset=${page * pageSize}&acknowledged=${acknowledged}`;
 
       const res = await fetch(url);
       const json = await res.json();
@@ -69,40 +66,7 @@ export default function CriticalEventsPage() {
     }
   };
 
-  const handleClearAll = async () => {
-    if (events.length === 0) {
-      alert('No events to clear');
-      return;
-    }
 
-    const confirmed = confirm(
-      `Are you sure you want to clear all ${events.length} critical event${events.length !== 1 ? 's' : ''}? This action cannot be undone.`
-    );
-
-    if (!confirmed) return;
-
-    try {
-      setLoading(true);
-      const res = await fetch('/api/patient/critical-events', {
-        method: 'DELETE',
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setEvents([]);
-        setTotalEvents(0);
-        setPage(0);
-      } else {
-        console.error('Failed to clear events:', res.statusText);
-        alert('Failed to clear events. Please try again.');
-      }
-    } catch (err) {
-      console.error('Failed to clear events:', err);
-      alert('Failed to clear events. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleMarkAllAsRead = async () => {
     const unreadCount = events.filter(e => !e.isAcknowledged).length;
@@ -199,50 +163,34 @@ export default function CriticalEventsPage() {
             </p>
           </div>
 
-          {/* Filter Tabs and Clear All Button */}
+          {/* Filter Tabs */}
           <div className="flex items-center justify-between mb-6 border-b border-slate-200 dark:border-gray-700">
             <div className="flex gap-2">
-              {['all', 'unread', 'read'].map((filterOption) => {
-                const filterValue = filterOption === 'unread' ? 'unacknowledged' : filterOption === 'read' ? 'acknowledged' : 'all';
-                return (
-                  <button
-                    key={filterOption}
-                    onClick={() => {
-                      setFilter(filterValue);
-                      setPage(0);
-                    }}
-                    className={`px-4 py-2 font-medium text-sm transition-colors capitalize ${
-                      filter === filterValue
-                        ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                    }`}
-                  >
-                    {filterOption === 'all'
-                      ? `All (${totalEvents})`
-                      : filterOption === 'unread'
-                      ? 'Unread'
-                      : 'Read'}
-                  </button>
-                );
-              })}
+              {['unread', 'read'].map((filterOption) => (
+                <button
+                  key={filterOption}
+                  onClick={() => {
+                    setFilter(filterOption);
+                    setPage(0);
+                  }}
+                  className={`px-4 py-2 font-medium text-sm transition-colors capitalize ${
+                    filter === filterOption
+                      ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  {filterOption === 'unread' ? 'Unread' : 'Read (History)'}
+                </button>
+              ))}
             </div>
-            {totalEvents > 0 && (
-              <div className="flex gap-2">
-                <button
-                  onClick={handleMarkAllAsRead}
-                  disabled={loading || events.filter(e => !e.isAcknowledged).length === 0}
-                  className="px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Mark All as Read
-                </button>
-                <button
-                  onClick={handleClearAll}
-                  disabled={loading}
-                  className="px-3 py-2 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Clear All
-                </button>
-              </div>
+            {totalEvents > 0 && filter === 'unread' && (
+              <button
+                onClick={handleMarkAllAsRead}
+                disabled={loading || events.length === 0}
+                className="px-3 py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Mark All as Read
+              </button>
             )}
           </div>
 
@@ -258,9 +206,7 @@ export default function CriticalEventsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-gray-600 dark:text-gray-400 text-sm">
-                  {filter === 'all'
-                    ? 'No critical events found'
-                    : filter === 'unacknowledged'
+                  {filter === 'unread'
                     ? 'All events have been read'
                     : 'No read events yet'}
                 </p>

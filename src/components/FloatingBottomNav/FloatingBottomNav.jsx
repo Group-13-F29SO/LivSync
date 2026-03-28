@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { LayoutDashboard, Target, Medal, FileText, Flame, Calendar, AlertTriangle, MessageSquare, User, Watch, Settings, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Target, Medal, FileText, Flame, Calendar, AlertTriangle, MessageSquare, User, Watch, Settings, Moon, Sun, Pill } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
 
 export default function FloatingBottomNav() {
@@ -52,6 +52,12 @@ export default function FloatingBottomNav() {
       path: '/articles',
       label: 'Articles',
       icon: <FileText className="w-6 h-6" />,
+    },
+    {
+      id: 'prescriptions',
+      path: '/patient/prescriptions',
+      label: 'Prescriptions',
+      icon: <Pill className="w-6 h-6" />,
     },
     {
       id: 'streaks',

@@ -499,6 +499,34 @@ export async function dismissNotification(notificationId) {
 }
 
 /**
+ * Create a prescription notification for a patient
+ */
+export async function createPrescriptionNotification(patientId, providerName, medicineNames) {
+  try {
+    const medicineList = Array.isArray(medicineNames) ? medicineNames.join(', ') : medicineNames;
+    const title = 'New Prescription Issued';
+    const message = `Dr. ${providerName} has issued a new prescription for: ${medicineList}. Visit your prescriptions page to view details.`;
+
+    const notification = await prisma.notifications.create({
+      data: {
+        patient_id: patientId,
+        title,
+        message,
+        notification_type: 'prescription',
+        priority: 'high',
+        action_type: 'view_prescriptions',
+        action_data: JSON.stringify({ path: '/patient/prescriptions' }),
+      },
+    });
+
+    return notification;
+  } catch (error) {
+    console.error('Error creating prescription notification:', error);
+    throw error;
+  }
+}
+
+/**
  * Get all notifications for a patient (including read/dismissed)
  */
 export async function getAllNotifications(patientId, limit = 50) {
