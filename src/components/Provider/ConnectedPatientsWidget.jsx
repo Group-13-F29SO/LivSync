@@ -149,19 +149,6 @@ export default function ConnectedPatientsWidget({ providerId }) {
           </p>
         </div>
       )}
-
-      {/* View All Button */}
-      {patients.length > 0 && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleViewAll();
-          }}
-          className="w-full py-2 text-center text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-        >
-          View All Patients
-        </button>
-      )}
     </div>
     </>
   );

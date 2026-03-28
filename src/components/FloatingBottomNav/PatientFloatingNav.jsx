@@ -1,11 +1,13 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { LayoutDashboard, Target, Medal, FileText, Flame, Calendar, AlertTriangle, MessageSquare, User, Watch, Settings, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Target, Medal, FileText, Flame, Calendar, AlertTriangle, MessageSquare, User, Watch, Settings, Moon, Sun, LogOut } from 'lucide-react';
 import { useTheme } from '../../hooks/useTheme';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function PatientFloatingNav() {
   const { isDarkMode, toggleDarkMode } = useTheme();
+  const { logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -101,6 +103,14 @@ export default function PatientFloatingNav() {
     router.push(path);
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   return (
     <div className={`fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40 flex gap-2 px-4 py-3 rounded-full shadow-2xl transition-colors ${
       isDarkMode 
@@ -162,6 +172,29 @@ export default function PatientFloatingNav() {
             : 'bg-gray-700 text-white'
         }`}>
           {isDarkMode ? 'Light mode' : 'Dark mode'}
+        </div>
+      </button>
+
+      {/* Logout Button */}
+      <button
+        onClick={handleLogout}
+        className={`relative flex items-center justify-center p-3 rounded-full transition-all duration-200 group ${
+          isDarkMode
+            ? 'text-red-400 hover:text-red-300 hover:bg-gray-800'
+            : 'text-gray-600 hover:text-red-600 hover:bg-gray-100'
+        }`}
+        title="Logout"
+        aria-label="Logout"
+      >
+        <LogOut className="w-6 h-6" />
+        
+        {/* Tooltip on hover */}
+        <div className={`absolute bottom-full mb-2 px-2 py-1 rounded text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${
+          isDarkMode
+            ? 'bg-gray-800 text-gray-100'
+            : 'bg-gray-700 text-white'
+        }`}>
+          Logout
         </div>
       </button>
     </div>
