@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
+import { createPrescriptionNotification } from '@/services/recommendationEngine';
 
 // GET: Retrieve all prescriptions for a provider or filtered by patient
 export async function GET(request) {
@@ -179,6 +180,16 @@ export async function POST(request) {
         },
       },
     });
+
+    // Create notification for the patient
+    try {
+      const medicineNames = prescription.prescription_items.map((item) => item.medicine_name);
+      const providerName = `${prescription.providers.first_name} ${prescription.providers.last_name}`;
+      await createPrescriptionNotification(patientId, providerName, medicineNames);
+    } catch (notificationError) {
+      console.error('Error creating prescription notification:', notificationError);
+      // Don't fail the prescription creation if notification fails
+    }
 
     return NextResponse.json(
       { prescription, message: 'Prescription created successfully' },

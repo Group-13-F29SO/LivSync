@@ -14,6 +14,7 @@ import ConnectionRequestsNotification from '@/components/Provider/ConnectionRequ
 import AlertNotification from '@/components/Alerts/AlertNotification';
 import CriticalEventsWidget from '@/components/Alerts/CriticalEventsWidget';
 import AppointmentsWidget from '@/components/Patient/AppointmentsWidget';
+import PrescriptionsWidget from '@/components/Patient/PrescriptionsWidget';
 import DraggableWidget from '@/components/Dashboard/DraggableWidget';
 import DashboardWidgetManager from '@/components/Dashboard/DashboardWidgetManager';
 import { useAuth } from '@/hooks/useAuth';
@@ -517,12 +518,12 @@ export default function DashboardPage() {
           })}
         </div>
 
-        {/* Other Widgets Grid - Articles & Manual Entry */}
-        {getVisibleWidgets().filter(w => ['articles', 'manual-entry'].includes(w.id)).length > 0 && (
+        {/* Critical Events & Manual Entry Grid */}
+        {getVisibleWidgets().filter(w => ['critical-events', 'manual-entry'].includes(w.id)).length > 0 && (
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {getVisibleWidgets().filter(w => ['articles', 'manual-entry'].includes(w.id)).map((widget) => {
+            {getVisibleWidgets().filter(w => ['critical-events', 'manual-entry'].includes(w.id)).map((widget) => {
               switch (widget.id) {
-                case 'articles':
+                case 'critical-events':
                   return (
                     <DraggableWidget
                       key={widget.id}
@@ -536,7 +537,7 @@ export default function DashboardPage() {
                       draggingId={draggingId}
                       dragOverId={dragOverId}
                     >
-                      <ArticlesCard />
+                      <CriticalEventsWidget />
                     </DraggableWidget>
                   );
 
@@ -614,12 +615,12 @@ export default function DashboardPage() {
           return null;
         })}
 
-        {getVisibleWidgets().some((widget) => ['critical-events', 'appointments'].includes(widget.id)) && (
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {getVisibleWidgets().some((widget) => ['articles', 'appointments', 'prescriptions'].includes(widget.id)) && (
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
             {getVisibleWidgets()
-              .filter((widget) => ['critical-events', 'appointments'].includes(widget.id))
+              .filter((widget) => ['articles', 'appointments', 'prescriptions'].includes(widget.id))
               .map((widget) => {
-                if (widget.id === 'critical-events') {
+                if (widget.id === 'articles') {
                   return (
                     <DraggableWidget
                       key={widget.id}
@@ -633,7 +634,7 @@ export default function DashboardPage() {
                       draggingId={draggingId}
                       dragOverId={dragOverId}
                     >
-                      <CriticalEventsWidget />
+                      <ArticlesCard />
                     </DraggableWidget>
                   );
                 }
@@ -653,6 +654,25 @@ export default function DashboardPage() {
                       dragOverId={dragOverId}
                     >
                       <AppointmentsWidget />
+                    </DraggableWidget>
+                  );
+                }
+
+                if (widget.id === 'prescriptions') {
+                  return (
+                    <DraggableWidget
+                      key={widget.id}
+                      widgetId={widget.id}
+                      isEditMode={isEditMode}
+                      isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                      onToggleVisibility={toggleWidgetVisibility}
+                      onDragStart={handleDragStart}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      draggingId={draggingId}
+                      dragOverId={dragOverId}
+                    >
+                      <PrescriptionsWidget />
                     </DraggableWidget>
                   );
                 }

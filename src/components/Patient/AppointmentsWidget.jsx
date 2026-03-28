@@ -80,7 +80,7 @@ export default function AppointmentsWidget() {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+      <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
           <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
           Upcoming Appointments
@@ -93,7 +93,7 @@ export default function AppointmentsWidget() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-md">
+    <div className="bg-white dark:bg-gray-900 rounded-lg p-6 shadow-sm">
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
         <Calendar className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
         Upcoming Appointments

@@ -10,12 +10,13 @@ const DEFAULT_WIDGETS = [
   { id: 'hydration', order: 3, visible: true },
   { id: 'sleep', order: 4, visible: true },
   { id: 'blood-glucose', order: 5, visible: true },
-  { id: 'articles', order: 6, visible: true },
+  { id: 'critical-events', order: 6, visible: true },
   { id: 'manual-entry', order: 7, visible: true },
   { id: 'streaks', order: 8, visible: true },
   { id: 'summary', order: 9, visible: true },
-  { id: 'critical-events', order: 10, visible: true },
+  { id: 'articles', order: 10, visible: true },
   { id: 'appointments', order: 11, visible: true },
+  { id: 'prescriptions', order: 12, visible: true },
 ];
 
 export const useWidgetPreferences = () => {
