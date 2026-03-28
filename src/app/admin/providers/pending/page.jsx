@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, Search, Stethoscope } from 'lucide-react';
+import { ChevronLeft, Search, Clock } from 'lucide-react';
 import UserCard from '@/components/Admin/UserCard';
 
-export default function ProvidersPage() {
+export default function PendingProvidersPage() {
   const router = useRouter();
   const [providers, setProviders] = useState([]);
   const [filteredProviders, setFilteredProviders] = useState([]);
@@ -45,9 +45,9 @@ export default function ProvidersPage() {
 
       const data = await response.json();
       const allProviders = data.data?.providers || data.providers || [];
-      // Only show approved providers
-      const approvedProviders = allProviders.filter(p => p.isVerified);
-      setProviders(approvedProviders);
+      // Filter to show only pending providers
+      const pendingProviders = allProviders.filter(p => !p.isVerified);
+      setProviders(pendingProviders);
     } catch (err) {
       setError('Failed to load providers. Please try again.');
       console.error('Error fetching providers:', err);
@@ -70,9 +70,8 @@ export default function ProvidersPage() {
       });
 
       if (response.ok) {
-        setProviders(prev => prev.map(p => 
-          p.id === providerId ? { ...p, isVerified: true, approvalStatus: 'approved' } : p
-        ));
+        setProviders(prev => prev.filter(p => p.id !== providerId));
+        setFilteredProviders(prev => prev.filter(p => p.id !== providerId));
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to approve provider');
@@ -98,6 +97,7 @@ export default function ProvidersPage() {
 
       if (response.ok) {
         setProviders(prev => prev.filter(p => p.id !== providerId));
+        setFilteredProviders(prev => prev.filter(p => p.id !== providerId));
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to reject provider');
@@ -123,6 +123,7 @@ export default function ProvidersPage() {
 
       if (response.ok) {
         setProviders(prev => prev.filter(p => p.id !== providerId));
+        setFilteredProviders(prev => prev.filter(p => p.id !== providerId));
       } else {
         const data = await response.json();
         setError(data.error || 'Failed to delete provider');
@@ -138,7 +139,7 @@ export default function ProvidersPage() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading providers...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading pending approvals...</p>
         </div>
       </div>
     );
@@ -158,15 +159,15 @@ export default function ProvidersPage() {
               >
                 <ChevronLeft className="w-6 h-6 text-gray-600 dark:text-gray-400" />
               </button>
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500/20 to-purple-600/20 rounded-lg">
-                <Stethoscope className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-amber-500/20 to-orange-600/20 rounded-lg">
+                <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  Healthcare Providers
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                  Pending Approvals
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {providers.length} total provider{providers.length === 1 ? '' : 's'}
+                  {filteredProviders.length} total provider{filteredProviders.length === 1 ? '' : 's'}
                 </p>
               </div>
             </div>
@@ -199,13 +200,13 @@ export default function ProvidersPage() {
         {/* Providers Grid */}
         {filteredProviders.length === 0 ? (
           <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-12 text-center border border-gray-200 dark:border-gray-800">
-            <Stethoscope className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+            <Clock className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
             <h3 className="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {providers.length === 0 ? 'No providers found' : 'No matching providers'}
+              {providers.length === 0 ? 'No pending approvals' : 'No matching providers'}
             </h3>
             <p className="text-gray-500 dark:text-gray-500 text-sm">
               {providers.length === 0
-                ? 'There are currently no registered providers in the system.'
+                ? 'All provider applications have been reviewed.'
                 : 'Try adjusting your search criteria.'}
             </p>
           </div>

@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Users, Stethoscope, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
+import { Users, Stethoscope, Clock } from 'lucide-react';
 import SecurityLogsWidget from '@/components/Admin/SecurityLogsWidget';
+import StatCard from '@/components/Admin/StatCard';
+import PendingApprovalsAlert from '@/components/Admin/PendingApprovalsAlert';
 
 export default function AdminDashboard() {
   const router = useRouter();
@@ -46,7 +48,7 @@ export default function AdminDashboard() {
 
       setStats({
         totalPatients: patients.length,
-        totalProviders: providers.length,
+        totalProviders: providers.filter(p => p.isVerified).length,
         approvedProviders: providers.filter(p => p.isVerified).length,
         pendingProviders: providers.filter(p => !p.isVerified).length,
       });
@@ -107,89 +109,34 @@ export default function AdminDashboard() {
         )}
 
         {/* Pending Approvals Alert */}
-        {stats.pendingProviders > 0 && (
-          <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 dark:border-yellow-600 rounded-lg">
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-              </div>
-              <div className="ml-3 flex-1">
-                <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
-                  {stats.pendingProviders} Provider{stats.pendingProviders === 1 ? '' : 's'} Pending Approval
-                </h3>
-                <p className="mt-1 text-xs text-yellow-700 dark:text-yellow-400">
-                  Review and approve or reject provider applications on the Healthcare Providers page.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        <PendingApprovalsAlert count={stats.pendingProviders} />
 
         {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <button
-            onClick={() => router.push('/admin/patients')}
-            className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all duration-300 text-left"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Patients</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.totalPatients}</p>
-              </div>
-              <div className="flex items-center justify-center w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => router.push('/admin/providers')}
-            className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:border-purple-400 dark:hover:border-purple-500 transition-all duration-300 text-left"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Providers</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-gray-100">{stats.totalProviders}</p>
-              </div>
-              <div className="flex items-center justify-center w-12 h-12 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                <Stethoscope className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => router.push('/admin/providers')}
-            className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:border-emerald-400 dark:hover:border-emerald-500 transition-all duration-300 text-left"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Approved Providers</p>
-                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {stats.approvedProviders}
-                </p>
-              </div>
-              <div className="flex items-center justify-center w-12 h-12 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
-                <CheckCircle2 className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={() => router.push('/admin/providers')}
-            className="bg-white dark:bg-gray-900 rounded-lg shadow-md p-6 border border-amber-200 dark:border-amber-700 hover:shadow-lg hover:border-amber-400 dark:hover:border-amber-500 transition-all duration-300 text-left"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending Approval</p>
-                <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
-                  {stats.pendingProviders}
-                </p>
-              </div>
-              <div className="flex items-center justify-center w-12 h-12 bg-amber-100 dark:bg-amber-900 rounded-lg">
-                <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-              </div>
-            </div>
-          </button>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-6 mb-8">
+          <StatCard
+            title="Total Patients"
+            value={stats.totalPatients}
+            icon={Users}
+            onClick="/admin/patients"
+            color="blue"
+            loading={isLoading}
+          />
+          <StatCard
+            title="Total Providers"
+            value={stats.totalProviders}
+            icon={Stethoscope}
+            onClick="/admin/providers"
+            color="purple"
+            loading={isLoading}
+          />
+          <StatCard
+            title="Pending Approval"
+            value={stats.pendingProviders}
+            icon={Clock}
+            onClick="/admin/providers/pending"
+            color="amber"
+            loading={isLoading}
+          />
         </div>
 
         {/* Security Logs Section */}

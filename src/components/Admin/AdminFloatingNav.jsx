@@ -40,7 +40,7 @@ export default function AdminFloatingNav() {
     },
     {
       id: 'articles',
-      path: '/articles',
+      path: '/admin/articles',
       label: 'Articles',
       icon: <FileText className="w-6 h-6" />,
     },

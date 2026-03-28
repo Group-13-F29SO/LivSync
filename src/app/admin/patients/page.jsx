@@ -111,7 +111,7 @@ export default function PatientsPage() {
                   Patients
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {filteredPatients.length} of {patients.length} registered
+                  {patients.length} total patient{patients.length === 1 ? '' : 's'}
                 </p>
               </div>
             </div>
