@@ -55,7 +55,7 @@ export default function FloatingBottomNav() {
     },
     {
       id: 'prescriptions',
-      path: '/prescriptions',
+      path: '/patient/prescriptions',
       label: 'Prescriptions',
       icon: <Pill className="w-6 h-6" />,
     },

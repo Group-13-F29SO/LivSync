@@ -7,6 +7,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const patientId = searchParams.get('patientId');
     const status = searchParams.get('status');
+    const providerId = searchParams.get('providerId');
 
     if (!patientId) {
       return NextResponse.json(
@@ -17,6 +18,7 @@ export async function GET(request) {
 
     const where = { patient_id: patientId };
     if (status) where.status = status;
+    if (providerId) where.provider_id = providerId;
 
     const prescriptions = await prisma.prescriptions.findMany({
       where,
