@@ -5,6 +5,25 @@ import { useRouter } from 'next/navigation';
 import { Users, ChevronRight, Plus } from 'lucide-react';
 import ConnectionRequestModal from '@/components/Provider/ConnectionRequestModal';
 
+// Helper function to format last sync time
+const formatLastSync = (minutes) => {
+  if (minutes === null || minutes === undefined) {
+    return null;
+  }
+
+  if (minutes < 60) {
+    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+  return `${days} day${days !== 1 ? 's' : ''} ago`;
+};
+
 export default function ConnectedPatientsWidget({ providerId }) {
   const router = useRouter();
   const [patients, setPatients] = useState([]);
@@ -24,9 +43,9 @@ export default function ConnectedPatientsWidget({ providerId }) {
       }
 
       const data = await response.json();
-      // Only display first 5 patients on the widget
-      const displayPatients = (data.patients || []).slice(0, 5);
-      setPatients(displayPatients);
+      // Filter to only show active/approved patients, then display first 5
+      const activePatients = (data.patients || []).filter(p => p.connectionStatus === 'approved').slice(0, 5);
+      setPatients(activePatients);
       setError(null);
     } catch (err) {
       console.error('Error fetching patients:', err);
@@ -125,9 +144,9 @@ export default function ConnectedPatientsWidget({ providerId }) {
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                   {patient.email}
                 </p>
-                {patient.lastSync && (
+                {patient.lastSync !== null && (
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    Last sync: {patient.lastSync}
+                    Last sync: {formatLastSync(patient.lastSync)}
                   </p>
                 )}
               </div>
