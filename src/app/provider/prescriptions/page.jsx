@@ -162,62 +162,67 @@ export default function PrescriptionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950">
+    <div className="min-h-screen bg-blue-50 dark:bg-gray-950">
       <main className="p-6 md:p-8 pb-32">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => router.push('/provider')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={24} className="text-gray-600 dark:text-gray-400" />
-            </button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">
-                Prescriptions
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Manage and create prescriptions for your patients
-              </p>
+        {/* Header with Colored Background */}
+        <div className="mb-8 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 dark:from-indigo-600 dark:via-purple-600 dark:to-pink-600 rounded-2xl p-8 text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => router.push('/provider')}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <ArrowLeft size={24} className="text-white" />
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-white">
+                  💊 Prescriptions
+                </h1>
+                <p className="text-indigo-100 mt-1">
+                  Manage and create prescriptions for your patients
+                </p>
+              </div>
             </div>
-          </div>
 
-          <button
-            onClick={() => {
-              setEditingPrescription(null);
-              setIsFormOpen(true);
-            }}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 transition-colors"
-          >
-            <Plus size={20} />
-            New Prescription
-          </button>
+            <button
+              onClick={() => {
+                setEditingPrescription(null);
+                setIsFormOpen(true);
+              }}
+              className="px-6 py-3 bg-white text-indigo-600 font-semibold rounded-xl hover:bg-indigo-50 flex items-center gap-2 transition-all hover:shadow-lg"
+            >
+              <Plus size={20} />
+              New Prescription
+            </button>
+          </div>
         </div>
 
-        {/* Filters */}
-        <div className="mb-6 flex gap-4 items-center">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Filter by Patient
-            </label>
-            <select
-              value={selectedPatientFilter}
-              onChange={(e) => setSelectedPatientFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Patients</option>
-              {patients.map((patient) => (
-                <option key={patient.id} value={patient.id}>
-                  {patient.name}
-                </option>
-              ))}
-            </select>
+        {/* Filters Section */}
+        <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-indigo-100 dark:border-indigo-900/30">
+          <div className="flex gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
+                Filter by Patient
+              </label>
+              <select
+                value={selectedPatientFilter}
+                onChange={(e) => setSelectedPatientFilter(e.target.value)}
+                className="w-full px-4 py-2 border-2 border-indigo-200 dark:border-indigo-800 dark:bg-gray-700 dark:text-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              >
+                <option value="all">All Patients</option>
+                {patients.map((patient) => (
+                  <option key={patient.id} value={patient.id}>
+                    {patient.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
         {/* Prescriptions List */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-indigo-100 dark:border-indigo-900/30 p-6">
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <div className="flex flex-col items-center gap-3">

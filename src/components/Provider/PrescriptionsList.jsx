@@ -86,7 +86,7 @@ export default function PrescriptionsList({
         {prescriptions.map((prescription) => (
           <div
             key={prescription.id}
-            className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 md:p-6 hover:shadow-lg transition-shadow"
+            className="bg-white dark:bg-gray-800 rounded-xl border-2 border-indigo-200 dark:border-indigo-900/30 p-4 md:p-6 hover:shadow-lg hover:border-indigo-400 dark:hover:border-indigo-700 transition-all"
           >
             {/* Hidden template for PDF export */}
             <div style={{ display: 'none' }}>
@@ -189,7 +189,7 @@ export default function PrescriptionsList({
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={() => handlePreview(prescription)}
-                className="px-3 py-2 flex items-center gap-2 text-sm bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                className="px-4 py-2 flex items-center gap-2 text-sm bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-900/50 font-medium transition-all shadow-sm"
               >
                 <Eye size={16} />
                 Preview
@@ -198,7 +198,7 @@ export default function PrescriptionsList({
               <button
                 onClick={() => handleExportPDF(prescription)}
                 disabled={isExporting}
-                className="px-3 py-2 flex items-center gap-2 text-sm bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded hover:bg-green-100 dark:hover:bg-green-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 flex items-center gap-2 text-sm bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-200 dark:hover:bg-emerald-900/50 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all shadow-sm"
               >
                 {isExporting ? (
                   <Loader size={16} className="animate-spin" />
@@ -212,7 +212,7 @@ export default function PrescriptionsList({
                 <>
                   <button
                     onClick={() => onEdit?.(prescription)}
-                    className="px-3 py-2 flex items-center gap-2 text-sm bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors"
+                    className="px-4 py-2 flex items-center gap-2 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/50 font-medium transition-all shadow-sm"
                   >
                     <Edit2 size={16} />
                     Edit
@@ -220,7 +220,7 @@ export default function PrescriptionsList({
 
                   <button
                     onClick={() => handleDelete(prescription.id)}
-                    className="px-3 py-2 flex items-center gap-2 text-sm bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors"
+                    className="px-4 py-2 flex items-center gap-2 text-sm bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-lg hover:bg-rose-200 dark:hover:bg-rose-900/50 font-medium transition-all shadow-sm"
                   >
                     <Trash2 size={16} />
                     Delete
@@ -235,19 +235,19 @@ export default function PrescriptionsList({
       {/* Preview Modal */}
       {showPreview && selectedPrescription && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border-2 border-indigo-200 dark:border-indigo-900/30">
+            <div className="sticky top-0 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 border-b-2 border-indigo-200 dark:border-indigo-900/30 p-4 flex items-center justify-between">
               <h2 className="text-xl font-bold text-gray-900 dark:text-gray-50">
-                Prescription Preview
+                💊 Prescription Preview
               </h2>
               <button
                 onClick={() => setShowPreview(false)}
-                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition-colors"
               >
                 ✕
               </button>
             </div>
-            <div className="p-6 bg-gray-50 dark:bg-gray-900">
+            <div className="p-6 bg-gradient-to-br from-white to-indigo-50 dark:from-gray-800 dark:to-gray-800">
               <PrescriptionTemplate prescription={selectedPrescription} />
             </div>
           </div>
