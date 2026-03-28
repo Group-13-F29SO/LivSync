@@ -5,25 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Users, ChevronRight, Plus } from 'lucide-react';
 import ConnectionRequestModal from '@/components/Provider/ConnectionRequestModal';
 
-// Helper function to format last sync time
-const formatLastSync = (minutes) => {
-  if (minutes === null || minutes === undefined) {
-    return null;
-  }
-
-  if (minutes < 60) {
-    return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
-  }
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) {
-    return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
-  }
-
-  const days = Math.floor(hours / 24);
-  return `${days} day${days !== 1 ? 's' : ''} ago`;
-};
-
 export default function ConnectedPatientsWidget({ providerId }) {
   const router = useRouter();
   const [patients, setPatients] = useState([]);
@@ -146,7 +127,7 @@ export default function ConnectedPatientsWidget({ providerId }) {
                 </p>
                 {patient.lastSync !== null && (
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    Last sync: {formatLastSync(patient.lastSync)}
+                    Last sync: {patient.lastSync}
                   </p>
                 )}
               </div>

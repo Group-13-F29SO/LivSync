@@ -122,7 +122,7 @@ export default function PatientCard({ patient, onDisconnect, providerId }) {
             </>
           )}
           <span>
-            Last sync: {patient.lastSync !== null ? `${patient.lastSync} min ago` : 'Never'}
+            Last sync: {patient.lastSync !== null ? patient.lastSync : 'Never'}
           </span>
         </div>
 

@@ -31,20 +31,10 @@ export async function GET(request) {
         last_name: true,
         email: true,
         created_at: true,
+        last_sync: true,
         patient_profiles: {
           select: {
             date_of_birth: true,
-          },
-        },
-        biometric_data: {
-          orderBy: {
-            timestamp: 'desc',
-          },
-          take: 1,
-          select: {
-            timestamp: true,
-            metric_type: true,
-            value: true,
           },
         },
       },
@@ -66,20 +56,10 @@ export async function GET(request) {
             last_name: true,
             email: true,
             created_at: true,
+            last_sync: true,
             patient_profiles: {
               select: {
                 date_of_birth: true,
-              },
-            },
-            biometric_data: {
-              orderBy: {
-                timestamp: 'desc',
-              },
-              take: 1,
-              select: {
-                timestamp: true,
-                metric_type: true,
-                value: true,
               },
             },
           },
@@ -104,20 +84,10 @@ export async function GET(request) {
             last_name: true,
             email: true,
             created_at: true,
+            last_sync: true,
             patient_profiles: {
               select: {
                 date_of_birth: true,
-              },
-            },
-            biometric_data: {
-              orderBy: {
-                timestamp: 'desc',
-              },
-              take: 1,
-              select: {
-                timestamp: true,
-                metric_type: true,
-                value: true,
               },
             },
           },
@@ -135,7 +105,7 @@ export async function GET(request) {
       age: patient.patient_profiles?.date_of_birth ? calculateAge(patient.patient_profiles.date_of_birth) : null,
       status: 'Active',
       connectionStatus: 'approved',
-      lastSync: patient.biometric_data.length > 0 ? getMinutesAgo(patient.biometric_data[0].timestamp) : null,
+      lastSync: formatLastSync(patient.last_sync),
       statusColor: 'green',
       alert: null,
       createdAt: patient.created_at,
@@ -151,7 +121,7 @@ export async function GET(request) {
       age: request.patients.patient_profiles?.date_of_birth ? calculateAge(request.patients.patient_profiles.date_of_birth) : null,
       status: 'Pending',
       connectionStatus: 'pending',
-      lastSync: request.patients.biometric_data.length > 0 ? getMinutesAgo(request.patients.biometric_data[0].timestamp) : null,
+      lastSync: formatLastSync(request.patients.last_sync),
       statusColor: 'orange',
       alert: null,
       createdAt: request.patients.created_at,
@@ -168,7 +138,7 @@ export async function GET(request) {
       age: request.patients.patient_profiles?.date_of_birth ? calculateAge(request.patients.patient_profiles.date_of_birth) : null,
       status: 'Revoked',
       connectionStatus: 'revoked',
-      lastSync: request.patients.biometric_data.length > 0 ? getMinutesAgo(request.patients.biometric_data[0].timestamp) : null,
+      lastSync: formatLastSync(request.patients.last_sync),
       statusColor: 'red',
       alert: null,
       createdAt: request.patients.created_at,
@@ -213,11 +183,21 @@ function calculateAge(dateOfBirth) {
   return age;
 }
 
-// Helper function to calculate minutes ago
-function getMinutesAgo(timestamp) {
+function formatLastSync(timestamp) {
+  if (!timestamp) {
+    return null;
+  }
+
   const now = new Date();
-  const diff = now - new Date(timestamp);
-  const minutes = Math.floor(diff / (1000 * 60));
-  // Return absolute value if calculation is negative (timezone or clock issues)
-  return Math.max(0, minutes);
+  const diffMs = now - new Date(timestamp);
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60000));
+
+  if (diffMinutes < 1) return 'just now';
+  if (diffMinutes < 60) return `${diffMinutes}m`;
+
+  const diffHours = Math.floor(diffMinutes / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d`;
 }

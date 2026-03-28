@@ -50,6 +50,7 @@ export async function GET(request) {
         first_name: true,
         last_name: true,
         email: true,
+        last_sync: true,
         patient_profiles: {
           select: {
             date_of_birth: true,
@@ -70,22 +71,7 @@ export async function GET(request) {
       ? calculateAge(patient.patient_profiles.date_of_birth)
       : null;
 
-    // Get last biometric sync
-    const lastBiometric = await prisma.biometric_data.findFirst({
-      where: {
-        patient_id: patientId,
-      },
-      orderBy: {
-        timestamp: 'desc',
-      },
-      select: {
-        timestamp: true,
-      },
-    });
-
-    const lastSync = lastBiometric 
-      ? getMinutesAgo(lastBiometric.timestamp)
-      : null;
+    const lastSync = formatLastSync(patient.last_sync);
 
     return NextResponse.json({
       success: true,
@@ -122,17 +108,21 @@ function calculateAge(dateOfBirth) {
   return age;
 }
 
-function getMinutesAgo(date) {
+function formatLastSync(date) {
+  if (!date) {
+    return null;
+  }
+
   const now = new Date();
   const diffMs = now - new Date(date);
-  const diffMins = Math.floor(diffMs / 60000);
-  
+  const diffMins = Math.max(0, Math.floor(diffMs / 60000));
+
   if (diffMins < 1) return 'just now';
   if (diffMins < 60) return `${diffMins}m`;
-  
+
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `${diffHours}h`;
-  
+
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays}d`;
 }
