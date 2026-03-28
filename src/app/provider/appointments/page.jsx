@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
-import { Calendar, Clock, User } from 'lucide-react';
+import { Calendar, Clock, User, Trash2, X } from 'lucide-react';
 import { appointmentService } from '@/services/appointmentService';
 
 export default function AppointmentsPage() {
@@ -15,6 +15,8 @@ export default function AppointmentsPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [activeTab, setActiveTab] = useState('list'); // 'list' or 'book'
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // { id, patientName } or null
+  const [deleting, setDeleting] = useState(false);
 
   // Form state
   const [selectedPatient, setSelectedPatient] = useState('');
@@ -38,6 +40,21 @@ export default function AppointmentsPage() {
       fetchPatients();
     }
   }, [user?.id]);
+
+  // Auto-clear success/error messages after 4 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(''), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(''), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   // Fetch appointments from API
   const fetchAppointments = async () => {
@@ -94,6 +111,32 @@ export default function AppointmentsPage() {
     }
   };
 
+  // Delete appointment
+  const handleDeleteAppointment = async (appointmentId) => {
+    try {
+      setDeleting(true);
+      const response = await fetch(
+        `/api/provider/appointments/${appointmentId}`,
+        {
+          method: 'DELETE',
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to cancel appointment');
+      }
+
+      setSuccess('Appointment cancelled successfully!');
+      setDeleteConfirm(null);
+      await fetchAppointments();
+    } catch (err) {
+      setError(err.message || 'Failed to cancel appointment');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   // Book appointment
   const handleBookAppointment = async (e) => {
     e.preventDefault();
@@ -128,7 +171,9 @@ export default function AppointmentsPage() {
       setSuccess('Appointment booked successfully!');
       await fetchAppointments();
       resetForm();
-      setTimeout(() => setActiveTab('list'), 1500);
+      setTimeout(() => {
+        setActiveTab('list');
+      }, 1500);
     } catch (err) {
       setError(err.message || 'Failed to book appointment');
     } finally {
@@ -249,17 +294,33 @@ export default function AppointmentsPage() {
                           {appointment.patients.last_name}
                         </h3>
                       </div>
-                      <span
-                        className={`text-xs font-medium px-3 py-1 rounded-full ${
-                          appointment.status === 'scheduled'
-                            ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                            : appointment.status === 'completed'
-                            ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
-                            : 'bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100'
-                        }`}
-                      >
-                        {appointment.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-medium px-3 py-1 rounded-full ${
+                            appointment.status === 'scheduled'
+                              ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
+                              : appointment.status === 'completed'
+                              ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
+                              : 'bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-100'
+                          }`}
+                        >
+                          {appointment.status}
+                        </span>
+                        <button
+                          onClick={() =>
+                            setDeleteConfirm({
+                              id: appointment.id,
+                              patientName: `${appointment.patients.first_name} ${appointment.patients.last_name}`,
+                              date: appointmentService.formatDate(appointment.appointment_date),
+                              time: appointmentService.formatTo12Hour(appointment.appointment_time),
+                            })
+                          }
+                          className="p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600 dark:text-red-400 transition-colors"
+                          title="Cancel appointment"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-3 text-sm">
                       <div className="flex items-center gap-2 p-2 bg-white/50 dark:bg-gray-900/30 rounded">
@@ -448,6 +509,73 @@ export default function AppointmentsPage() {
           </div>
         )}
       </main>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-sm w-full p-6 animate-in">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Cancel Appointment?
+              </h3>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 disabled:opacity-50"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+              <p className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  Patient:
+                </span>{' '}
+                {deleteConfirm.patientName}
+              </p>
+              <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
+                <span className="font-semibold text-gray-900 dark:text-white">
+                  Date & Time:
+                </span>{' '}
+                {deleteConfirm.date} at {deleteConfirm.time}
+              </p>
+            </div>
+
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              This action will permanently cancel this appointment. The patient will need to
+              reschedule if needed.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 bg-gray-300 dark:bg-gray-700 hover:bg-gray-400 dark:hover:bg-gray-600 disabled:bg-gray-300 dark:disabled:bg-gray-700 text-gray-900 dark:text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+              >
+                Keep Appointment
+              </button>
+              <button
+                onClick={() => handleDeleteAppointment(deleteConfirm.id)}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-semibold rounded-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <span className="inline-block animate-spin">⏳</span>
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Cancel Appointment
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

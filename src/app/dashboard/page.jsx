@@ -13,6 +13,7 @@ import BadgeNotification from '@/components/Badges/BadgeNotification';
 import ConnectionRequestsNotification from '@/components/Provider/ConnectionRequestsNotification';
 import AlertNotification from '@/components/Alerts/AlertNotification';
 import CriticalEventsWidget from '@/components/Alerts/CriticalEventsWidget';
+import AppointmentsWidget from '@/components/Patient/AppointmentsWidget';
 import DraggableWidget from '@/components/Dashboard/DraggableWidget';
 import DashboardWidgetManager from '@/components/Dashboard/DashboardWidgetManager';
 import { useAuth } from '@/hooks/useAuth';
@@ -565,7 +566,7 @@ export default function DashboardPage() {
         )}
 
         {/* Special Widgets - Rendered Separately */}
-        {getVisibleWidgets().filter(w => ['streaks', 'summary', 'critical-events'].includes(w.id)).map((widget) => {
+        {getVisibleWidgets().filter(w => ['streaks', 'summary'].includes(w.id)).map((widget) => {
           if (widget.id === 'streaks') {
             return (
               <div key={widget.id} className="mt-8 cursor-pointer" onClick={() => router.push('/dashboard/streaks')}>
@@ -610,28 +611,56 @@ export default function DashboardPage() {
             );
           }
 
-          if (widget.id === 'critical-events') {
-            return (
-              <div key={widget.id} className="mt-8">
-                <DraggableWidget
-                  widgetId={widget.id}
-                  isEditMode={isEditMode}
-                  isVisible={getWidgetPreference(widget.id)?.visible !== false}
-                  onToggleVisibility={toggleWidgetVisibility}
-                  onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                  draggingId={draggingId}
-                  dragOverId={dragOverId}
-                >
-                  <CriticalEventsWidget />
-                </DraggableWidget>
-              </div>
-            );
-          }
-
           return null;
         })}
+
+        {getVisibleWidgets().some((widget) => ['critical-events', 'appointments'].includes(widget.id)) && (
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {getVisibleWidgets()
+              .filter((widget) => ['critical-events', 'appointments'].includes(widget.id))
+              .map((widget) => {
+                if (widget.id === 'critical-events') {
+                  return (
+                    <DraggableWidget
+                      key={widget.id}
+                      widgetId={widget.id}
+                      isEditMode={isEditMode}
+                      isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                      onToggleVisibility={toggleWidgetVisibility}
+                      onDragStart={handleDragStart}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      draggingId={draggingId}
+                      dragOverId={dragOverId}
+                    >
+                      <CriticalEventsWidget />
+                    </DraggableWidget>
+                  );
+                }
+
+                if (widget.id === 'appointments') {
+                  return (
+                    <DraggableWidget
+                      key={widget.id}
+                      widgetId={widget.id}
+                      isEditMode={isEditMode}
+                      isVisible={getWidgetPreference(widget.id)?.visible !== false}
+                      onToggleVisibility={toggleWidgetVisibility}
+                      onDragStart={handleDragStart}
+                      onDragOver={handleDragOver}
+                      onDrop={handleDrop}
+                      draggingId={draggingId}
+                      dragOverId={dragOverId}
+                    >
+                      <AppointmentsWidget />
+                    </DraggableWidget>
+                  );
+                }
+
+                return null;
+              })}
+          </div>
+        )}
       </main>
     </div>
   );

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
+import { queueAppointmentReminders } from '@/services/appointmentReminderService';
 
 export async function POST(request) {
   try {
@@ -95,8 +96,23 @@ export async function POST(request) {
             email: true,
           },
         },
+        providers: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+          },
+        },
       },
     });
+
+    // Queue reminder notifications for the scheduler
+    try {
+      await queueAppointmentReminders(appointment);
+    } catch (reminderError) {
+      console.error('Error creating reminder notifications:', reminderError);
+      // Don't fail the appointment creation if reminders fail
+    }
 
     return NextResponse.json(
       {
