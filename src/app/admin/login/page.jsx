@@ -10,13 +10,34 @@ export default function AdminLoginPage() {
     email: '',
     password: '',
   });
-
-  // Force light mode for admin login page
-  useEffect(() => {
-    document.documentElement.classList.remove('dark');
-  }, []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const hadDarkClass = document.documentElement.classList.contains('dark');
+
+    document.documentElement.classList.remove('dark');
+
+    return () => {
+      if (hadDarkClass) {
+        document.documentElement.classList.add('dark');
+      }
+    };
+  }, []);
+
+  const syncUserState = (user) => {
+    if (user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    } else {
+      localStorage.removeItem('user');
+    }
+
+    window.dispatchEvent(
+      new CustomEvent('livsync-local-storage-change', {
+        detail: { key: 'user', value: user },
+      })
+    );
+  };
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -47,7 +68,7 @@ export default function AdminLoginPage() {
 
       // Store admin credentials in localStorage
       if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
+        syncUserState(data.user);
       }
 
       // Redirect to admin dashboard on success
@@ -80,7 +101,7 @@ export default function AdminLoginPage() {
 
       // Store admin credentials in localStorage
       if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
+        syncUserState(data.user);
       }
 
       // Redirect to admin dashboard on success

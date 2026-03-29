@@ -87,11 +87,11 @@ export async function GET(request) {
     const patientsWithWarnings = new Set();
 
     for (const event of unreadCriticalEvents) {
-      if (event.metric_type === 'heart_rate' || event.threshold_type === 'low') {
+      if (event.metric_type === 'heart_rate' || (event.metric_type === 'blood_glucose' && event.threshold_type === 'min')) {
         // Heart rate and low blood glucose are critical
         criticalCount++;
         patientsWithCritical.add(event.patient_id);
-      } else if (event.metric_type === 'blood_glucose' && event.threshold_type === 'high') {
+      } else if (event.metric_type === 'blood_glucose' && event.threshold_type === 'max') {
         // High blood glucose is a warning
         warningCount++;
         patientsWithWarnings.add(event.patient_id);

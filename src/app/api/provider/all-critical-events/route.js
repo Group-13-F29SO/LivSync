@@ -104,11 +104,11 @@ export async function GET(request) {
       let statusColor = '';
 
       if (event.metric_type === 'heart_rate') {
-        name = 'High Heart Rate';
+        name = event.threshold_type === 'max' ? 'High Heart Rate' : 'Low Heart Rate';
         status = 'critical';
         statusColor = 'red';
       } else if (event.metric_type === 'blood_glucose') {
-        if (event.threshold_type === 'high') {
+        if (event.threshold_type === 'max') {
           name = 'Elevated Blood Glucose';
           status = 'warning';
           statusColor = 'orange';

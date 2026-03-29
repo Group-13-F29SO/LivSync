@@ -59,6 +59,12 @@ export default function AdminFloatingNav() {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/admin/logout', { method: 'POST' });
+      localStorage.removeItem('user');
+      window.dispatchEvent(
+        new CustomEvent('livsync-local-storage-change', {
+          detail: { key: 'user', value: null },
+        })
+      );
       router.push('/admin/login');
     } catch (error) {
       console.error('Logout error:', error);

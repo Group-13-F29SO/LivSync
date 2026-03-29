@@ -1,8 +1,12 @@
-import { FootprintsIcon, FlameIcon, DropIcon, MoonIcon } from '@/components/Icons/GoalIcons';
-
-const EmojiIcon = ({ emoji }) => (
-  <span className="text-xl leading-none">{emoji}</span>
-);
+import {
+  Footprints,
+  Flame,
+  Droplets,
+  Moon,
+  Dumbbell,
+  Beef,
+  Pill,
+} from 'lucide-react';
 
 export const GOAL_CATALOG = [
   // Core goals (always shown)
@@ -12,7 +16,7 @@ export const GOAL_CATALOG = [
     unit: 'steps',
     defaultTarget: 10000,
     defaultFrequency: 'daily',
-    icon: FootprintsIcon,
+    icon: Footprints,
     iconBgColor: 'bg-blue-100',
     iconColor: 'text-blue-600',
     core: true,
@@ -23,7 +27,7 @@ export const GOAL_CATALOG = [
     unit: 'kcal',
     defaultTarget: 2200,
     defaultFrequency: 'daily',
-    icon: FlameIcon,
+    icon: Flame,
     iconBgColor: 'bg-orange-100',
     iconColor: 'text-orange-600',
     core: true,
@@ -34,7 +38,7 @@ export const GOAL_CATALOG = [
     unit: 'glasses',
     defaultTarget: 8,
     defaultFrequency: 'daily',
-    icon: DropIcon,
+    icon: Droplets,
     iconBgColor: 'bg-cyan-100',
     iconColor: 'text-cyan-600',
     core: true,
@@ -45,7 +49,7 @@ export const GOAL_CATALOG = [
     unit: 'hours',
     defaultTarget: 8,
     defaultFrequency: 'daily',
-    icon: MoonIcon,
+    icon: Moon,
     iconBgColor: 'bg-indigo-100',
     iconColor: 'text-indigo-600',
     core: true,
@@ -58,7 +62,7 @@ export const GOAL_CATALOG = [
     unit: 'sessions',
     defaultTarget: 4,
     defaultFrequency: 'weekly', // ✅ default weekly
-    icon: () => <EmojiIcon emoji="🏋️" />,
+    icon: Dumbbell,
     iconBgColor: 'bg-emerald-100',
     iconColor: 'text-emerald-700',
     core: false,
@@ -69,7 +73,7 @@ export const GOAL_CATALOG = [
     unit: 'g',
     defaultTarget: 120,
     defaultFrequency: 'daily',
-    icon: () => <EmojiIcon emoji="🥩" />,
+    icon: Beef,
     iconBgColor: 'bg-amber-100',
     iconColor: 'text-amber-700',
     core: false,
@@ -80,7 +84,7 @@ export const GOAL_CATALOG = [
     unit: 'doses',
     defaultTarget: 1,
     defaultFrequency: 'daily',
-    icon: () => <EmojiIcon emoji="💊" />,
+    icon: Pill,
     iconBgColor: 'bg-rose-100',
     iconColor: 'text-rose-700',
     core: false,

@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { GOAL_CATALOG } from '@/constants/goalCatalog';
 
 const STREAK_METRICS = ['steps', 'calories', 'water', 'sleep'];

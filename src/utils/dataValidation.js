@@ -115,11 +115,5 @@ function getExpectedMetrics() {
 }
 
 module.exports = {
-  validateDataPoint,
-  validateDataRange,
-  validateCompleteDataset,
-  getValidRange,
-  getExpectedMetrics,
-  VALID_RANGES,
-  EXPECTED_METRICS
+  validateCompleteDataset
 };

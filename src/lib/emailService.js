@@ -63,17 +63,4 @@ export async function sendPasswordResetEmail(email, resetCode, userName = 'User'
   }
 }
 
-/**
- * Verify email service is configured correctly
- * @returns {Promise<boolean>} True if transporter is working
- */
-export async function verifyEmailService() {
-  try {
-    await transporter.verify();
-    console.log('Email service verified successfully');
-    return true;
-  } catch (error) {
-    console.error('Email service verification failed:', error);
-    return false;
-  }
-}
+export default { sendPasswordResetEmail };
