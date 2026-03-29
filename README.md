@@ -62,15 +62,17 @@ Before getting started, ensure you have the following installed on your system:
 
 ### Step 4: Install Project Dependencies
 
+```bash
 npm install
-
+```
 
 ### Step 5: Run Database Migrations
 
 Navigate to the project directory and run the Prisma migrations:
 
+```bash
 npx prisma migrate deploy
-
+```
 
 **Note:** If you encounter issues with `npx prisma migrate run dev`, use `npx prisma migrate deploy` instead, which is the recommended approach for production-like environments.
 
@@ -78,13 +80,15 @@ npx prisma migrate deploy
 
 Generate the Prisma client to ensure all types are available:
 
+```bash
 npx prisma generate
-
+```
 
 ### Step 7: Start the Development Server
 
+```bash
 npm run dev
-
+```
 
 The application should now be running at **http://localhost:3000**
 
@@ -142,7 +146,9 @@ When running `npx prisma migrate deploy`, Prisma attempts to automatically creat
 **Solution:**
 If migrations fail during auto-creation, manually create the database first (see Step 2), then run the migrations again:
 
+```bash
 npx prisma migrate deploy
+```
 
 Once the database exists, Prisma only needs to connect and apply migrations, which requires fewer permissions and is less likely to fail.
 
