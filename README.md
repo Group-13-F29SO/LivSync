@@ -90,7 +90,7 @@ npx prisma generate
 npm run dev
 ```
 
-The application should now be running at **http://localhost:3000**
+The application should now be running at **http://localhost:3000/signup**
 
 ---
 
