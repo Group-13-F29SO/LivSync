@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, CheckCircle2, Info, AlertTriangle, Calendar, X } from 'lucide-react';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import DetailPageHeader from '@/components/Admin/DetailPageHeader';
 
 export default function SecurityLogsPage() {

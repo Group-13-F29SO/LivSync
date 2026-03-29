@@ -1,4 +1,3 @@
-import React from 'react';
 import { GOAL_CATALOG } from '@/constants/goalCatalog';
 
 const getMetricInfo = (metricType) => {

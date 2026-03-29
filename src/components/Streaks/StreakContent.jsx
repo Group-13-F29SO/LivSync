@@ -1,4 +1,4 @@
-import React from 'react';
+
 import StreakStatsCard from './StreakStatsCard';
 import { GOAL_CATALOG } from '@/constants/goalCatalog';
 

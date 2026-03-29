@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+
 
 export default function ChatMessage({ message, isUser }) {
   return (

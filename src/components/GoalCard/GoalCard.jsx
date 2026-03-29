@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FlameIcon, TrashIcon } from '../Icons/GoalIcons';
+import { Flame, Trash2 } from 'lucide-react';
 
 export default function GoalCard({
   title,
@@ -44,7 +44,7 @@ export default function GoalCard({
         <div className="flex-1">
           <h3 className="font-bold text-slate-800 dark:text-slate-100 text-lg">{title}</h3>
           <div className="flex items-center gap-1 mt-1">
-            <FlameIcon className="w-4 h-4 text-orange-500" />
+            <Flame className="w-4 h-4 text-orange-500" />
             <span className="text-sm text-gray-500 dark:text-gray-400">{Number(streak) || 0} day streak</span>
           </div>
         </div>
@@ -55,7 +55,7 @@ export default function GoalCard({
             className="text-gray-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-lg"
             title="Delete goal"
           >
-            <TrashIcon className="w-5 h-5" />
+            <Trash2 className="w-5 h-5" />
           </button>
         )}
       </div>

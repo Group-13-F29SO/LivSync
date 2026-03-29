@@ -1,5 +1,3 @@
-import React from 'react';
-
 const TodaySummaryCard = () => {
     return (
         <div className="bg-white rounded-2xl p-4 shadow-md">

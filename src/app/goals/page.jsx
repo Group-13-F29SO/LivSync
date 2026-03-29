@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import GoalCard from '@/components/GoalCard/GoalCard';
-import { PlusIcon } from '@/components/Icons/GoalIcons';
+import { Plus } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { GOAL_CATALOG } from '@/constants/goalCatalog';
 
@@ -240,7 +240,7 @@ export default function GoalsPage() {
           disabled={availableAddOns.length === 0}
           className="w-full bg-white dark:bg-gray-900 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-2xl p-8 flex items-center justify-center gap-3 hover:border-gray-400 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all group disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <PlusIcon className="w-6 h-6 text-gray-400 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400" />
+          <Plus className="w-6 h-6 text-gray-400 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400" />
           <span className="text-gray-500 dark:text-gray-400 font-medium group-hover:text-gray-600 dark:group-hover:text-gray-300">
             {availableAddOns.length === 0 ? 'All goals added' : 'Add New Goal'}
           </span>
