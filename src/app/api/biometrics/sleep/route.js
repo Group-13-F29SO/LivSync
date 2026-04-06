@@ -146,8 +146,6 @@ export async function GET(req) {
       ? Number(((optimalNights / sleepValues.length) * 100).toFixed(1))
       : 0;
 
-    const currentProgress = Math.min((selectedDateSleep / recommendedMax) * 100, 100);
-
     // Fetch user's goal for this metric
     let goal = null;
     const userGoal = await prisma.goals.findFirst({
@@ -158,6 +156,9 @@ export async function GET(req) {
       select: { target_value: true },
     });
     goal = userGoal?.target_value || null;
+
+    const progressGoal = Number.isFinite(goal) && goal > 0 ? goal : 8;
+    const currentProgress = Number(((selectedDateSleep / progressGoal) * 100).toFixed(1));
 
     return new Response(
       JSON.stringify({
@@ -171,7 +172,7 @@ export async function GET(req) {
           count: sleepValues.length,
           optimalNights,
           optimalPercentage,
-          currentProgress: Number(currentProgress.toFixed(1)),
+          currentProgress,
           recommendedMin,
           recommendedMax,
           goalAchieved: goal ? selectedDateSleep >= goal : false,
