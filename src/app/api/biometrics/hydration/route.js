@@ -100,10 +100,11 @@ export async function GET(req) {
       );
     }
 
-    // Parse the selected date to get start and end of day
-    const dateObj = new Date(selectedDate + 'T00:00:00');
-    const startOfDay = new Date(dateObj.getTime());
-    const endOfDay = new Date(dateObj.getTime() + 24 * 60 * 60 * 1000);
+    // Parse the selected date to get start and end of day (local timezone)
+    // selectedDate format: "YYYY-MM-DD"
+    const [year, month, day] = selectedDate.split('-').map(Number);
+    const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
     // Fetch hydration data for the specific date
     const hydrationData = await prisma.biometric_data.findMany({
@@ -112,7 +113,7 @@ export async function GET(req) {
         metric_type: 'hydration',
         timestamp: {
           gte: startOfDay,
-          lt: endOfDay
+          lte: endOfDay
         }
       },
       orderBy: {

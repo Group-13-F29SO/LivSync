@@ -55,12 +55,11 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Parse the date
-    const selectedDate = new Date(date);
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Parse date string to create local midnight (not UTC)
+    // date format: "YYYY-MM-DD"
+    const [year, month, day] = date.split('-').map(Number);
+    const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
 
     // Delete all biometric data for this patient on the selected date
     const result = await prisma.biometric_data.deleteMany({

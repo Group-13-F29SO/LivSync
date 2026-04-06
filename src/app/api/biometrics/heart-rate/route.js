@@ -41,16 +41,18 @@ export async function GET(req) {
     endDate.setHours(23, 59, 59, 999);
 
     switch (period) {
-      case 'thisWeek':
-        // Get Monday of current week
+      case 'thisWeek': {
+        // Calendar week: Monday through Sunday
         const dayOfWeek = startDate.getDay();
-        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Sunday is 0
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
         startDate.setDate(startDate.getDate() - daysToMonday);
         startDate.setHours(0, 0, 0, 0);
-        // Set end date to Sunday of current week
+
+        endDate = new Date(startDate);
         endDate.setDate(startDate.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
         break;
+      }
       case 'thisMonth':
         // Get first day of current month
         startDate.setDate(1);

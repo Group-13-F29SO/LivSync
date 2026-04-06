@@ -28,16 +28,15 @@ export async function GET(req) {
     const url = new URL(req.url);
     const dateParam = url.searchParams.get('date');
 
-    const targetDate = dateParam ? new Date(`${dateParam}T00:00:00`) : new Date();
-    if (isNaN(targetDate.getTime())) {
-      return new Response(
-        JSON.stringify({ error: 'Invalid date' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+    // Parse date as local time (YYYY-MM-DD format)
+    let selectedDate;
+    if (dateParam) {
+      const [year, month, day] = dateParam.split('-').map(Number);
+      selectedDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    } else {
+      selectedDate = new Date();
+      selectedDate.setHours(0, 0, 0, 0);
     }
-
-    const selectedDate = new Date(targetDate);
-    selectedDate.setHours(0, 0, 0, 0);
 
     const selectedDateEnd = new Date(selectedDate);
     selectedDateEnd.setHours(23, 59, 59, 999);

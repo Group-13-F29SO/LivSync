@@ -14,6 +14,10 @@ import {
 export default function RangeBarChart({ chartData, period }) {
   const getPeriodLabel = () => {
     switch (period) {
+      case 'thisWeek':
+        return ' - This Week';
+      case 'thisMonth':
+        return ' - This Month';
       case '7days':
         return ' - Last 7 Days';
       case '30days':

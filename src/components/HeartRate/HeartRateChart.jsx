@@ -21,10 +21,10 @@ export default function HeartRateChart({ period, chartData, dataLoading, error, 
     switch (period) {
       case 'today':
         return ' - Today';
-      case '7days':
-        return ' - Last 7 Days';
-      case '30days':
-        return ' - Last 30 Days';
+      case 'thisWeek':
+        return ' - This Week';
+      case 'thisMonth':
+        return ' - This Month';
       case 'all':
         return ' - All Available Data';
       default:

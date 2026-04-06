@@ -61,12 +61,26 @@ export async function POST(request, { params }) {
       );
     }
 
-    // Parse the date
-    const selectedDate = new Date(date);
-    const startOfDay = new Date(selectedDate);
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(selectedDate);
-    endOfDay.setHours(23, 59, 59, 999);
+    // Parse date string to create local midnight (not UTC)
+    // dateParam format: "YYYY-MM-DD"
+    const [year, month, day] = date.split('-').map(Number);
+    const selectedDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const startOfDay = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const endOfDay = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+    // Get the patient's primary device (most recently synced)
+    const device = await prisma.devices.findFirst({
+      where: {
+        patient_id: patientId,
+        is_active: true,
+      },
+      orderBy: {
+        last_sync: 'desc',
+      },
+    });
+
+    // Use device name as source, fallback to 'admin_generated' if no device
+    const dataSource = device ? device.device_name : 'admin_generated';
 
     // Generate biometric data for all types
     const generators = [
@@ -82,7 +96,8 @@ export async function POST(request, { params }) {
 
     for (const { type, generator } of generators) {
       try {
-        const data = generator(selectedDate);
+        const generatorInstance = new generator();
+        const data = generatorInstance.generate(selectedDate);
         
         if (Array.isArray(data)) {
           for (const entry of data) {
@@ -90,9 +105,9 @@ export async function POST(request, { params }) {
               data: {
                 patient_id: patientId,
                 metric_type: type,
-                value: entry.value || entry,
+                value: entry.value ?? entry,
                 timestamp: entry.timestamp || new Date(entry.date || selectedDate),
-                source: 'admin_generated',
+                source: dataSource,
                 is_user_entered: false,
               },
             });
@@ -103,9 +118,9 @@ export async function POST(request, { params }) {
             data: {
               patient_id: patientId,
               metric_type: type,
-              value: data.value || data,
+              value: data.value ?? data,
               timestamp: data.timestamp || selectedDate,
-              source: 'admin_generated',
+              source: dataSource,
               is_user_entered: false,
             },
           });
@@ -114,6 +129,23 @@ export async function POST(request, { params }) {
       } catch (err) {
         console.error(`Error generating ${type}:`, err);
       }
+    }
+
+    // Update patient's last_sync to the end of the generated date
+    await prisma.patients.update({
+      where: { id: patientId },
+      data: {
+        last_sync: endOfDay,
+      },
+    });
+
+    if (device) {
+      await prisma.devices.update({
+        where: { id: device.id },
+        data: {
+          last_sync: endOfDay,
+        },
+      });
     }
 
     return NextResponse.json({
